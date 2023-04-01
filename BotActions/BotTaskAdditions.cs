@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -44,6 +45,8 @@ public class BotTaskAdditions
         if (message.Text.StartsWith("/part")) await ChoosingParticipants(message);
        
         if (message.Text.StartsWith("/name")) await AddPartiticantToTask(message);
+        
+        if (message.Text.StartsWith("/date")) await AddDateToTask(message);
 
         if (message.Text.StartsWith("/finish")) await CompleteTask(message);
     }
@@ -125,9 +128,8 @@ public class BotTaskAdditions
         {
             await BotClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: "All participants added.\n" +
-                      "type \"/finish\" when you are done setting up this task",
-                replyMarkup: new ReplyKeyboardRemove(),
+                text: "All participants added",
+                      replyMarkup: new ReplyKeyboardRemove(),
                 replyToMessageId: message.MessageId);
             return;
         }
@@ -160,8 +162,42 @@ public class BotTaskAdditions
                 replyMarkup: new ReplyKeyboardRemove());
         }
     }
-    private async Task AddDateToTask()
+    private async Task AddDateToTask(Message message)
     {
+        int telegramId = (int)message.From.Id;
+        string date = message.Text.Substring("/desc".Length).Trim();
+        Console.WriteLine($"{date}");
+
+        date = dateConverter(date);
+        if (date == null)
+        {
+            await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
         
+        TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
+
+        _creatingTaskDbOperations.AddDateToTask(task, date);
+
+        _trelloOperations.PushDateToTrello(task);
+        
+        
+    }
+
+    private string dateConverter(string date)
+    {
+        DateTime properDate;
+        DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
+            out properDate);
+        if (DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
+                out properDate))
+        {
+            string trelloDate = properDate.ToString("o");
+            return trelloDate;
+        }
+        
+        return null;
     }
 }

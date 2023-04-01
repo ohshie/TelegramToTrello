@@ -52,5 +52,6 @@ public class TTTTask
     public string TaskId { get; set; }
     public string TaskDesc { get; set; }
     public string TaskCurrentParticipant { get; set; }
+    public string Date { get; set; }
 }
 

@@ -1,3 +1,4 @@
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -122,6 +123,27 @@ public class TrelloOperations
                                   $"key={TrelloAPIKey}&token={TrelloToken}&value={userCreatedTask.TaskCurrentParticipant}";
 
             HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(responseBody);
+                return true;
+            }
+
+            Console.WriteLine($"failed {response}");
+            return false;
+        }
+    }
+
+    public async Task<bool> PushDateToTrello(TTTTask userCreatedTask)
+    {
+        using (HttpClient httpClient = new HttpClient())
+        {
+            string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?due={userCreatedTask.Date}&" +
+                                  $"key={TrelloAPIKey}&token={TrelloToken}";
+            
+            HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
 
             if (response.IsSuccessStatusCode)
             {

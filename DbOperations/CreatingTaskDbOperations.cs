@@ -20,7 +20,8 @@ public class CreatingTaskDbOperations
                     ListId = "",
                     TaskId = "",
                     TaskDesc = "",
-                    TaskCurrentParticipant = ""
+                    TaskCurrentParticipant = "",
+                    Date = ""
                 });
                 
                 dbContext.SaveChangesAsync();
@@ -102,5 +103,16 @@ public class CreatingTaskDbOperations
         }
 
         return true;
+    }
+
+    public async Task AddDateToTask(TTTTask task, string date)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            task.Date = date;
+            
+            dbContext.CreatingTasks.Update(task);
+            await dbContext.SaveChangesAsync();
+        }
     }
 }

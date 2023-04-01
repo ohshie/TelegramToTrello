@@ -22,6 +22,14 @@ public class BotTaskCreation
         int telegramId = (int)message.From.Id;
         string newTaskName = message.Text.Substring("/newtask".Length).Trim();
         Console.WriteLine(newTaskName);
+        if (newTaskName.StartsWith("@teltotrelbot"))
+        {
+            await BotClient.SendTextMessageAsync(text: "Dont click on \"/newtask\"\n" +
+                                                       $"Just type \"/newtask (name of the task)\"",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
 
         TrelloUser? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
         if (trelloUser == null)
@@ -175,7 +183,8 @@ public class BotTaskCreation
         await BotClient.SendTextMessageAsync(message.Chat.Id, 
             text:"Task created.\n" +
                  "You can add task description with \"/desc your description\"\n" +
-                 "And add participants to that task with \"/part\"",
+                 "Add participants to that task with \"/part\"\n" +
+                 "And add due date with \"/date\"",
             replyToMessageId: message.MessageId);
     }
 }
