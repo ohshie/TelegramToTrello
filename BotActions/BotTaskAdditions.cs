@@ -1,0 +1,167 @@
+using Microsoft.EntityFrameworkCore;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
+
+namespace TelegramToTrello.BotActions;
+
+public class BotTaskAdditions
+{
+    private DbOperations _dbOperation = new DbOperations();
+    private TrelloOperations _trelloOperations = new TrelloOperations();
+    private CreatingTaskDbOperations _creatingTaskDbOperations = new CreatingTaskDbOperations();
+    
+    private static ITelegramBotClient BotClient { get; set; }
+
+    public BotTaskAdditions(ITelegramBotClient botClient)
+    {
+        BotClient = botClient;
+    }
+
+    public async Task ChoosingATaskToAddAdittions(Message message)
+    {
+        TTTTask task = await _dbOperation.RetrieveUserTask((int)message.From.Id);
+        if (task == null)
+        {
+            await BotClient.SendTextMessageAsync(text: "Looks like there is no task created already creating a task, " +
+                                                       $"please create it first by typing \"/newtask name of the task\".",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
+
+        if (task.TaskId == "")
+        {
+            await BotClient.SendTextMessageAsync(text: "Looks like you haven't pushed your task yet.\n" +
+                                                       "Please choose board and table for it and then use \"push\" to publish it to trello",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
+        
+        if (message.Text.StartsWith("/desc")) await AddDescriptionToTask(message);
+
+        if (message.Text.StartsWith("/part")) await ChoosingParticipants(message);
+       
+        if (message.Text.StartsWith("/name")) await AddPartiticantToTask(message);
+
+        if (message.Text.StartsWith("/finish")) await CompleteTask(message);
+    }
+    
+    private async Task AddDescriptionToTask(Message message)
+    {
+        int telegramId = (int)message.From.Id;
+        string trelloTaskDesc = message.Text.Substring("/desc".Length).Trim();
+        Console.WriteLine($"{trelloTaskDesc}");
+
+        TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
+        if (task == null)
+        {
+            await BotClient.SendTextMessageAsync(text: "Looks like there is no task created already creating a task, " +
+                                                       $"please create it first by typing \"/newtask name of the task\".",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
+
+        await _creatingTaskDbOperations.AddDescriptionToTask(task, trelloTaskDesc);
+
+        await _trelloOperations.PushTaskDescriptionToTrello(task);
+    }
+
+    private async Task ChoosingParticipants(Message message)
+    {
+        int telegramId = (int)message.From.Id;
+        string participant = message.Text.Substring("/part".Length).Trim();
+        Console.WriteLine($"{participant}");
+        
+        TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
+
+        ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardParticipants(task);
+        
+        await BotClient.SendTextMessageAsync(text: "choose participant from a list",
+            chatId: message.Chat.Id,
+            replyMarkup: replyKeyboardMarkup,
+            replyToMessageId: message.MessageId);
+    }
+
+    private ReplyKeyboardMarkup KeyboardParticipants(TTTTask task)
+    {
+        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+        
+        BotDbContext dbContext = new BotDbContext();
+        {
+            TrelloUserBoard taskBoard = dbContext.TrelloUserBoards
+                .Include(tub => tub.UsersOnBoards)
+                .FirstOrDefault(tub => tub.TrelloBoardId == task.BoardId);
+        
+            if (taskBoard != null)
+            {
+                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name all set!")});
+                foreach (var user in taskBoard.UsersOnBoards)
+                {
+                    keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
+                }
+            }
+        
+            ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
+            {
+                ResizeKeyboard = true,
+                OneTimeKeyboard = true,
+                Selective = true
+            };
+        
+            return replyKeyboardMarkup;
+        }
+    }
+
+    private async Task AddPartiticantToTask(Message message)
+    {
+        int telegramId = (int)message.From.Id;
+        string participantName = message.Text.Substring("/desc".Length).Trim();
+        Console.WriteLine($"{participantName}");
+
+        if (participantName == "all set!")
+        {
+            await BotClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "All participants added.\n" +
+                      "type \"/finish\" when you are done setting up this task",
+                replyMarkup: new ReplyKeyboardRemove(),
+                replyToMessageId: message.MessageId);
+            return;
+        }
+
+        TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
+
+        bool userFoundOnBoard = await _creatingTaskDbOperations.AddParticipantToTask(task, participantName);
+        if (!userFoundOnBoard)
+        {
+            await BotClient.SendTextMessageAsync(text: "Please choose name from keyboard menu.",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
+        
+        await _trelloOperations.PushTaskParticipantToTrello(task);
+    }
+
+    private async Task CompleteTask(Message message)
+    {
+        int telegramId = (int)message.From.Id;
+
+        bool taskCleared = await _dbOperation.ClearTask(telegramId);
+        if (taskCleared)
+        {
+            await BotClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId,
+                text: "All done, you can create new task now",
+                replyMarkup: new ReplyKeyboardRemove());
+        }
+    }
+    private async Task AddDateToTask()
+    {
+        
+    }
+}
