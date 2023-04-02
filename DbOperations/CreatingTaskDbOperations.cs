@@ -6,7 +6,7 @@ public class CreatingTaskDbOperations
     
      public async Task<bool> AddTaskToDb(string taskName, int telegramId)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             TTTTask existingTask = await _dbOperations.RetrieveUserTask(telegramId);
 
@@ -24,7 +24,7 @@ public class CreatingTaskDbOperations
                     Date = ""
                 });
                 
-                dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
                 return false;
             }
 
@@ -34,7 +34,7 @@ public class CreatingTaskDbOperations
     
     public async Task<bool> AddBoardToTask(int telegramId, string boardName)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
             if (task == null) return false;
@@ -58,7 +58,7 @@ public class CreatingTaskDbOperations
 
     public async Task<bool> AddTableToTask(int telegramId, string listName)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
             
@@ -81,7 +81,7 @@ public class CreatingTaskDbOperations
 
     public async Task AddDescriptionToTask(TTTTask task, string description)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             task.TaskDesc = description;
             
@@ -94,7 +94,7 @@ public class CreatingTaskDbOperations
         string trelloIdOfParticipant = await _dbOperations.UserNameToId(task.BoardId, participantName);
         if (trelloIdOfParticipant == null) return false;
         
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             task.TaskCurrentParticipant = trelloIdOfParticipant;
             
@@ -107,7 +107,7 @@ public class CreatingTaskDbOperations
 
     public async Task AddDateToTask(TTTTask task, string date)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        await using (BotDbContext dbContext = new BotDbContext())
         {
             task.Date = date;
             

@@ -82,7 +82,7 @@ public class BotTaskCreation
         int telegramId = (int)message.From.Id;
         
         string boardName = message.Text.Substring("/board".Length).Trim();
-
+        
         bool noTaskExist = await _dbOperation.CheckIfUserAlreadyCreatingTask(telegramId);
         if (!noTaskExist)
         {

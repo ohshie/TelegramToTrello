@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -31,7 +30,7 @@ public class BotClient
             receiverOptions: receiverOptions,
             cancellationToken: cts.Token);
         
-        var me = await _botClient.GetMeAsync();
+        var me = await _botClient.GetMeAsync(cancellationToken:cts.Token);
         Console.WriteLine(_botClient.Timeout);
         Console.WriteLine($"Listening for @{me.Username}");
         Console.ReadLine();
@@ -68,7 +67,7 @@ public class BotClient
             || message.Text.StartsWith("/part") 
             || message.Text.StartsWith("/name")
             || message.Text.StartsWith("/date")) 
-            await botTaskAdditions.ChoosingATaskToAddAdittions(message);
+            await botTaskAdditions.ChoosingATaskToAddExtras(message);
     }
     
     private async Task RegisterUser(Message? message, ITelegramBotClient botClient)
@@ -77,15 +76,15 @@ public class BotClient
         Console.WriteLine(trelloUserName);
         if (trelloUserName.StartsWith("@teltotrelbot"))
         {
-            _botClient.SendTextMessageAsync(message.Chat.Id, 
+            await _botClient.SendTextMessageAsync(message.Chat.Id, 
                 replyToMessageId: message.MessageId,
                 text:$"Dont click on \"/register\"\n" +
                      $"Just type \"/register your trello username without @\"");
             return;
         }
         
-        string trelloID = await _trelloOperations.GetTrelloUserIdFromTrelloAPI(trelloUserName);
-        if (trelloID == null)
+        string trelloId = await _trelloOperations.GetTrelloUserIdFromTrelloApi(trelloUserName);
+        if (trelloId == null)
         {
             await _botClient.SendTextMessageAsync(message.Chat.Id,
                 replyToMessageId: message.MessageId,
@@ -93,7 +92,7 @@ public class BotClient
             return;
         }
         
-        bool success = await _dbOperation.LinkTelegramToTrello(message, botClient, trelloID, trelloUserName);
+        bool success = await _dbOperation.LinkTelegramToTrello(message, botClient, trelloId, trelloUserName);
         if (success) await botClient.SendTextMessageAsync(message.Chat.Id,
             replyToMessageId: message.MessageId,
             text:"Trello account linked to telegram account.");

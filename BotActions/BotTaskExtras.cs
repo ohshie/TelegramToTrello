@@ -19,7 +19,7 @@ public class BotTaskAdditions
         BotClient = botClient;
     }
 
-    public async Task ChoosingATaskToAddAdittions(Message message)
+    public async Task ChoosingATaskToAddExtras(Message message)
     {
         TTTTask task = await _dbOperation.RetrieveUserTask((int)message.From.Id);
         if (task == null)
@@ -171,7 +171,8 @@ public class BotTaskAdditions
         date = dateConverter(date);
         if (date == null)
         {
-            await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)",
+            await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
+                                                       "Due date must be in the future.",
                 chatId: message.Chat.Id,
                 replyToMessageId: message.MessageId);
             return;
@@ -191,6 +192,8 @@ public class BotTaskAdditions
         DateTime properDate;
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
             out properDate);
+        if (properDate < DateTime.Today) return null;
+       
         if (DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
                 out properDate))
         {
