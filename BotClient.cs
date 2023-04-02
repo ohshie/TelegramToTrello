@@ -55,18 +55,18 @@ public class BotClient
         
         if (message.Text.StartsWith("/register")) await RegisterUser(message, botClient);
 
-        if (message.Text.StartsWith("/newtask")) await botTaskCreation.AddNewTaskToDb(message);
-        
-        if (message.Text.StartsWith("/board")) await botTaskCreation.NewTaskBoardSelection(message);
-
-        if (message.Text.StartsWith("/list")) await botTaskCreation.NewTaskTableSelection(message);
-        
-        if (message.Text.StartsWith("/push")) await botTaskCreation.PushTaskToTrello(message);
+        if (message.Text.StartsWith("/newtask")
+            ||message.Text.StartsWith("/tag") 
+            || message.Text.StartsWith("/board") 
+            || message.Text.StartsWith("/list") 
+            || message.Text.StartsWith("/push")) 
+            await botTaskCreation.InitialTaskCreator(message);
         
         if (message.Text.StartsWith("/desc")
             || message.Text.StartsWith("/part") 
             || message.Text.StartsWith("/name")
-            || message.Text.StartsWith("/date")) 
+            || message.Text.StartsWith("/date")
+            || message.Text.StartsWith("/taskset"))
             await botTaskAdditions.ChoosingATaskToAddExtras(message);
     }
     

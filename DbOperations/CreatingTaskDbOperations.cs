@@ -16,6 +16,7 @@ public class CreatingTaskDbOperations
                 {
                     Id = telegramId,
                     TaskName = taskName,
+                    Tag = "",
                     BoardId = "",
                     ListId = "",
                     TaskId = "",
@@ -31,6 +32,20 @@ public class CreatingTaskDbOperations
             return true;
         }
     }
+
+     public async Task<bool> AddTagToTask(int telegramId, string tag)
+     {
+         await using (BotDbContext dbContext = new BotDbContext())
+         {
+             TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
+             if (task == null) return false;
+             
+             task.Tag = tag;
+             dbContext.CreatingTasks.Update(task);
+             await dbContext.SaveChangesAsync();
+             return true;
+         }
+     }
     
     public async Task<bool> AddBoardToTask(int telegramId, string boardName)
     {
@@ -51,7 +66,6 @@ public class CreatingTaskDbOperations
                 
                 return true;
             }
-
             return false;
         }
     }

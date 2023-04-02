@@ -47,6 +47,7 @@ public class TTTTask
 {
     public int Id { get; set; }
     public string TaskName { get; set; }
+    public string Tag { get; set; }
     public string BoardId { get; set; }
     public string ListId { get; set; }
     public string TaskId { get; set; }

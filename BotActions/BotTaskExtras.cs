@@ -24,7 +24,7 @@ public class BotTaskAdditions
         TTTTask task = await _dbOperation.RetrieveUserTask((int)message.From.Id);
         if (task == null)
         {
-            await BotClient.SendTextMessageAsync(text: "Looks like there is no task created already creating a task, " +
+            await BotClient.SendTextMessageAsync(text: "Looks like there is no task created, " +
                                                        $"please create it first by typing \"/newtask name of the task\".",
                 chatId: message.Chat.Id,
                 replyToMessageId: message.MessageId);
@@ -48,7 +48,7 @@ public class BotTaskAdditions
         
         if (message.Text.StartsWith("/date")) await AddDateToTask(message);
 
-        if (message.Text.StartsWith("/finish")) await CompleteTask(message);
+        if (message.Text.StartsWith("/taskset")) await CompleteTask(message);
     }
     
     private async Task AddDescriptionToTask(Message message)
@@ -57,11 +57,24 @@ public class BotTaskAdditions
         string trelloTaskDesc = message.Text.Substring("/desc".Length).Trim();
         Console.WriteLine($"{trelloTaskDesc}");
 
+        if (trelloTaskDesc.StartsWith("@TelToTrelBot"))
+        {
+            trelloTaskDesc = trelloTaskDesc.Substring("@teltotrelbot".Length).Trim();
+        }
+        
         TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
         if (task == null)
         {
             await BotClient.SendTextMessageAsync(text: "Looks like there is no task created already creating a task, " +
                                                        $"please create it first by typing \"/newtask name of the task\".",
+                chatId: message.Chat.Id,
+                replyToMessageId: message.MessageId);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(trelloTaskDesc))
+        {
+            await BotClient.SendTextMessageAsync(text: "Please manually type \"/desc *description of your task*\".",
                 chatId: message.Chat.Id,
                 replyToMessageId: message.MessageId);
             return;
@@ -100,7 +113,7 @@ public class BotTaskAdditions
         
             if (taskBoard != null)
             {
-                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name all set!")});
+                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
                 foreach (var user in taskBoard.UsersOnBoards)
                 {
                     keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
@@ -110,7 +123,6 @@ public class BotTaskAdditions
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
             {
                 ResizeKeyboard = true,
-                OneTimeKeyboard = true,
                 Selective = true
             };
         
@@ -124,11 +136,13 @@ public class BotTaskAdditions
         string participantName = message.Text.Substring("/desc".Length).Trim();
         Console.WriteLine($"{participantName}");
 
-        if (participantName == "all set!")
+        if (participantName == "press this when done")
         {
             await BotClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
-                text: "All participants added",
+                text: "All participants added\n" +
+                      "If you haven't added description or date do it now\n" +
+                      "/desc | /date" ,
                       replyMarkup: new ReplyKeyboardRemove(),
                 replyToMessageId: message.MessageId);
             return;

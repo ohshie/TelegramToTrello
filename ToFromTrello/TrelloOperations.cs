@@ -75,7 +75,8 @@ public class TrelloOperations
     {
         using (HttpClient httpClient = new HttpClient())
         {
-            string trelloApiUri = $"https://api.trello.com/1/cards?idList={userCreatedTask.ListId}&name={userCreatedTask.TaskName}&key={TrelloApiKey}&token={TrelloToken}";
+            string combinedTagAndTaskName = $"[{userCreatedTask.Tag}] {userCreatedTask.TaskName}";
+            string trelloApiUri = $"https://api.trello.com/1/cards?idList={userCreatedTask.ListId}&name={Uri.EscapeDataString(combinedTagAndTaskName)}&key={TrelloApiKey}&token={TrelloToken}";
 
             HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
 
