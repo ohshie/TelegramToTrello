@@ -86,6 +86,7 @@ public class WriteFromTrelloToDb
         }
 
         await dbContext.SaveChangesAsync();
+        Console.WriteLine("boards done");
     }
 
     private async Task PopulateBoardWithUsers(Boards board)
@@ -116,5 +117,6 @@ public class WriteFromTrelloToDb
         }
 
         await dbContext.SaveChangesAsync();
+        Console.WriteLine("users done");
     }
 }
