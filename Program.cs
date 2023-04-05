@@ -7,7 +7,8 @@ class Program
     {
         using BotDbContext dbContext = new BotDbContext();
         {
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
+            //await dbContext.Database.EnsureCreatedAsync();
         }
         
         BotClient botClient = new BotClient();
