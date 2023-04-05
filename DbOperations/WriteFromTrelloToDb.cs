@@ -50,9 +50,9 @@ public class WriteFromTrelloToDb
 
             await dbContext.SaveChangesAsync();
 
-            await PopulateBoardWithTables(boardsFoundInDb);
+            PopulateBoardWithTables(boardsFoundInDb);
 
-            await PopulateBoardWithUsers(boardsFoundInDb);
+            PopulateBoardWithUsers(boardsFoundInDb);
         }
 
         await dbContext.SaveChangesAsync();
