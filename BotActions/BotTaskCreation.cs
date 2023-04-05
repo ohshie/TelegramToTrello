@@ -20,7 +20,7 @@ public class BotTaskCreation
     public async Task InitialTaskCreator(Message message)
     {
         int telegramId = (int)message.From.Id;
-        TrelloUser? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
+        RegisteredUsers? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
         if (trelloUser == null)
         {
             await BotClient.SendTextMessageAsync(text: "Looks like you are not registered yet. " +
@@ -134,7 +134,7 @@ public class BotTaskCreation
 
         await _creatingTaskDbOperations.AddTagToTask(telegramId, tag);
 
-        TrelloUser? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
+        RegisteredUsers? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
 
         ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardBoardChoice(trelloUser);
 
@@ -144,13 +144,13 @@ public class BotTaskCreation
             replyToMessageId: message.MessageId);
     }
 
-    private ReplyKeyboardMarkup KeyboardBoardChoice(TrelloUser? trelloUser)
+    private ReplyKeyboardMarkup KeyboardBoardChoice(RegisteredUsers? trelloUser)
     {
         List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
-
-        foreach (var board in trelloUser.TrelloUserBoards)
+        
+        foreach (var board in trelloUser.UsersBoards.Select(ub => ub.Boards))
         {
-            keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/board {board.Name}") });
+            keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/board {board.BoardName}") });
         }
 
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
@@ -189,9 +189,9 @@ public class BotTaskCreation
             return;
         }
 
-        TrelloUser? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
+        RegisteredUsers? trelloUser = await _dbOperation.RetrieveTrelloUser(telegramId);
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardTableChoice(trelloUser, boardName);
+        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardTableChoice(trelloUser, boardName);
 
         await BotClient.SendTextMessageAsync(text: "choose trello board",
             chatId: message.Chat.Id,
@@ -199,14 +199,13 @@ public class BotTaskCreation
             replyToMessageId: message.MessageId);
     }
 
-    private ReplyKeyboardMarkup KeyboardTableChoice(TrelloUser trelloUser, string selectedBoardName)
+    private async Task<ReplyKeyboardMarkup> KeyboardTableChoice(RegisteredUsers trelloUser, string selectedBoardName)
     {
-        TrelloUserBoard selectedBoard =
-            trelloUser.TrelloUserBoards.FirstOrDefault(board => board.Name == selectedBoardName);
+        Boards selectedBoard = await _dbOperation.RetrieveBoards(trelloUser.TelegramId, selectedBoardName);
 
-        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+            List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
 
-        foreach (var table in selectedBoard.TrelloBoardTables)
+        foreach (var table in selectedBoard.Tables)
         {
             keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/list {table.Name}") });
         }

@@ -93,7 +93,7 @@ public class BotTaskAdditions
         
         TTTTask task = await _dbOperation.RetrieveUserTask(telegramId);
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardParticipants(task);
+        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants(task);
         
         await BotClient.SendTextMessageAsync(text: "choose participant from a list",
             chatId: message.Chat.Id,
@@ -101,13 +101,23 @@ public class BotTaskAdditions
             replyToMessageId: message.MessageId);
     }
 
-    private ReplyKeyboardMarkup KeyboardParticipants(TTTTask task)
+    private async Task<ReplyKeyboardMarkup> KeyboardParticipants(TTTTask task)
     {
         List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
-        
-        BotDbContext dbContext = new BotDbContext();
+
+        Boards taskBoards = await _dbOperation.RetrieveBoards(task.Id, task.BoardId);
+
+        if (taskBoards != null)
         {
-            TrelloUserBoard taskBoard = dbContext.TrelloUserBoards
+            keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
+            foreach (var user in taskBoards.UsersOnBoards.Select(uob => uob))
+            {
+                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
+            }
+        }
+        /*BotDbContext dbContext = new BotDbContext();
+        {
+            Boards taskBoard = dbContext.Boards
                 .Include(tub => tub.UsersOnBoards)
                 .FirstOrDefault(tub => tub.TrelloBoardId == task.BoardId);
         
@@ -118,7 +128,7 @@ public class BotTaskAdditions
                 {
                     keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
                 }
-            }
+            }*/
         
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
             {
@@ -127,7 +137,7 @@ public class BotTaskAdditions
             };
         
             return replyKeyboardMarkup;
-        }
+        
     }
 
     private async Task AddPartiticantToTask(Message message)

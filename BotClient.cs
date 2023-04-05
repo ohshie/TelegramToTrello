@@ -68,6 +68,8 @@ public class BotClient
             || message.Text.StartsWith("/date")
             || message.Text.StartsWith("/taskset"))
             await botTaskAdditions.ChoosingATaskToAddExtras(message);
+
+        //if (message.Text.StartsWith("/listme")) await _dbOperation.SimpleList(message);
     }
     
     private async Task RegisterUser(Message? message, ITelegramBotClient botClient)

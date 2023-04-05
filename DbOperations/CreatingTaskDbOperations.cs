@@ -54,9 +54,7 @@ public class CreatingTaskDbOperations
             TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
             if (task == null) return false;
             
-            string boardNameFetched = await _dbOperations.BoardNameToId(
-                boardName: boardName,
-                telegramId: task.Id);
+            string boardNameFetched = await _dbOperations.BoardNameToId(boardName);
 
             if (!string.IsNullOrEmpty(boardNameFetched))
             {

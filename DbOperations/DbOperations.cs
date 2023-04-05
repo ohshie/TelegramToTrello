@@ -11,13 +11,13 @@ public class DbOperations
     {
         await using BotDbContext dbContext = new BotDbContext();
         {
-            var existingUser = await dbContext.TrelloUsers.FindAsync((int)message.From.Id);
+            var existingUser = await dbContext.Users.FindAsync((int)message.From.Id);
             
             if (existingUser == null)
             {
-                dbContext.TrelloUsers.Add(new TrelloUser
+                dbContext.Users.Add(new RegisteredUsers
                 {
-                    Id = (int)message.From.Id,
+                    TelegramId = (int)message.From.Id,
                     TelegramUserName = message.From.Username,
                     TrelloUserName = trelloUserName,
                     TrelloId = trelloId
@@ -36,7 +36,7 @@ public class DbOperations
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TrelloUser trelloUser = await dbContext.TrelloUsers.FindAsync(telegramId);
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(telegramId);
             if (trelloUser == null) return false;
             
             WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
@@ -62,19 +62,47 @@ public class DbOperations
         return false;
     }
     
-    public async Task<TrelloUser?> RetrieveTrelloUser(int telegramId)
+    public async Task<RegisteredUsers?> RetrieveTrelloUser(int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TrelloUser trelloUser = await dbContext.TrelloUsers.Include(um => um.TrelloUserBoards)
-                .ThenInclude(tub => tub.TrelloBoardTables)
-                .FirstOrDefaultAsync(um => um.Id == telegramId);
+            RegisteredUsers trelloUser = await dbContext.Users
+                .Include(ru => ru.UsersBoards)
+                .ThenInclude(ub => ub.Boards)
+                .FirstOrDefaultAsync(um => um.TelegramId == telegramId);
 
             if (trelloUser != null)
             {
                 return trelloUser;
             }
         }
+        return null;
+    }
+
+    public async Task<Boards> RetrieveBoards(int telegramId, string boardName)
+    {
+        string checkIfId = await BoardNameToId(boardName);
+        if (checkIfId != null) boardName = checkIfId;
+        
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            RegisteredUsers trelloUser = await dbContext.Users
+                .Include(ru => ru.UsersBoards)
+                .ThenInclude(ub => ub.Boards)
+                .ThenInclude(b => b.Tables)
+                .Include(ru => ru.UsersBoards)
+                .ThenInclude(ub => ub.Boards)
+                .ThenInclude(b => b.UsersOnBoards)
+                .FirstOrDefaultAsync(um => um.TelegramId == telegramId);
+            
+            if (trelloUser != null)
+            {
+                return trelloUser.UsersBoards
+                    .Select(ub => ub.Boards)
+                    .FirstOrDefault(b => b.TrelloBoardId == boardName);
+            }
+        }
+
         return null;
     }
 
@@ -108,18 +136,15 @@ public class DbOperations
         }
     }
 
-    public async Task<string> BoardNameToId(string boardName, int telegramId)
+    public async Task<string> BoardNameToId(string boardName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TrelloUser trelloUser = await dbContext.TrelloUsers.FindAsync(telegramId);
+            Boards board = await dbContext.Boards.FirstOrDefaultAsync(b => b.BoardName == boardName);
             
-            TrelloUserBoard boardNameToId = await dbContext.TrelloUserBoards.FirstOrDefaultAsync(tub =>
-                tub.Name == boardName && tub.TrelloUserId == trelloUser.TrelloId);
-
-            if (boardNameToId != null)
+            if (board != null)
             {
-                return boardNameToId.TrelloBoardId;
+                return board.TrelloBoardId;
             }
                 
             return null;
@@ -132,7 +157,7 @@ public class DbOperations
         {
             TTTTask task = await dbContext.CreatingTasks.FindAsync(telegramId);
             
-            TrelloBoardTable tableNameToId = await dbContext.BoardTables.FirstOrDefaultAsync(bt =>
+            Tables tableNameToId = await dbContext.BoardTables.FirstOrDefaultAsync(bt =>
                 bt.Name == tableName && bt.TrelloUserBoard.TrelloBoardId == task.BoardId);
 
             if (tableNameToId != null)
