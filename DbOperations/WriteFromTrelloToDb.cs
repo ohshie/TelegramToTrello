@@ -49,10 +49,9 @@ public class WriteFromTrelloToDb
             }
 
             await dbContext.SaveChangesAsync();
-
-            PopulateBoardWithTables(boardsFoundInDb);
-
-            PopulateBoardWithUsers(boardsFoundInDb);
+            
+            await PopulateBoardWithTables(boardsFoundInDb);
+            await PopulateBoardWithUsers(boardsFoundInDb);
         }
 
         await dbContext.SaveChangesAsync();
@@ -86,7 +85,7 @@ public class WriteFromTrelloToDb
         }
 
         await dbContext.SaveChangesAsync();
-        Console.WriteLine("boards done");
+        Console.WriteLine("tables done");
     }
 
     private async Task PopulateBoardWithUsers(Boards board)

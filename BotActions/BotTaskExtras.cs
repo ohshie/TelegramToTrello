@@ -115,28 +115,14 @@ public class BotTaskAdditions
                 keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
             }
         }
-        /*BotDbContext dbContext = new BotDbContext();
+
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
         {
-            Boards taskBoard = dbContext.Boards
-                .Include(tub => tub.UsersOnBoards)
-                .FirstOrDefault(tub => tub.TrelloBoardId == task.BoardId);
+            ResizeKeyboard = true,
+            Selective = true
+        };
         
-            if (taskBoard != null)
-            {
-                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
-                foreach (var user in taskBoard.UsersOnBoards)
-                {
-                    keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
-                }
-            }*/
-        
-            ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
-            {
-                ResizeKeyboard = true,
-                Selective = true
-            };
-        
-            return replyKeyboardMarkup;
+        return replyKeyboardMarkup;
         
     }
 
