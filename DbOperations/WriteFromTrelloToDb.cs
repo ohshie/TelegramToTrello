@@ -7,10 +7,10 @@ public class WriteFromTrelloToDb
     private TrelloOperations trelloInfo = new TrelloOperations();
     private BotDbContext dbContext = new BotDbContext();
 
-    public async Task PopulateDbWithBoards(RegisteredUsers trelloUser, int telegramId)
+    public async Task PopulateDbWithBoards(RegisteredUsers trelloUser)
     {
         List<TrelloOperations.TrelloUserBoardsList> boardsFoundInTrello =
-            await trelloInfo.GetTrelloBoards(trelloUser.TrelloId);
+            await trelloInfo.GetTrelloBoards(trelloUser);
 
         foreach (var board in boardsFoundInTrello)
         {
@@ -35,13 +35,13 @@ public class WriteFromTrelloToDb
 
             UsersBoards usersBoards =
                 await dbContext.UsersBoards.FirstOrDefaultAsync(ub =>
-                    ub.UserId == telegramId && ub.BoardId == boardsFoundInDb.Id);
+                    ub.UserId == trelloUser.TelegramId && ub.BoardId == boardsFoundInDb.Id);
 
             if (usersBoards == null)
             {
                 usersBoards = new UsersBoards
                 {
-                    UserId = telegramId,
+                    UserId = trelloUser.TelegramId,
                     BoardId = boardsFoundInDb.Id
                 };
                 dbContext.Add(usersBoards);
@@ -50,17 +50,17 @@ public class WriteFromTrelloToDb
 
             await dbContext.SaveChangesAsync();
             
-            await PopulateBoardWithTables(boardsFoundInDb);
-            await PopulateBoardWithUsers(boardsFoundInDb);
+            await PopulateBoardWithTables(boardsFoundInDb, trelloUser);
+            await PopulateBoardWithUsers(boardsFoundInDb, trelloUser);
         }
 
         await dbContext.SaveChangesAsync();
     }
 
-    private async Task PopulateBoardWithTables(Boards board)
+    private async Task PopulateBoardWithTables(Boards board, RegisteredUsers trelloUser)
     {
         List<TrelloOperations.TrelloBoardTablesList> tablesFoundOnBoard =
-            await trelloInfo.GetBoardTables(board.TrelloBoardId);
+            await trelloInfo.GetBoardTables(board.TrelloBoardId, trelloUser);
 
         foreach (var table in tablesFoundOnBoard)
         {
@@ -88,10 +88,10 @@ public class WriteFromTrelloToDb
         Console.WriteLine("tables done");
     }
 
-    private async Task PopulateBoardWithUsers(Boards board)
+    private async Task PopulateBoardWithUsers(Boards board, RegisteredUsers trelloUser)
     {
         List<TrelloOperations.TrelloBoardUsersList> usersFoundOnBoardInTrello =
-            await trelloInfo.GetUsersOnBoard(board.TrelloBoardId);
+            await trelloInfo.GetUsersOnBoard(board.TrelloBoardId, trelloUser);
 
         foreach (var user in usersFoundOnBoardInTrello)
         {

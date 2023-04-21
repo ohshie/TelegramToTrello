@@ -12,7 +12,6 @@ public class BotClient
     private static readonly string TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
     
     private TelegramBotClient _botClient = new TelegramBotClient(TelegramBotToken);
-    private TrelloOperations _trelloOperations = new TrelloOperations();
     private DbOperations _dbOperation = new DbOperations();
     
     public async Task BotOperations()
@@ -41,7 +40,7 @@ public class BotClient
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         botClient.GetUpdatesAsync();
-
+        
         if (update.Message is not {} message) return;
         if (message.Text is not {} messageText) return;
 
@@ -53,7 +52,8 @@ public class BotClient
         BotTaskCreation botTaskCreation = new BotTaskCreation(botClient);
         BotTaskAdditions botTaskAdditions = new BotTaskAdditions(botClient);
         
-        if (message.Text.StartsWith("/register")) await RegisterUser(message, botClient);
+        if (message.Text.StartsWith("/register")) await Authenticate(message, botClient);
+        if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
 
         if (message.Text.StartsWith("/newtask")
             ||message.Text.StartsWith("/tag") 
@@ -68,39 +68,34 @@ public class BotClient
             || message.Text.StartsWith("/date")
             || message.Text.StartsWith("/taskset"))
             await botTaskAdditions.ChoosingATaskToAddExtras(message);
+    }
 
-        //if (message.Text.StartsWith("/listme")) await _dbOperation.SimpleList(message);
+    private async Task Authenticate(Message? message, ITelegramBotClient botClient)
+    {
+        string oauthLink = AuthLink.CreateLink(message.From.Id);
+
+        await _dbOperation.RegisterNewUser(message, botClient);
+        
+        await botClient.SendTextMessageAsync(message.Chat.Id,
+            replyToMessageId: message.MessageId,
+            text: "Please click on this link authenticate in trello:\n\n" +
+                  $"{oauthLink}\n\n" +
+                  "When done click /CompleteRegistration");
     }
     
-    private async Task RegisterUser(Message? message, ITelegramBotClient botClient)
+    public async Task FinishAuth(Message message, ITelegramBotClient botClient)
     {
-        string trelloUserName = message.Text.Substring("/register".Length).Trim();
-        Console.WriteLine(trelloUserName);
-        if (trelloUserName.StartsWith("@teltotrelbot"))
+        bool success = await _dbOperation.LinkBoardsFromTrello((int)message.From.Id);
+        if (success)
         {
-            await _botClient.SendTextMessageAsync(message.Chat.Id, 
-                replyToMessageId: message.MessageId,
-                text:$"Dont click on \"/register\"\n" +
-                     $"Just type \"/register your trello username without @\"");
+            await botClient.SendTextMessageAsync(message.Chat.Id,text: "All set, you can now create tasks with /newtask");
             return;
         }
-        
-        string trelloId = await _trelloOperations.GetTrelloUserIdFromTrelloApi(trelloUserName);
-        if (trelloId == null)
-        {
-            await _botClient.SendTextMessageAsync(message.Chat.Id,
-                replyToMessageId: message.MessageId,
-                text:$"{trelloUserName} not found in trello or no username provided.");
-            return;
-        }
-        
-        bool success = await _dbOperation.LinkTelegramToTrello(message, botClient, trelloId, trelloUserName);
-        if (success) await botClient.SendTextMessageAsync(message.Chat.Id,
+
+        await botClient.SendTextMessageAsync(message.Chat.Id, 
             replyToMessageId: message.MessageId,
-            text:"Trello account linked to telegram account.");
-        
-        success = await _dbOperation.LinkBoardsFromTrello((int)message.From.Id);
-        if (success) await botClient.SendTextMessageAsync(message.Chat.Id,text: "Boards fetched");
+            text: "Looks like you haven't completed authentication via trello.\n" +
+                                                                    "Click /register and finish authorization via trello website.");
     }
 
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

@@ -3,10 +3,10 @@ namespace TelegramToTrello;
 public class RegisteredUsers
 {
     public int TelegramId { get; set; }
-    public string TelegramUserName { get; set; }
+    public string TelegramName { get; set; }
+    public string TrelloToken { get; set; }
     public string TrelloId { get; set; }
-    public string TrelloUserName { get; set; }
-    
+
     public ICollection<UsersBoards> UsersBoards { get; set; }
 }
 

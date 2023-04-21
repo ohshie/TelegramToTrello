@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trello Token Callback</title>
+    <script>
+        function getAccessTokenFromUrl() {
+            const hash = window.location.hash.substr(1);
+            const params = new URLSearchParams(hash);
+            return params.get("token");
+        }
+
+        function getTelegramUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get("state");
+        }
+        
+        const telegramUserId = getTelegramUserIdFromUrl();
+        const accessToken = getAccessTokenFromUrl();
+        console.log("Access token:", accessToken);
+        console.log("Telegram user ID:", telegramUserId);
+
+        // Send the token and Telegram user ID to your server
+        fetch("/trello/authcallback", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ token: accessToken, state: telegramUserId })
+        });
+
+    </script>
+</head>
+<body>
+<div id="message">You can close this page now</div>
+</body>
+</html>

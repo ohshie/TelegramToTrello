@@ -6,31 +6,30 @@ namespace TelegramToTrello;
 public class TrelloOperations
 {
     private static readonly string TrelloApiKey = Environment.GetEnvironmentVariable("Trello_API_Key");
-    private static readonly string TrelloToken = Environment.GetEnvironmentVariable("Trello_Token");
-    
-    public async Task<string> GetTrelloUserIdFromTrelloApi(string userName)
+
+    public async Task<string> GetTrelloUserId(string token)
     {
         using HttpClient httpClient = new HttpClient();
-        HttpResponseMessage response = (await httpClient.GetAsync(
-            $"https://api.trello.com/1/members/{userName}?key={TrelloApiKey}&token={TrelloToken}"));
-       
-        if (response.IsSuccessStatusCode)
+        HttpResponseMessage responseMessage = (await httpClient.GetAsync(
+            $"https://api.trello.com/1/members/me?key={TrelloApiKey}&token={token}"));
+
+        if (responseMessage.IsSuccessStatusCode)
         {
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await responseMessage.Content.ReadAsStringAsync();
             var json = JObject.Parse(content);
             if (json["id"].ToString() == null) return null;
-            
+
             return json["id"].ToString();
         }
 
         return null;
     }
-
-    public async Task<List<TrelloUserBoardsList>> GetTrelloBoards(string userName)
+    
+    public async Task<List<TrelloUserBoardsList>> GetTrelloBoards(RegisteredUsers userName)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = (await httpClient.GetAsync(
-            $"http://api.trello.com/1/members/{userName}/boards?key={TrelloApiKey}&token={TrelloToken}"));
+            $"https://api.trello.com/1/members/{userName.TrelloId}/boards?key={TrelloApiKey}&token={userName.TrelloToken}"));
 
         if (response.IsSuccessStatusCode)
         {
@@ -41,10 +40,10 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardTablesList>> GetBoardTables(string boardName)
+    public async Task<List<TrelloBoardTablesList>> GetBoardTables(string boardName, RegisteredUsers trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
-        HttpResponseMessage response = await httpClient.GetAsync($"http://api.trello.com/1/boards/{boardName}/lists?key={TrelloApiKey}&token={TrelloToken}");
+        HttpResponseMessage response = await httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -55,12 +54,12 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardUsersList>> GetUsersOnBoard(string boardName)
+    public async Task<List<TrelloBoardUsersList>> GetUsersOnBoard(string boardName, RegisteredUsers trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response =
             await httpClient.GetAsync(
-                $"https://api.trello.com/1/boards/{boardName}/members?key={TrelloApiKey}&token={TrelloToken}");
+                $"https://api.trello.com/1/boards/{boardName}/members?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -73,10 +72,13 @@ public class TrelloOperations
 
     public async Task<string> PushTaskToTrello(TTTTask userCreatedTask)
     {
+        using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
+            
             string combinedTagAndTaskName = $"[{userCreatedTask.Tag}] {userCreatedTask.TaskName}";
-            string trelloApiUri = $"https://api.trello.com/1/cards?idList={userCreatedTask.ListId}&name={Uri.EscapeDataString(combinedTagAndTaskName)}&key={TrelloApiKey}&token={TrelloToken}";
+            string trelloApiUri = $"https://api.trello.com/1/cards?idList={userCreatedTask.ListId}&name={Uri.EscapeDataString(combinedTagAndTaskName)}&key={TrelloApiKey}&token={trelloUser.TrelloToken}";
 
             HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
 
@@ -96,10 +98,13 @@ public class TrelloOperations
 
     public async Task<bool> PushTaskDescriptionToTrello(TTTTask userCreatedTask)
     {
+        using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
+            
             string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?" +
-                                  $"desc={Uri.EscapeDataString(userCreatedTask.TaskDesc)}&key={TrelloApiKey}&token={TrelloToken}";
+                                  $"desc={Uri.EscapeDataString(userCreatedTask.TaskDesc)}&key={TrelloApiKey}&token={trelloUser.TrelloToken}";
 
             HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
 
@@ -117,10 +122,12 @@ public class TrelloOperations
 
     public async Task<bool> PushTaskParticipantToTrello(TTTTask userCreatedTask)
     {
+        using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}/idMembers?" +
-                                  $"key={TrelloApiKey}&token={TrelloToken}&value={userCreatedTask.TaskCurrentParticipant}";
+                                  $"key={TrelloApiKey}&token={trelloUser.TrelloToken}&value={userCreatedTask.TaskCurrentParticipant}";
 
             HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
 
@@ -138,10 +145,12 @@ public class TrelloOperations
 
     public async Task<bool> PushDateToTrello(TTTTask userCreatedTask)
     {
+        using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?due={userCreatedTask.Date}&" +
-                                  $"key={TrelloApiKey}&token={TrelloToken}";
+                                  $"key={TrelloApiKey}&token={trelloUser.TrelloToken}";
             
             HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
 
