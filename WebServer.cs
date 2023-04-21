@@ -9,7 +9,7 @@ public class WebServer
     public async Task Run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls("http://127.0.0.1:8080");
+        builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("WebServer"));
         var app = builder.Build();
 
         app.UseStaticFiles();
