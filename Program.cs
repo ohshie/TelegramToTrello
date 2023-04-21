@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Telegram.Bot;
 using TelegramToTrello;
 
 class Program
@@ -8,11 +9,16 @@ class Program
         using BotDbContext dbContext = new BotDbContext();
         {
             await dbContext.Database.MigrateAsync();
-            //await dbContext.Database.EnsureCreatedAsync();
         }
         
         BotClient botClient = new BotClient();
+        Task bot = botClient.BotOperations();
 
-        await botClient.BotOperations();
+        WebServer server = new WebServer();
+        Task webServer = server.Run(args);
+
+        await Task.WhenAll(bot, webServer);
+        
+        Console.ReadLine();
     }
 }

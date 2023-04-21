@@ -7,40 +7,58 @@ namespace TelegramToTrello;
 
 public class DbOperations
 {
-    public async Task<bool> LinkTelegramToTrello(Message message, ITelegramBotClient botClient, string trelloId, string trelloUserName)
+    public async Task<bool> RegisterNewUser(Message message, ITelegramBotClient botClient)
     {
         await using BotDbContext dbContext = new BotDbContext();
         {
-            var existingUser = await dbContext.Users.FindAsync((int)message.From.Id);
-            
+            RegisteredUsers existingUser = await dbContext.Users.FindAsync((int)message.From.Id);
+
             if (existingUser == null)
             {
                 dbContext.Users.Add(new RegisteredUsers
                 {
                     TelegramId = (int)message.From.Id,
-                    TelegramUserName = message.From.Username,
-                    TrelloUserName = trelloUserName,
-                    TrelloId = trelloId
+                    TelegramName = message.From.Username,
+                    TrelloId = "",
+                    TrelloToken = "",
                 });
-
+                
                 await dbContext.SaveChangesAsync();
-
                 return true;
             }
-            await botClient.SendTextMessageAsync(message.Chat.Id, $"Account {existingUser.TelegramUserName} already linked");
+            await botClient.SendTextMessageAsync(message.Chat.Id, $"Account {existingUser.TrelloId} already linked");
         }
         return false;
     }
 
+    public async Task<bool> AddTrelloTokenAndId(string token, string trelloId, int telegramId)
+    {
+        await using BotDbContext dbContext = new BotDbContext();
+        {
+            RegisteredUsers existingUser = await dbContext.Users.FindAsync(telegramId);
+
+            if (existingUser != null)
+            {
+                existingUser.TrelloToken = token;
+                existingUser.TrelloId = trelloId;
+
+                await dbContext.SaveChangesAsync();
+                return true;
+            }
+        }
+        return false;
+    }
+    
     public async Task<bool> LinkBoardsFromTrello(int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
             RegisteredUsers trelloUser = await dbContext.Users.FindAsync(telegramId);
             if (trelloUser == null) return false;
+            if (trelloUser.TrelloId == "") return false;
             
             WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
-            await writeFromTrelloToDb.PopulateDbWithBoards(trelloUser, telegramId);
+            await writeFromTrelloToDb.PopulateDbWithBoards(trelloUser);
 
             return true;
         }

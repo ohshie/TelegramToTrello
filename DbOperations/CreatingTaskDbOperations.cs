@@ -32,7 +32,6 @@ public class CreatingTaskDbOperations
             return true;
         }
     }
-
      public async Task<bool> AddTagToTask(int telegramId, string tag)
      {
          await using (BotDbContext dbContext = new BotDbContext())

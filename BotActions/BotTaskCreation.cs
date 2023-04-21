@@ -275,7 +275,7 @@ public class BotTaskCreation
                 replyToMessageId: message.MessageId);
             return;
         }
-
+        
         string taskId = await _trelloOperations.PushTaskToTrello(userCreatedTask);
         if (string.IsNullOrEmpty(taskId)) return;
 
