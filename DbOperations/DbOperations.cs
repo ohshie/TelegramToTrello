@@ -21,6 +21,7 @@ public class DbOperations
                     TelegramName = message.From.Username,
                     TrelloId = "",
                     TrelloToken = "",
+                    TrelloName = ""
                 });
                 
                 await dbContext.SaveChangesAsync();
@@ -215,5 +216,22 @@ public class DbOperations
                 dbContext.SaveChangesAsync();
             }
         }
+    }
+
+    public async Task<string> BoardIdToName(string boardId)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            Boards board = await dbContext.Boards.FirstOrDefaultAsync(b =>
+                b.TrelloBoardId == boardId);
+
+            if (board != null)
+            {
+                string boardName = board.BoardName;
+                return boardName;
+            }
+        }
+
+        return "";
     }
 }

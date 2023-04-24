@@ -20,5 +20,6 @@ class Program
         await Task.WhenAll(bot, webServer);
         
         Console.ReadLine();
+        Environment.Exit(1);
     }
 }

@@ -1,10 +1,12 @@
+using Telegram.Bot.Types;
+
 namespace TelegramToTrello;
 
 public class CreatingTaskDbOperations
 {
     private DbOperations _dbOperations = new DbOperations();
     
-     public async Task<bool> AddTaskToDb(string taskName, int telegramId)
+     public async Task<bool> AddTaskToDb(int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -15,23 +17,24 @@ public class CreatingTaskDbOperations
                 dbContext.CreatingTasks.Add(new TTTTask()
                 {
                     Id = telegramId,
-                    TaskName = taskName,
+                    TaskName = "",
                     Tag = "",
                     BoardId = "",
                     ListId = "",
                     TaskId = "",
                     TaskDesc = "",
-                    TaskCurrentParticipant = "",
+                    TaskPartId = "",
+                    TaskPartName = "",
                     Date = ""
                 });
                 
                 await dbContext.SaveChangesAsync();
                 return false;
             }
-
             return true;
         }
     }
+     
      public async Task<bool> AddTagToTask(int telegramId, string tag)
      {
          await using (BotDbContext dbContext = new BotDbContext())
@@ -89,13 +92,84 @@ public class CreatingTaskDbOperations
             return false;
         }
     }
+    
+    public async Task<bool> AddPlaceholderName(int telegramId)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
+            
+            if (task != null)
+            {
+                if (string.IsNullOrEmpty(task.TaskName))
+                {
+                    task.TaskName = "###tempname###";
+                }
 
-    public async Task AddDescriptionToTask(TTTTask task, string description)
+                dbContext.CreatingTasks.Update(task);
+                await dbContext.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    public async Task<bool> AddPlaceholderDescription(int telegramId)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
+            
+            if (task != null)
+            {
+                if (string.IsNullOrEmpty(task.TaskDesc))
+                {
+                    task.TaskDesc = "###tempdesc###";
+                }
+                
+                dbContext.CreatingTasks.Update(task);
+                await dbContext.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    public async Task<bool> AddPlaceholderDate(int telegramId)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
+            
+            if (task != null)
+            {
+                task.Date = "###tempdate###";
+                dbContext.CreatingTasks.Update(task); 
+                await dbContext.SaveChangesAsync(); 
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public async Task SetTaskName(TTTTask task, string taskName)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            task.TaskName = taskName;
+            task.NameSet = true;
+            dbContext.CreatingTasks.Update(task);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+    
+    public async Task SetDescription(TTTTask task, string description)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
             task.TaskDesc = description;
-            
+            task.DescSet = true;
+            dbContext.CreatingTasks.Update(task);
             await dbContext.SaveChangesAsync();
         }
     }
@@ -107,8 +181,8 @@ public class CreatingTaskDbOperations
         
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            task.TaskCurrentParticipant = trelloIdOfParticipant;
-            
+            task.TaskPartId = task.TaskPartId+trelloIdOfParticipant+",";
+            task.TaskPartName = task.TaskPartName + participantName + ", ";
             dbContext.CreatingTasks.Update(task);
             await dbContext.SaveChangesAsync();
         }
