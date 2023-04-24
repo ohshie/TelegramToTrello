@@ -50,24 +50,22 @@ public class BotClient
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
 
         BotTaskCreation botTaskCreation = new BotTaskCreation(botClient);
-        BotTaskAdditions botTaskAdditions = new BotTaskAdditions(botClient);
+
+        await MessagesToReplacePlaceholdersWithValues(message, botClient,botTaskCreation);
         
         if (message.Text.StartsWith("/register")) await Authenticate(message, botClient);
         if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
 
         if (message.Text.StartsWith("/newtask")
-            ||message.Text.StartsWith("/tag") 
+            || message.Text.StartsWith("/tag") 
             || message.Text.StartsWith("/board") 
             || message.Text.StartsWith("/list") 
-            || message.Text.StartsWith("/push")) 
-            await botTaskCreation.InitialTaskCreator(message);
-        
-        if (message.Text.StartsWith("/desc")
-            || message.Text.StartsWith("/part") 
+            || message.Text.StartsWith("/push")
+            || message.Text.StartsWith("/desc")
+            || message.Text.StartsWith("/part")
             || message.Text.StartsWith("/name")
-            || message.Text.StartsWith("/date")
-            || message.Text.StartsWith("/taskset"))
-            await botTaskAdditions.ChoosingATaskToAddExtras(message);
+            || message.Text.StartsWith("/date"))
+            await botTaskCreation.InitialTaskCreator(message);
     }
 
     private async Task Authenticate(Message? message, ITelegramBotClient botClient)
@@ -83,7 +81,7 @@ public class BotClient
                   "When done click /CompleteRegistration");
     }
     
-    public async Task FinishAuth(Message message, ITelegramBotClient botClient)
+    private async Task FinishAuth(Message message, ITelegramBotClient botClient)
     {
         bool success = await _dbOperation.LinkBoardsFromTrello((int)message.From.Id);
         if (success)
@@ -98,6 +96,31 @@ public class BotClient
                                                                     "Click /register and finish authorization via trello website.");
     }
 
+    public async Task MessagesToReplacePlaceholdersWithValues(Message message, ITelegramBotClient botClient, BotTaskCreation botTaskCreation)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            TTTTask task = await dbContext.CreatingTasks.FindAsync((int)message.From.Id);
+            if (task == null) return;
+            
+            if (task.TaskName == "###tempname###")
+            {
+                await botTaskCreation.AddNameToTask(task, message);
+                return;
+            }
+            if (task.TaskDesc == "###tempdesc###")
+            {
+                await botTaskCreation.AddDescriptionToTask(task, message);
+                return;
+            }
+            if (task.Date == "###tempdate###")
+            {
+                await botTaskCreation.AddDateToTask(task, message);
+            }
+        }
+        
+    //await _trelloOperations.PushTaskDescriptionToTrello(task);
+    }
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         var ErrorMessage = exception switch

@@ -6,6 +6,7 @@ public class RegisteredUsers
     public string TelegramName { get; set; }
     public string TrelloToken { get; set; }
     public string TrelloId { get; set; }
+    public string TrelloName { get; set; }
 
     public ICollection<UsersBoards> UsersBoards { get; set; }
 }
@@ -60,7 +61,11 @@ public class TTTTask
     public string ListId { get; set; }
     public string TaskId { get; set; }
     public string TaskDesc { get; set; }
-    public string TaskCurrentParticipant { get; set; }
-    public string Date { get; set; }
+    public string TaskPartId { get; set; }
+    public string TaskPartName { get; set; }
+    public string? Date { get; set; }
+    public bool NameSet { get; set; }
+    public bool DescSet { get; set; }
+    public bool DateSet { get; set; }
 }
 

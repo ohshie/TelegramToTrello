@@ -1,5 +1,7 @@
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace TelegramToTrello;
 
@@ -69,44 +71,27 @@ public class TrelloOperations
 
         return null;
     }
-
-    public async Task<string> PushTaskToTrello(TTTTask userCreatedTask)
+    
+    
+    public async Task<bool> PushTaskToTrello(TTTTask task)
     {
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
-            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
+            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(task.Id);
+            string trelloApiUri = $"https://api.trello.com/1/cards";
+
+            string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
             
-            string combinedTagAndTaskName = $"[{userCreatedTask.Tag}] {userCreatedTask.TaskName}";
-            string trelloApiUri = $"https://api.trello.com/1/cards?idList={userCreatedTask.ListId}&name={Uri.EscapeDataString(combinedTagAndTaskName)}&key={TrelloApiKey}&token={trelloUser.TrelloToken}";
+            var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
+                             $"&token={trelloUser.TrelloToken}" +
+                             $"&name={Uri.EscapeDataString(task.TaskName)}" +
+                             $"&idList={task.ListId}" +
+                             $"&idMembers={Uri.EscapeDataString(participants)}" +
+                             $"&due={Uri.EscapeDataString(task.Date)}" +
+                             $"&desc={Uri.EscapeDataString(task.TaskDesc)}";
 
-            HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
-
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                JObject taskId = JObject.Parse(responseBody);
-                if (taskId["id"].ToString() == null) return null;
-
-                return taskId["id"].ToString();
-            }
-            
-            Console.WriteLine($"failed to create card. status code: {response}");
-                return null;
-        }
-    }
-
-    public async Task<bool> PushTaskDescriptionToTrello(TTTTask userCreatedTask)
-    {
-        using (BotDbContext dbContext = new BotDbContext())
-        using (HttpClient httpClient = new HttpClient())
-        {
-            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
-            
-            string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?" +
-                                  $"desc={Uri.EscapeDataString(userCreatedTask.TaskDesc)}&key={TrelloApiKey}&token={trelloUser.TrelloToken}";
-
-            HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
+            HttpResponseMessage response = await httpClient.PostAsync(requestUri, null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -120,30 +105,7 @@ public class TrelloOperations
         }
     }
 
-    public async Task<bool> PushTaskParticipantToTrello(TTTTask userCreatedTask)
-    {
-        using (BotDbContext dbContext = new BotDbContext())
-        using (HttpClient httpClient = new HttpClient())
-        {
-            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
-            string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}/idMembers?" +
-                                  $"key={TrelloApiKey}&token={trelloUser.TrelloToken}&value={userCreatedTask.TaskCurrentParticipant}";
-
-            HttpResponseMessage response = await httpClient.PostAsync(trelloApiUri, null);
-
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(responseBody);
-                return true;
-            }
-
-            Console.WriteLine($"failed {response}");
-            return false;
-        }
-    }
-
-    public async Task<bool> PushDateToTrello(TTTTask userCreatedTask)
+    private async Task<bool> PushDateToTrello(TTTTask userCreatedTask)
     {
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())

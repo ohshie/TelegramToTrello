@@ -13,7 +13,7 @@ public class WebServer
         var app = builder.Build();
 
         app.UseStaticFiles();
-        app.MapGet("/", () => "Hello World!");
+        app.MapGet("/", () => "Nothing to see here.");
         app.MapPost("/trello/authcallback", AuthCallback);
         app.Run();
     }
