@@ -55,9 +55,10 @@ public class UsersOnBoard
 public class TTTTask
 {
     public int Id { get; set; }
+    public string TrelloId { get; set; }
     public string TaskName { get; set; }
     public string Tag { get; set; }
-    public string BoardId { get; set; }
+    public string TrelloBoardId { get; set; }
     public string ListId { get; set; }
     public string TaskId { get; set; }
     public string TaskDesc { get; set; }

@@ -55,9 +55,11 @@ public class BotClient
         
         if (message.Text.StartsWith("/register")) await Authenticate(message, botClient);
         if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
+        
+        if (message.Text.StartsWith("/newtask"))
+            await botTaskCreation.InitialTaskCreator(message);
 
-        if (message.Text.StartsWith("/newtask")
-            || message.Text.StartsWith("/tag") 
+        if (message.Text.StartsWith("/tag") 
             || message.Text.StartsWith("/board") 
             || message.Text.StartsWith("/list") 
             || message.Text.StartsWith("/push")
@@ -65,7 +67,7 @@ public class BotClient
             || message.Text.StartsWith("/part")
             || message.Text.StartsWith("/name")
             || message.Text.StartsWith("/date"))
-            await botTaskCreation.InitialTaskCreator(message);
+            await botTaskCreation.TaskCreationOperator(message);
     }
 
     private async Task Authenticate(Message? message, ITelegramBotClient botClient)

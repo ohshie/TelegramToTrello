@@ -6,20 +6,21 @@ public class CreatingTaskDbOperations
 {
     private DbOperations _dbOperations = new DbOperations();
     
-     public async Task<bool> AddTaskToDb(int telegramId)
+     public async Task<TTTTask> AddTaskToDb(RegisteredUsers user)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TTTTask existingTask = await _dbOperations.RetrieveUserTask(telegramId);
+            TTTTask existingTask = await _dbOperations.RetrieveUserTask(user.TelegramId);
 
             if (existingTask == null)
             {
                 dbContext.CreatingTasks.Add(new TTTTask()
                 {
-                    Id = telegramId,
+                    Id = user.TelegramId,
+                    TrelloId = user.TrelloId,
                     TaskName = "",
                     Tag = "",
-                    BoardId = "",
+                    TrelloBoardId = "",
                     ListId = "",
                     TaskId = "",
                     TaskDesc = "",
@@ -29,39 +30,32 @@ public class CreatingTaskDbOperations
                 });
                 
                 await dbContext.SaveChangesAsync();
-                return false;
+                return existingTask;
             }
-            return true;
+            return null;
         }
     }
      
-     public async Task<bool> AddTagToTask(int telegramId, string tag)
+     public async Task AddTagToTask(TTTTask userTask, string tag)
      {
          await using (BotDbContext dbContext = new BotDbContext())
          {
-             TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-             if (task == null) return false;
-             
-             task.Tag = tag;
-             dbContext.CreatingTasks.Update(task);
+             userTask.Tag = tag;
+             dbContext.CreatingTasks.Update(userTask);
              await dbContext.SaveChangesAsync();
-             return true;
          }
      }
     
-    public async Task<bool> AddBoardToTask(int telegramId, string boardName)
+    public async Task<bool> AddBoardToTask(TTTTask userTask, string boardName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-            if (task == null) return false;
-            
             string boardNameFetched = await _dbOperations.BoardNameToId(boardName);
 
             if (!string.IsNullOrEmpty(boardNameFetched))
             {
-                task.BoardId = boardNameFetched;
-                dbContext.CreatingTasks.Update(task);
+                userTask.TrelloBoardId = boardNameFetched;
+                dbContext.CreatingTasks.Update(userTask);
                 await dbContext.SaveChangesAsync();
                 
                 return true;
@@ -70,20 +64,18 @@ public class CreatingTaskDbOperations
         }
     }
 
-    public async Task<bool> AddTableToTask(int telegramId, string listName)
+    public async Task<bool> AddTableToTask(TTTTask userTask, string listName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-            
             string tableId = await _dbOperations.TableNameToId(
                 tableName: listName,
-                telegramId: task.Id);
+                telegramId: userTask.Id);
 
             if (!string.IsNullOrEmpty(tableId))
             {
-                task.ListId = tableId;
-                dbContext.CreatingTasks.Update(task);
+                userTask.ListId = tableId;
+                dbContext.CreatingTasks.Update(userTask);
                 await dbContext.SaveChangesAsync();
                 
                 return true;
@@ -93,65 +85,37 @@ public class CreatingTaskDbOperations
         }
     }
     
-    public async Task<bool> AddPlaceholderName(int telegramId)
+    public async Task AddPlaceholderName(TTTTask userTask)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-            
-            if (task != null)
-            {
-                if (string.IsNullOrEmpty(task.TaskName))
-                {
-                    task.TaskName = "###tempname###";
-                }
+            userTask.TaskName = "###tempname###"; 
+            dbContext.CreatingTasks.Update(userTask); 
+            await dbContext.SaveChangesAsync();
+        }
 
-                dbContext.CreatingTasks.Update(task);
-                await dbContext.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
     }
     
-    public async Task<bool> AddPlaceholderDescription(int telegramId)
+    public async Task AddPlaceholderDescription(TTTTask userTask)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-            
-            if (task != null)
-            {
-                if (string.IsNullOrEmpty(task.TaskDesc))
-                {
-                    task.TaskDesc = "###tempdesc###";
-                }
-                
-                dbContext.CreatingTasks.Update(task);
-                await dbContext.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-    }
-    
-    public async Task<bool> AddPlaceholderDate(int telegramId)
-    {
-        await using (BotDbContext dbContext = new BotDbContext())
-        {
-            TTTTask task = await _dbOperations.RetrieveUserTask(telegramId);
-            
-            if (task != null)
-            {
-                task.Date = "###tempdate###";
-                dbContext.CreatingTasks.Update(task); 
-                await dbContext.SaveChangesAsync(); 
-                return true;
-            }
-            return false;
+            userTask.TaskDesc = "###tempdesc###";
+            dbContext.CreatingTasks.Update(userTask);
+            await dbContext.SaveChangesAsync();
         }
     }
 
+    public async Task AddPlaceholderDate(TTTTask userTask)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            userTask.Date = "###tempdate###";
+            dbContext.CreatingTasks.Update(userTask);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+    
     public async Task SetTaskName(TTTTask task, string taskName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
@@ -176,13 +140,13 @@ public class CreatingTaskDbOperations
 
     public async Task<bool> AddParticipantToTask(TTTTask task, string participantName)
     {
-        string trelloIdOfParticipant = await _dbOperations.UserNameToId(task.BoardId, participantName);
+        string trelloIdOfParticipant = await _dbOperations.UserNameToId(task.TrelloBoardId, participantName);
         if (trelloIdOfParticipant == null) return false;
         
         await using (BotDbContext dbContext = new BotDbContext())
         {
             task.TaskPartId = task.TaskPartId+trelloIdOfParticipant+",";
-            task.TaskPartName = task.TaskPartName + participantName + ", ";
+            task.TaskPartName = task.TaskPartName + participantName + ",";
             dbContext.CreatingTasks.Update(task);
             await dbContext.SaveChangesAsync();
         }
