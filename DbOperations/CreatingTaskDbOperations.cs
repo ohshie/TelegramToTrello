@@ -106,18 +106,16 @@ public class CreatingTaskDbOperations
         }
     }
 
-    public async Task<bool> AddPlaceholderDate(TTTTask userTask)
+    public async Task AddPlaceholderDate(TTTTask userTask)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
             userTask.Date = "###tempdate###";
             dbContext.CreatingTasks.Update(userTask);
             await dbContext.SaveChangesAsync();
-            return true;
         }
     }
     
-
     public async Task SetTaskName(TTTTask task, string taskName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
@@ -148,7 +146,7 @@ public class CreatingTaskDbOperations
         await using (BotDbContext dbContext = new BotDbContext())
         {
             task.TaskPartId = task.TaskPartId+trelloIdOfParticipant+",";
-            task.TaskPartName = task.TaskPartName + participantName + ", ";
+            task.TaskPartName = task.TaskPartName + participantName + ",";
             dbContext.CreatingTasks.Update(task);
             await dbContext.SaveChangesAsync();
         }

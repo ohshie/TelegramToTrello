@@ -72,7 +72,6 @@ public class TrelloOperations
         return null;
     }
     
-    
     public async Task<bool> PushTaskToTrello(TTTTask task)
     {
         using (BotDbContext dbContext = new BotDbContext())

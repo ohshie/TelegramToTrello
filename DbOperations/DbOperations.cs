@@ -65,22 +65,6 @@ public class DbOperations
         }
     }
     
-    public async Task<bool> ClearTask(int telegramId)
-    {
-        await using BotDbContext dbContext = new BotDbContext();
-        {
-            TTTTask taskToDelete = await dbContext.CreatingTasks.FindAsync(telegramId);
-
-            if (taskToDelete != null)
-            {
-                dbContext.CreatingTasks.Remove(taskToDelete);
-                await dbContext.SaveChangesAsync();
-                return true;
-            }
-        }
-        return false;
-    }
-    
     public async Task<RegisteredUsers?> RetrieveTrelloUser(int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
@@ -139,22 +123,7 @@ public class DbOperations
 
         return null;
     }
-
-    public async Task<bool> CheckIfUserAlreadyCreatingTask(int telegramId)
-    {
-        await using (BotDbContext dbContext = new BotDbContext())
-        {
-            TTTTask tttTask = await dbContext.CreatingTasks.FirstOrDefaultAsync(um => um.Id == telegramId);
-        
-            if (tttTask == null)
-            {
-                return false;
-            }
-            
-            return true;
-        }
-    }
-
+    
     public async Task<string> BoardNameToId(string boardName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
@@ -205,19 +174,6 @@ public class DbOperations
         return null;
     }
     
-    public async Task AddTaskIdToCreatedTasks(int telegramId, string taskId)
-    {
-        using (BotDbContext dbContext = new BotDbContext())
-        {
-            TTTTask task = await dbContext.CreatingTasks.FindAsync(telegramId);
-            if (task != null)
-            {
-                task.TaskId = taskId;
-                dbContext.SaveChangesAsync();
-            }
-        }
-    }
-
     public async Task<string> BoardIdToName(string boardId)
     {
         using (BotDbContext dbContext = new BotDbContext())
@@ -233,5 +189,14 @@ public class DbOperations
         }
 
         return "";
+    }
+
+    public async Task RemoveEntry(TTTTask userTask)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            dbContext.RemoveRange(userTask);
+            await dbContext.SaveChangesAsync();
+        }
     }
 }

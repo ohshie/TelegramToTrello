@@ -92,6 +92,7 @@ public class BotTaskCreation
         // step 7
         if (message.Text.StartsWith("/push")) await PushTaskToTrello(message, userTask);
     }
+    
     // step 1 getting a board for new task
     private async Task NewTaskBoard(Message message, RegisteredUsers trelloUser)
     {
@@ -301,7 +302,13 @@ public class BotTaskCreation
         if (taskBoards != null)
         {
             keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
-            foreach (var user in taskBoards.UsersOnBoards.Select(uob => uob))
+
+            string addedUsers = task.TaskPartName.Remove(task.TaskPartName.Length-1);
+            List<string> addedUsersList = addedUsers.Split(',').ToList();
+
+            var filteredUsers = taskBoards.UsersOnBoards.Where(uob => !addedUsersList.Contains(uob.Name));
+            
+            foreach (var user in filteredUsers)
             {
                 keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
             }
@@ -309,18 +316,18 @@ public class BotTaskCreation
 
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
         {
+            OneTimeKeyboard = true,
             ResizeKeyboard = true,
             Selective = true
         };
         
         return replyKeyboardMarkup;
-        
     }
 
     private async Task AddParticipantToTask(Message message, TTTTask userTask)
     {
         string participantName = message.Text.Substring("/part".Length).Trim();
-
+        
         if (participantName == "press this when done")
         {
             await BotClient.SendTextMessageAsync(
@@ -339,7 +346,15 @@ public class BotTaskCreation
             await BotClient.SendTextMessageAsync(text: "Please choose name from keyboard menu.",
                 chatId: message.Chat.Id,
                 replyToMessageId: message.MessageId);
+            return;
         }
+        
+        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants(userTask);
+
+        await BotClient.SendTextMessageAsync(text: $"{participantName} added to task: {userTask.TaskName}",
+            chatId: message.Chat.Id,
+            replyMarkup: replyKeyboardMarkup,
+            replyToMessageId: message.MessageId);
     }
     
     // step 7 add date
@@ -424,6 +439,19 @@ public class BotTaskCreation
             return;
         }
         
-        await _trelloOperations.PushTaskToTrello(userTask);
+        bool success = await _trelloOperations.PushTaskToTrello(userTask);
+        if (success)
+        {
+            await BotClient.SendTextMessageAsync(message.Chat.Id,
+                text: "Task successfully created",
+                replyToMessageId: message.MessageId);
+            await RemoveTaskFromDb(userTask);
+            return;
+        }
+    }
+
+    private async Task RemoveTaskFromDb(TTTTask userTask)
+    {
+        _dbOperation.RemoveEntry(userTask);
     }
 }
