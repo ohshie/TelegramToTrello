@@ -177,7 +177,7 @@ public class DbOperations
             TTTTask task = await dbContext.CreatingTasks.FindAsync(telegramId);
             
             Tables tableNameToId = await dbContext.BoardTables.FirstOrDefaultAsync(bt =>
-                bt.Name == tableName && bt.TrelloUserBoard.TrelloBoardId == task.BoardId);
+                bt.Name == tableName && bt.TrelloUserBoard.TrelloBoardId == task.TrelloBoardId);
 
             if (tableNameToId != null)
             {
