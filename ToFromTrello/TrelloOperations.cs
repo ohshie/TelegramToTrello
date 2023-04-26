@@ -1,7 +1,5 @@
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace TelegramToTrello;
 
@@ -17,11 +15,15 @@ public class TrelloOperations
 
         if (responseMessage.IsSuccessStatusCode)
         {
-            var content = await responseMessage.Content.ReadAsStringAsync();
-            var json = JObject.Parse(content);
-            if (json["id"].ToString() == null) return null;
+            string content = await responseMessage.Content.ReadAsStringAsync();
+            JsonDocument json = JsonDocument.Parse(content);
+            
+            if (json.RootElement.GetProperty("id").GetString() == null)
+            {
+                return null;
+            }
 
-            return json["id"].ToString();
+            return json.RootElement.GetProperty("id").GetString();
         }
 
         return null;
@@ -36,7 +38,7 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<List<TrelloUserBoardsList>>(content);
+            return JsonSerializer.Deserialize<List<TrelloUserBoardsList>>(content);
         }
 
         return null;
@@ -50,7 +52,7 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<List<TrelloBoardTablesList>>(content);
+            return JsonSerializer.Deserialize<List<TrelloBoardTablesList>>(content);
         }
 
         return null;
@@ -66,7 +68,7 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<List<TrelloBoardUsersList>>(content);
+            return JsonSerializer.Deserialize<List<TrelloBoardUsersList>>(content);
         }
 
         return null;
@@ -126,31 +128,70 @@ public class TrelloOperations
             return false;
         }
     }
-    
+
+    public async Task<List<TrelloCards>> GetCardsOnBoards(Boards board, RegisteredUsers user)
+    {
+        using HttpClient httpClient = new HttpClient();
+        {
+            string cardsUrl = $"https://api.trello.com/1/boards/{board.TrelloBoardId}/cards?key={TrelloApiKey}&token={user.TrelloToken}";
+        
+            HttpResponseMessage cardsResponse = await httpClient.GetAsync(cardsUrl);
+
+            if (!cardsResponse.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Failed to fetch cards for board {board.Id}");
+                return null;
+            }
+
+            string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
+            List<TrelloCards> cards = JsonSerializer.Deserialize<List<TrelloCards>>(cardsJson);
+            return cards;
+        }
+        
+    }
+
     // helper classes to create a list of trello boards/lists/users for selected user
     public class TrelloUserBoardsList
     {
-        [JsonProperty("Id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
         
-        [JsonProperty("name")] 
+        [JsonPropertyName("name")] 
         public string Name { get; set; }
     }
     
     public class TrelloBoardTablesList
     {
-        [JsonProperty("Id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
         
-        [JsonProperty("name")] 
+        [JsonPropertyName("name")] 
         public string Name { get; set; }
     }
 
     public class TrelloBoardUsersList
     {
-        [JsonProperty("Id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
-        [JsonProperty("fullname")]
+        [JsonPropertyName("fullName")]
         public string Name { get; set; }
+    }
+
+    public class TrelloCards
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; }
+        [JsonPropertyName("due")]
+        public string Due { get; set; }
+        [JsonPropertyName("dueComplete")]
+        public bool Complete { get; set; }
+        [JsonPropertyName("idMembers")]
+        public string[] Members { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        [JsonPropertyName("desc")]
+        public string Description { get; set; }
+        [JsonPropertyName("shortUrl")]
+        public string Url { get; set; }
     }
 }

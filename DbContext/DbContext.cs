@@ -10,6 +10,7 @@ public class BotDbContext : DbContext
     public DbSet<Tables> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
     public DbSet<UsersBoards> UsersBoards { get; set; }
+    public DbSet<TaskNotification> TaskNotifications { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

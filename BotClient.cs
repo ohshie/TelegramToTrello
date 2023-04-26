@@ -50,6 +50,7 @@ public class BotClient
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
 
         BotTaskCreation botTaskCreation = new BotTaskCreation(botClient);
+        BotNotificationCentre botNotificationCentre = new BotNotificationCentre(botClient);
 
         await MessagesToReplacePlaceholdersWithValues(message, botClient,botTaskCreation);
         
@@ -69,6 +70,9 @@ public class BotClient
             || message.Text.StartsWith("/name")
             || message.Text.StartsWith("/date"))
             await botTaskCreation.TaskCreationOperator(message);
+
+        if (message.Text.StartsWith("/notifications"))
+            await botNotificationCentre.NotificationExperiment(message);
     }
 
     private async Task Authenticate(Message? message, ITelegramBotClient botClient)

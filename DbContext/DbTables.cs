@@ -70,3 +70,12 @@ public class TTTTask
     public bool DateSet { get; set; }
 }
 
+public class TaskNotification
+{
+    public string Id { get; set; }
+    public string Due { get; set; }
+    public string Url { get; set; }
+    public string Name { get; set; }
+    public int User { get; set; }
+}
+
