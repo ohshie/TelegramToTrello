@@ -53,7 +53,8 @@ public class BotClient
 
         await MessagesToReplacePlaceholdersWithValues(message, botClient,botTaskCreation);
         
-        if (message.Text.StartsWith("/register")) await Authenticate(message, botClient);
+        if (message.Text.StartsWith("/register")
+            || message.Text.StartsWith("/start")) await Authenticate(message, botClient);
         if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
         
         if (message.Text.StartsWith("/newtask"))
