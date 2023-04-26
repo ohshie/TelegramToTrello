@@ -81,10 +81,10 @@ public class TrelloOperations
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
             string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
-            
+            string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
                              $"&token={trelloUser.TrelloToken}" +
-                             $"&name={Uri.EscapeDataString(task.TaskName)}" +
+                             $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
                              $"&idList={task.ListId}" +
                              $"&idMembers={Uri.EscapeDataString(participants)}" +
                              $"&due={Uri.EscapeDataString(task.Date)}" +

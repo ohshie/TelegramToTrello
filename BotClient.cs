@@ -95,8 +95,8 @@ public class BotClient
 
         await botClient.SendTextMessageAsync(message.Chat.Id, 
             replyToMessageId: message.MessageId,
-            text: "Looks like you haven't completed authentication via trello.\n" +
-                                                                    "Click /register and finish authorization via trello website.");
+            text: "Looks like you haven't completed authentication via trello.\n" + 
+                  "Click /register and finish authorization via trello website.");
     }
 
     public async Task MessagesToReplacePlaceholdersWithValues(Message message, ITelegramBotClient botClient, BotTaskCreation botTaskCreation)
