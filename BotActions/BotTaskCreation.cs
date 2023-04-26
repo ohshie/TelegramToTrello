@@ -303,11 +303,15 @@ public class BotTaskCreation
         {
             keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
 
-            string addedUsers = task.TaskPartName.Remove(task.TaskPartName.Length-1);
-            List<string> addedUsersList = addedUsers.Split(',').ToList();
-
-            var filteredUsers = taskBoards.UsersOnBoards.Where(uob => !addedUsersList.Contains(uob.Name));
+            IEnumerable<UsersOnBoard> filteredUsers = taskBoards.UsersOnBoards;
             
+            if (task.TaskPartName.Length > 0)
+            {
+                string addedUsers = task.TaskPartName.Remove(task.TaskPartName.Length-1);
+                List<string> addedUsersList = addedUsers.Split(',').ToList();
+                filteredUsers = taskBoards.UsersOnBoards.Where(uob => !addedUsersList.Contains(uob.Name));
+            }
+
             foreach (var user in filteredUsers)
             {
                 keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
