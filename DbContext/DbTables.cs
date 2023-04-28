@@ -1,24 +1,25 @@
 namespace TelegramToTrello;
 
-public class RegisteredUsers
+public class RegisteredUser
 {
     public int TelegramId { get; set; }
     public string TelegramName { get; set; }
     public string TrelloToken { get; set; }
     public string TrelloId { get; set; }
     public string TrelloName { get; set; }
+    public bool NotificationsEnabled { get; set; }
 
     public ICollection<UsersBoards> UsersBoards { get; set; }
 }
 
-public class Boards
+public class Board
 {
     public int Id { get; set; }
     public string TrelloBoardId { get; set; }
     public string BoardName { get; set; }
     public int TelegramId { get; set; }
 
-    public ICollection<Tables> Tables { get; set; }
+    public ICollection<Table> Tables { get; set; }
     public ICollection<UsersOnBoard> UsersOnBoards { get; set; }
     public ICollection<UsersBoards> UsersBoards { get; set; }
 }
@@ -26,20 +27,20 @@ public class Boards
 public class UsersBoards
 {
     public int UserId { get; set; }
-    public RegisteredUsers RegisteredUsers { get; set; }
+    public RegisteredUser RegisteredUsers { get; set; }
 
     public int BoardId { get; set; }
-    public Boards Boards { get; set; }
+    public Board Boards { get; set; }
 }
 
-public class Tables
+public class Table
 {
     public int Id { get; set; }
     public string Name { get; set; }
     public string TableId { get; set; }
     public int BoardId { get; set; }
     
-    public Boards TrelloUserBoard { get; set; }
+    public Board TrelloUserBoard { get; set; }
 }
 
 public class UsersOnBoard
@@ -49,7 +50,7 @@ public class UsersOnBoard
     public string Name { get; set; }
     public int TrelloUserBoardId { get; set; }
     
-    public Boards TrelloBoard { get; set; } 
+    public Board TrelloBoard { get; set; } 
 }
 
 public class TTTTask

@@ -4,28 +4,28 @@ namespace TelegramToTrello;
 
 public class BotDbContext : DbContext
 {
-    public DbSet<RegisteredUsers> Users { get; set; }
-    public DbSet<Boards> Boards { get; set; }
+    public DbSet<RegisteredUser> Users { get; set; }
+    public DbSet<Board> Boards { get; set; }
     public DbSet<TTTTask> CreatingTasks { get; set; }
-    public DbSet<Tables> BoardTables { get; set; }
+    public DbSet<Table> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
     public DbSet<UsersBoards> UsersBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite("Data Source=teltotrel.sqlite");
+        optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=postgres;Password=**");
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<RegisteredUsers>()
+        modelBuilder.Entity<RegisteredUser>()
             .HasKey(u => u.TelegramId);
 
-        modelBuilder.Entity<Boards>()
+        modelBuilder.Entity<Board>()
             .HasKey(b => b.Id);
 
-        modelBuilder.Entity<Tables>()
+        modelBuilder.Entity<Table>()
             .HasKey(bl => bl.Id);
         
         modelBuilder.Entity<UsersOnBoard>()
@@ -52,7 +52,7 @@ public class BotDbContext : DbContext
             .WithMany(tub => tub.UsersOnBoards)
             .HasForeignKey(uob => uob.TrelloUserBoardId);
 
-        modelBuilder.Entity<Tables>()
+        modelBuilder.Entity<Table>()
             .HasOne(bl => bl.TrelloUserBoard)
             .WithMany(b => b.Tables)
             .HasForeignKey(bl => bl.BoardId);

@@ -29,7 +29,7 @@ public class TrelloOperations
         return null;
     }
     
-    public async Task<List<TrelloUserBoardsList>> GetTrelloBoards(RegisteredUsers userName)
+    public async Task<List<TrelloUserBoardsList>> GetTrelloBoards(RegisteredUser userName)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = (await httpClient.GetAsync(
@@ -44,7 +44,7 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardTablesList>> GetBoardTables(string boardName, RegisteredUsers trelloUser)
+    public async Task<List<TrelloBoardTablesList>> GetBoardTables(string boardName, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = await httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
@@ -58,7 +58,7 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardUsersList>> GetUsersOnBoard(string boardName, RegisteredUsers trelloUser)
+    public async Task<List<TrelloBoardUsersList>> GetUsersOnBoard(string boardName, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response =
@@ -79,7 +79,7 @@ public class TrelloOperations
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
-            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(task.Id);
+            RegisteredUser trelloUser = await dbContext.Users.FindAsync(task.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
             string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
@@ -111,7 +111,7 @@ public class TrelloOperations
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
-            RegisteredUsers trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
+            RegisteredUser trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?due={userCreatedTask.Date}&" +
                                   $"key={TrelloApiKey}&token={trelloUser.TrelloToken}";
             
@@ -129,23 +129,42 @@ public class TrelloOperations
         }
     }
 
-    public async Task<List<TrelloCards>> GetCardsOnBoards(Boards board, RegisteredUsers user)
+    public async Task<List<TrelloCards>> GetCardsOnBoards(RegisteredUser user)
     {
         using HttpClient httpClient = new HttpClient();
         {
-            string cardsUrl = $"https://api.trello.com/1/boards/{board.TrelloBoardId}/cards?key={TrelloApiKey}&token={user.TrelloToken}";
-        
+            string isOpenFilter = "is:open";
+            string cardLimit = "150";
+            
+            string cardsUrl =
+                $"https://api.trello.com/1/search?"+
+                $"query={isOpenFilter}&" +
+                $"key={TrelloApiKey}&" +
+                $"token={user.TrelloToken}&" +
+                $"idBoards=mine&" +
+                $"cards_limit={cardLimit}";
+            
             HttpResponseMessage cardsResponse = await httpClient.GetAsync(cardsUrl);
-
+            
             if (!cardsResponse.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Failed to fetch cards for board {board.Id}");
+                Console.WriteLine($"Failed to fetch cards for board");
                 return null;
             }
 
             string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
-            List<TrelloCards> cards = JsonSerializer.Deserialize<List<TrelloCards>>(cardsJson);
-            return cards;
+            TrelloSearchResponse searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
+            List<TrelloCards> cards = searchResponse.CardItems;
+            
+            DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
+            DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
+            
+            List<TrelloCards> filteredCards = cards.Where(card => card.Due != null &&
+                                                           DateTime.Parse(card.Due) >= minDueDate &&
+                                                           DateTime.Parse(card.Due) <= maxDueDate &&
+                                                           card.Members.Contains(user.TrelloId)).ToList();
+            
+            return filteredCards;
         }
         
     }
@@ -177,14 +196,18 @@ public class TrelloOperations
         public string Name { get; set; }
     }
 
+    public class TrelloSearchResponse
+    {
+        [JsonPropertyName("cards")]
+        public List<TrelloCards> CardItems { get; set; }
+    }
+    
     public class TrelloCards
     {
         [JsonPropertyName("id")]
         public string Id { get; set; }
         [JsonPropertyName("due")]
-        public string Due { get; set; }
-        [JsonPropertyName("dueComplete")]
-        public bool Complete { get; set; }
+        public string? Due { get; set; }
         [JsonPropertyName("idMembers")]
         public string[] Members { get; set; }
         [JsonPropertyName("name")]
@@ -193,5 +216,7 @@ public class TrelloOperations
         public string Description { get; set; }
         [JsonPropertyName("shortUrl")]
         public string Url { get; set; }
+        [JsonPropertyName("closed")]
+        public bool Status { get; set; }
     }
 }
