@@ -82,6 +82,8 @@ public class TrelloOperations
             RegisteredUser trelloUser = await dbContext.Users.FindAsync(task.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
+            string correctDate = DateTime.Parse(task.Date).ToUniversalTime().ToString("o");
+            
             string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
@@ -89,7 +91,7 @@ public class TrelloOperations
                              $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
                              $"&idList={task.ListId}" +
                              $"&idMembers={Uri.EscapeDataString(participants)}" +
-                             $"&due={Uri.EscapeDataString(task.Date)}" +
+                             $"&due={Uri.EscapeDataString(correctDate)}" +
                              $"&desc={Uri.EscapeDataString(task.TaskDesc)}";
 
             HttpResponseMessage response = await httpClient.PostAsync(requestUri, null);

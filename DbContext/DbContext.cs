@@ -12,9 +12,11 @@ public class BotDbContext : DbContext
     public DbSet<UsersBoards> UsersBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
 
+    private string dbConnectionstring = Environment.GetEnvironmentVariable("DbConnectionString");
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=postgres;Password=**");
+        optionsBuilder.UseNpgsql(dbConnectionstring);
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

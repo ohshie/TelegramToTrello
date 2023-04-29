@@ -24,7 +24,7 @@ public class BotNotificationCentre
         BotClient = botClient;
     }
 
-    public async Task EnableNotificationsForUser()
+    public async Task ToggleNotificationsForUser()
     {
         RegisteredUser trelloUser = await DbOperations.RetrieveTrelloUser((int)Message.From.Id);
         if (trelloUser == null) return;
@@ -46,7 +46,6 @@ public class BotNotificationCentre
         await BotClient.SendTextMessageAsync(text: $"Notifications turned off.\n" +
                                                    $"To enable notifications press /notifications",
             chatId: trelloUser.TelegramId);
-        
     }
 
     private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
@@ -55,7 +54,7 @@ public class BotNotificationCentre
 
         Console.WriteLine("done");
         
-        List<TaskNotification> newTasks = await _notificationsDbOperations.AddOrUpdateWatchedCards(trelloUser, cards);
+        List<TaskNotification> newTasks = await _notificationsDbOperations.UpdateAndAddCards(trelloUser, cards);
 
         string newTaskMessage = "";
         foreach (var task in newTasks)
@@ -80,6 +79,25 @@ public class BotNotificationCentre
                await BotClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
                                                     $"{newTaskMessage}",
                    chatId: trelloUser.TelegramId);
+           }
+
+           List<TaskNotification> currentTask = await _notificationsDbOperations.GetUserCardsFromDb(trelloUser);
+
+           foreach (var task in currentTask)
+           {
+               DateTime now = DateTime.Now;
+               DateTime dueDate = DateTime.Parse(task.Due);
+               TimeSpan timeDelta = dueDate - now;
+               
+               if (timeDelta.TotalHours < 3 && timeDelta.TotalHours > 1)
+               {
+                   
+                   await BotClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
+                                                              $"{task.Name}\n" +
+                                                              $"{DateTime.Parse(task.Due)}\n" +
+                                                              $"{task.Url}",
+                       chatId: trelloUser.TelegramId);
+               }
            }
        }
     }

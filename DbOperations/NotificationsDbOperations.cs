@@ -20,36 +20,53 @@ public class NotificationsDbOperations
             return false;
         }
     }
-    public async Task<List<TaskNotification>> AddOrUpdateWatchedCards(RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
+    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
     {
         using BotDbContext dbContext = new BotDbContext();
         {
             await RemoveTasksThatAreNotInTrello(dbContext, user, cards);
             
-            List<TaskNotification> taskNotifications = new List<TaskNotification>();
+            List<TaskNotification> newTasks = new List<TaskNotification>();
+            
             foreach (var card in cards)
             {
                 TaskNotification notification = await dbContext.TaskNotifications.FindAsync(card.Id);
                 if (notification == null)
                 {
+                    string correctDueDate = DateTime.Parse(card.Due).ToUniversalTime().ToString("o");
+                    
                     notification = new TaskNotification()
                     {
                         Id = card.Id,
                         Name = card.Name,
-                        Due = card.Due,
+                        Due = correctDueDate,
                         Url = card.Url,
                         User = user.TelegramId
                     };
-                    dbContext.TaskNotifications.Add(notification);
-                    taskNotifications.Add(notification);
+                    newTasks.Add(notification);
                 }
             }
+            dbContext.TaskNotifications.AddRange(newTasks);
             await dbContext.SaveChangesAsync();
-            return taskNotifications;
+
+            
+            
+            return newTasks;
         }
     }
 
-    public async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
+    public async Task<List<TaskNotification>> GetUserCardsFromDb(RegisteredUser trelloUser)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            List<TaskNotification> allTasks = new List<TaskNotification>();
+            allTasks = dbContext.TaskNotifications.Where(tn => tn.User == trelloUser.TelegramId).ToList();
+
+            return allTasks;
+        }
+    }
+
+    private async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
     {
         List<TaskNotification> notificationsList = dbContext.TaskNotifications.Where(tn => tn.User == user.TelegramId).ToList();
         List<string> cardsIds = cards.Select(c => c.Id).ToList();

@@ -11,6 +11,7 @@ public class BotClient
 {
     private static Timer Timer;
     private static readonly string TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
+    private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
     
     private TelegramBotClient _botClient = new TelegramBotClient(TelegramBotToken);
     private DbOperations _dbOperation = new DbOperations();
@@ -76,7 +77,7 @@ public class BotClient
             await botTaskCreation.TaskCreationOperator();
 
         if (message.Text.StartsWith("/notifications"))
-            await botNotificationCentre.EnableNotificationsForUser();
+            await botNotificationCentre.ToggleNotificationsForUser();
     }
 
     private async Task Authenticate(Message message, ITelegramBotClient botClient)
@@ -116,7 +117,7 @@ public class BotClient
 
     private async Task NotificationService(BotNotificationCentre botNotificationCentre)
     {
-        TimeSpan interval = TimeSpan.FromMinutes(1);
+        TimeSpan interval = TimeSpan.FromMinutes(TasksUpdateTimer);
         Timer = new Timer(async _ => await botNotificationCentre.NotificationManager(), null, interval, interval);
     }
     
