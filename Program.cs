@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using TelegramToTrello;
+using TelegramToTrello.BotActions;
 
 class Program
 {
@@ -13,7 +14,7 @@ class Program
         
         BotClient botClient = new BotClient();
         Task bot = botClient.BotOperations();
-
+        
         WebServer server = new WebServer();
         Task webServer = server.Run(args);
 

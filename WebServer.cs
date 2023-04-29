@@ -1,6 +1,4 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Telegram.Bot;
+using System.Text.Json;
 
 namespace TelegramToTrello;
 
@@ -25,10 +23,9 @@ public class WebServer
             using (var reader = new StreamReader(context.Request.Body))
             {
                 var body = await reader.ReadToEndAsync();
-                var json = JsonConvert.DeserializeObject<JObject>(body);
-                var token = json["token"].ToString();
-                var telegramId = json["state"].ToString();
-                Console.WriteLine("Token: " + token);
+                JsonDocument json = JsonDocument.Parse(body);
+                string token = json.RootElement.GetProperty("token").GetString();
+                string telegramId = json.RootElement.GetProperty("state").GetString();
                 
                 TrelloOperations trelloOperations = new TrelloOperations();
                 

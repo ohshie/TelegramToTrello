@@ -9,7 +9,9 @@ namespace TelegramToTrello;
 
 public class BotClient
 {
+    private static Timer Timer;
     private static readonly string TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
+    private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
     
     private TelegramBotClient _botClient = new TelegramBotClient(TelegramBotToken);
     private DbOperations _dbOperation = new DbOperations();
@@ -22,6 +24,9 @@ public class BotClient
         {
             AllowedUpdates = Array.Empty<UpdateType>()
         };
+        
+        BotNotificationCentre botNotificationCentre = new BotNotificationCentre(_botClient);
+        NotificationService(botNotificationCentre);
         
         _botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
@@ -49,16 +54,17 @@ public class BotClient
 
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
 
-        BotTaskCreation botTaskCreation = new BotTaskCreation(botClient);
+        BotTaskCreation botTaskCreation = new BotTaskCreation(botClient, message);
+        BotNotificationCentre botNotificationCentre = new BotNotificationCentre(message, botClient);
 
-        await MessagesToReplacePlaceholdersWithValues(message, botClient,botTaskCreation);
+        await botTaskCreation.MessagesToReplacePlaceholdersWithValues();
         
         if (message.Text.StartsWith("/register")
             || message.Text.StartsWith("/start")) await Authenticate(message, botClient);
         if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
         
         if (message.Text.StartsWith("/newtask"))
-            await botTaskCreation.InitialTaskCreator(message);
+            await botTaskCreation.InitialTaskCreator();
 
         if (message.Text.StartsWith("/tag") 
             || message.Text.StartsWith("/board") 
@@ -68,14 +74,24 @@ public class BotClient
             || message.Text.StartsWith("/part")
             || message.Text.StartsWith("/name")
             || message.Text.StartsWith("/date"))
-            await botTaskCreation.TaskCreationOperator(message);
+            await botTaskCreation.TaskCreationOperator();
+
+        if (message.Text.StartsWith("/notifications"))
+            await botNotificationCentre.ToggleNotificationsForUser();
     }
 
-    private async Task Authenticate(Message? message, ITelegramBotClient botClient)
+    private async Task Authenticate(Message message, ITelegramBotClient botClient)
     {
         string oauthLink = AuthLink.CreateLink(message.From.Id);
 
-        await _dbOperation.RegisterNewUser(message, botClient);
+        bool registerSuccess = await _dbOperation.RegisterNewUser(message);
+        if (!registerSuccess)
+        {
+            await botClient.SendTextMessageAsync(message.Chat.Id,
+                replyToMessageId: message.MessageId,
+                text: "User already registered.");
+            return;
+        }
         
         await botClient.SendTextMessageAsync(message.Chat.Id,
             replyToMessageId: message.MessageId,
@@ -99,31 +115,12 @@ public class BotClient
                   "Click /register and finish authorization via trello website.");
     }
 
-    public async Task MessagesToReplacePlaceholdersWithValues(Message message, ITelegramBotClient botClient, BotTaskCreation botTaskCreation)
+    private async Task NotificationService(BotNotificationCentre botNotificationCentre)
     {
-        using (BotDbContext dbContext = new BotDbContext())
-        {
-            TTTTask task = await dbContext.CreatingTasks.FindAsync((int)message.From.Id);
-            if (task == null) return;
-            
-            if (task.TaskName == "###tempname###")
-            {
-                await botTaskCreation.AddNameToTask(task, message);
-                return;
-            }
-            if (task.TaskDesc == "###tempdesc###")
-            {
-                await botTaskCreation.AddDescriptionToTask(task, message);
-                return;
-            }
-            if (task.Date == "###tempdate###")
-            {
-                await botTaskCreation.AddDateToTask(task, message);
-            }
-        }
-        
-    //await _trelloOperations.PushTaskDescriptionToTrello(task);
+        TimeSpan interval = TimeSpan.FromMinutes(TasksUpdateTimer);
+        Timer = new Timer(async _ => await botNotificationCentre.NotificationManager(), null, interval, interval);
     }
+    
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         var ErrorMessage = exception switch
