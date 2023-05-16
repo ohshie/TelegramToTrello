@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Telegram.Bot;
 using TelegramToTrello;
-using TelegramToTrello.BotActions;
 
 class Program
 {

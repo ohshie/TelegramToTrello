@@ -19,7 +19,7 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0-preview.2.23128.3" />
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="8.0.0-preview.3.23174.8" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0-preview.3" />
-      <PackageReference Include="Telegram.Bot" Version="19.0.0-preview.2" />
+      <PackageReference Include="Telegram.Bot" Version="19.0.0-preview.4" />
       <PackageReference Include="Telegram.Bot.Extensions" Version="1.0.0" />
     </ItemGroup>
 
