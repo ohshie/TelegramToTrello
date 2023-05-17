@@ -58,17 +58,24 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardUser>> GetUsersOnBoard(string boardName, RegisteredUser trelloUser)
+    public async Task<List<TrelloBoardUser>> GetUsersOnBoard(string boardId, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response =
             await httpClient.GetAsync(
-                $"https://api.trello.com/1/boards/{boardName}/members?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
+                $"https://api.trello.com/1/boards/{boardId}/members?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
 
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
+            var newUsers = JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
+
+            foreach (var user in newUsers)
+            {
+                user.BoardId = boardId;
+            }
+
+            return newUsers;
         }
 
         return null;
@@ -199,6 +206,8 @@ public class TrelloOperations
         public string Id { get; set; }
         [JsonPropertyName("fullName")]
         public string Name { get; set; }
+        
+        public string BoardId { get; set; }
     }
 
     public class TrelloSearchResponse
