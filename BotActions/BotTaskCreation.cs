@@ -457,7 +457,7 @@ public class BotTaskCreation
             string.IsNullOrEmpty(UserTask.Tag))
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
-                text: "You are pushing tag to early, please follow bot commands.",
+                text: "You are pushing task to early, please follow bot commands.",
                 replyToMessageId: Message.MessageId);
             return;
         }

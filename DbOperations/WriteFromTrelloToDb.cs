@@ -4,150 +4,152 @@ namespace TelegramToTrello.Dboperations;
 
 public class WriteFromTrelloToDb
 {
-    private TrelloOperations trelloInfo = new TrelloOperations();
+    private readonly TrelloOperations _trelloInfo = new();
 
     public async Task PopulateDbWithBoardsUsersTables(RegisteredUser trelloUser)
     {
-        List<TrelloOperations.TrelloUserBoardsList> boardsFoundInTrello =
-            await trelloInfo.GetTrelloBoards(trelloUser);
-        
-        List<List<TrelloOperations.TrelloBoardTablesList>> allListsFromUser =
-            new List<List<TrelloOperations.TrelloBoardTablesList>>();
+        List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello =
+            await _trelloInfo.GetTrelloBoards(trelloUser);
 
-        List<List<TrelloOperations.TrelloBoardUsersList>> allUsersOnAllBoardsFromUser =
-            new List<List<TrelloOperations.TrelloBoardUsersList>>();
-
-        List<Board> boardsFoundInDb = new List<Board>();
-        
-        foreach (var board in boardsFoundInTrello)
-        {
-            Board boardToList = await GerOrCreateBoards(board);
-            boardsFoundInDb.Add(boardToList);
-        }
-
-        foreach (var board in boardsFoundInDb)
-        {
-            await GetOrCreateUsersBoards(trelloUser, board);
-            
-            await PopulateBoardWithTables(board, trelloUser);
-            await PopulateBoardWithUsers(board, trelloUser);
-        }
+        await CreateBoards(boardsFoundInTrello);
+        await CreateUsersBoardsRelations(trelloUser);
+        await PopulateBoardWithTables(trelloUser);
+        await PopulateBoardsWithUsers(trelloUser);
     }
 
-
-    private async Task<Board> GerOrCreateBoards(TrelloOperations.TrelloUserBoardsList board)
+    private async Task CreateBoards(List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
     {
-        using (BotDbContext dbContext = new BotDbContext())
+        using (BotDbContext dbContext = new())
         {
-            Board boardsFoundInDb = await dbContext.Boards.FirstOrDefaultAsync(b =>
-                b.TrelloBoardId == board.Id);
-        
-            if (boardsFoundInDb == null)
+            var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
+
+            foreach (var board in boardsFoundInTrello)
             {
-                boardsFoundInDb = new Board
+                if (!currentBoardsInDb.ContainsKey(board.Id))
                 {
-                    TrelloBoardId = board.Id,
-                    BoardName = board.Name,
-                };
-                dbContext.Boards.Add(boardsFoundInDb);
-                await dbContext.SaveChangesAsync();
-            }
-            else
-            {
-                boardsFoundInDb.BoardName = board.Name;
-                boardsFoundInDb.TrelloBoardId = board.Id;
+                    dbContext.Boards.Add(new Board
+                    {
+                        TrelloBoardId = board.Id,
+                        BoardName = board.Name
+                    });
+                }
             }
 
-            return boardsFoundInDb;
-        }
-    }
-
-    private async Task GetOrCreateUsersBoards(RegisteredUser trelloUser, Board board)
-    {
-        using (BotDbContext dbContext = new BotDbContext())
-        {
-            UsersBoards usersBoards =
-                await dbContext.UsersBoards.FirstOrDefaultAsync(ub =>
-                    ub.UserId == trelloUser.TelegramId && ub.BoardId == board.Id);
-        
-            if (usersBoards == null)
-            {
-                usersBoards = new UsersBoards
-                {
-                    UserId = trelloUser.TelegramId,
-                    BoardId = board.Id
-                };
-                dbContext.Add(usersBoards);
-                await dbContext.SaveChangesAsync();
-            }
+            await dbContext.SaveChangesAsync();
         }
     }
     
-    private async Task PopulateBoardWithTables(Board board, RegisteredUser trelloUser)
+    private async Task CreateUsersBoardsRelations(RegisteredUser trelloUser)
     {
-        List<TrelloOperations.TrelloBoardTablesList> tablesFoundOnBoard =
-            await trelloInfo.GetBoardTables(board.TrelloBoardId, trelloUser);
-        
-        foreach (var table in tablesFoundOnBoard)
+        using (BotDbContext dbContext = new())
         {
-            using (BotDbContext dbContext = new BotDbContext())
-            {
-                Table tablesFoundInDb = await dbContext.BoardTables.FirstOrDefaultAsync(bt =>
-                    bt.TrelloUserBoard.TrelloBoardId == board.TrelloBoardId && bt.Name == table.Name);
+            var usersBoardsMap = dbContext.UsersBoards.ToDictionary(ub => ub.BoardId);
 
-                if (tablesFoundInDb == null)
+            foreach (var board in dbContext.Boards)
+            {
+                if (!usersBoardsMap.ContainsKey(board.Id))
                 {
-                    tablesFoundInDb = new Table
+                    var usersBoards = new UsersBoards
                     {
-                        Name = table.Name,
-                        TableId = table.Id,
+                        UserId = trelloUser.TelegramId,
                         BoardId = board.Id
                     };
-                    dbContext.BoardTables.Add(tablesFoundInDb);
+                    dbContext.Add(usersBoards);
                 }
-                else
-                {
-                    tablesFoundInDb.Name = table.Name;
-                    tablesFoundInDb.TableId = table.Id;
-                }
-                await dbContext.SaveChangesAsync();
             }
-            
+            await dbContext.SaveChangesAsync();
         }
-        Console.WriteLine("table done");
+    }
+    
+    private async Task PopulateBoardWithTables(RegisteredUser trelloUser)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            var currentBoards = dbContext.Boards
+                .Include(b => b.UsersBoards)
+                .Include(b => b.Tables)
+                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .ToDictionary(b => b.TrelloBoardId, b=> b);
+
+            var currentTables = dbContext.BoardTables
+                .ToDictionary(t => t.TableId);
+
+            List<Task<List<TrelloOperations.TrelloBoardTable>>> fetchFreshTablesTask = new();
+            
+            foreach (var board in currentBoards.Values)
+            {
+                fetchFreshTablesTask.Add(_trelloInfo.GetBoardTables(board.TrelloBoardId,trelloUser));
+            }
+
+            var freshTableListTest = await Task.WhenAll(fetchFreshTablesTask);
+            
+            foreach (var tableListOnBoard in freshTableListTest)
+            { 
+                foreach (var table in tableListOnBoard)
+                {
+                    if (!currentTables.ContainsKey(table.Id))
+                    {
+                        Board? board = currentBoards.Values
+                            .FirstOrDefault(cb => cb.TrelloBoardId == table.BoardId);
+
+                        dbContext.BoardTables.Add(new Table
+                        {
+                            Name = table.Name,
+                            TableId = table.Id,
+                            BoardId = board.Id,
+                            TrelloUserBoard = board
+                        });
+                    }
+                }
+            }
+            Console.WriteLine("table done");
+            await dbContext.SaveChangesAsync();
+        }
     }
 
-    private async Task PopulateBoardWithUsers(Board board, RegisteredUser trelloUser)
+    private async Task PopulateBoardsWithUsers(RegisteredUser trelloUser)
     {
-        List<TrelloOperations.TrelloBoardUsersList> usersFoundOnBoardInTrello =
-            await trelloInfo.GetUsersOnBoard(board.TrelloBoardId, trelloUser);
-
-        foreach (var user in usersFoundOnBoardInTrello)
+        using (BotDbContext dbContext = new())
         {
-            using (BotDbContext dbContext = new BotDbContext())
-            {
-                UsersOnBoard usersOnBoardFoundInDb = await dbContext.UsersOnBoards.FirstOrDefaultAsync(uob =>
-                    uob.TrelloUserId == user.Id && uob.TrelloUserBoardId == board.Id);
+            var currentBoards = dbContext.Boards
+                .Include(b => b.UsersBoards)
+                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .ToDictionary(b => b.TrelloBoardId);
 
-                if (usersOnBoardFoundInDb == null)
-                {
-                    usersOnBoardFoundInDb = new UsersOnBoard
-                    {
-                        TrelloUserId = user.Id,
-                        Name = user.Name,
-                        TrelloUserBoardId = board.Id
-                    };
-                    dbContext.UsersOnBoards.Add(usersOnBoardFoundInDb);
-                }
-                else
-                {
-                    usersOnBoardFoundInDb.TrelloUserId = user.Id;
-                    usersOnBoardFoundInDb.Name = user.Name;
-                }
-                await dbContext.SaveChangesAsync();
+            var currentUsers = new HashSet<(string userId, string boardId)>(dbContext.UsersOnBoards
+                .AsEnumerable()
+                .Select(uob => (uob.TrelloUserId, uob.TrelloBoard.TrelloBoardId)));
+
+            List<Task<List<TrelloOperations.TrelloBoardUser>>> fetchingUsersOnBoardsTasks = new();
+
+            foreach (var board in currentBoards.Values)
+            {
+                fetchingUsersOnBoardsTasks.Add(_trelloInfo.GetUsersOnBoard(board.TrelloBoardId,trelloUser));
             }
-        }
+
+            var freshUsers = await Task.WhenAll(fetchingUsersOnBoardsTasks);
             
-        Console.WriteLine("users done");
+            foreach (var usersList in freshUsers)
+            {
+                foreach (var user in usersList)
+                {
+                    if (!currentUsers.Contains((user.Id, user.BoardId)))
+                    {
+                        Board? board = currentBoards.Values.FirstOrDefault(cb => cb.TrelloBoardId == user.BoardId);
+                        dbContext.UsersOnBoards.Add(new UsersOnBoard
+                        {
+                            Name = user.Name,
+                            TrelloUserId = user.Id,
+                            TrelloUserBoardId = board.Id,
+                            TrelloBoard = board
+                        });
+                        currentUsers.Add((user.Id, board.TrelloBoardId));
+                    }
+                }
+                
+            }
+            Console.WriteLine("users done");
+            await dbContext.SaveChangesAsync();
+        }
     }
 }
