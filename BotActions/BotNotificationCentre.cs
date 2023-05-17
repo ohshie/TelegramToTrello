@@ -50,7 +50,7 @@ public class BotNotificationCentre
 
     private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
     {
-        List<TrelloOperations.TrelloCards> cards = await _trelloOperations.GetCardsOnBoards(trelloUser);
+        List<TrelloOperations.TrelloCard> cards = await _trelloOperations.GetCardsOnBoards(trelloUser);
 
         Console.WriteLine("done");
         

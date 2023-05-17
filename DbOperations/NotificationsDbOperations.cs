@@ -20,7 +20,7 @@ public class NotificationsDbOperations
             return false;
         }
     }
-    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
+    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, List<TrelloOperations.TrelloCard> cards)
     {
         using BotDbContext dbContext = new BotDbContext();
         {
@@ -66,7 +66,7 @@ public class NotificationsDbOperations
         }
     }
 
-    private async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, List<TrelloOperations.TrelloCards> cards)
+    private async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, List<TrelloOperations.TrelloCard> cards)
     {
         List<TaskNotification> notificationsList = dbContext.TaskNotifications.Where(tn => tn.User == user.TelegramId).ToList();
         List<string> cardsIds = cards.Select(c => c.Id).ToList();
