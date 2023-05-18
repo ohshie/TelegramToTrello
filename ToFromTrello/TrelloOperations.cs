@@ -29,7 +29,7 @@ public class TrelloOperations
         return null;
     }
     
-    public async Task<List<TrelloUserBoard>> GetTrelloBoards(RegisteredUser userName)
+    public async Task<Dictionary<string, TrelloUserBoard>> GetTrelloBoards(RegisteredUser userName)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = (await httpClient.GetAsync(
@@ -38,7 +38,8 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<List<TrelloUserBoard>>(content);
+            var boardsMap = JsonSerializer.Deserialize<List<TrelloUserBoard>>(content).ToDictionary(b => b.Id);
+            return boardsMap;
         }
 
         return null;

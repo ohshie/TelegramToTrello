@@ -15,26 +15,53 @@ public class WriteFromTrelloToDb
     private async Task CreateBoards(RegisteredUser trelloUser)
     {
         TrelloOperations trelloOperation = new TrelloOperations();
-        List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello =
+        var boardsFoundInTrello =
             await trelloOperation.GetTrelloBoards(trelloUser);
         
+        await AddNewBoards(boardsFoundInTrello);
+        await RemoveBoardThatWereNotInTrello(boardsFoundInTrello);
+    }
+
+    private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
+    {
         using (BotDbContext dbContext = new())
         {
             var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
 
-            foreach (var board in boardsFoundInTrello)
+            var newEntries = boardsFoundInTrello.Keys.Except(currentBoardsInDb.Keys);
+            if (newEntries.Any())
             {
-                if (!currentBoardsInDb.ContainsKey(board.Id))
+                foreach (var key in newEntries)
                 {
                     dbContext.Boards.Add(new Board
                     {
-                        TrelloBoardId = board.Id,
-                        BoardName = board.Name
+                        TrelloBoardId = boardsFoundInTrello.GetValueOrDefault(key)!.Id,
+                        BoardName = boardsFoundInTrello.GetValueOrDefault(key)!.Name
                     });
                 }
-            }
 
-            await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
+            }
+        }
+    }
+
+    private async Task RemoveBoardThatWereNotInTrello(
+        Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
+
+            var entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys);
+            if (entriesToRemove.Any())
+            {
+                foreach (var key in entriesToRemove)
+                {
+                    dbContext.Boards.Remove(currentBoardsInDb.GetValueOrDefault(key)!);
+                }
+
+                await dbContext.SaveChangesAsync();
+            }
         }
     }
     
@@ -64,11 +91,12 @@ public class WriteFromTrelloToDb
     {
         var (currentBoards, currentTables) = GetCurrentBoardsAndTablesFromDb(trelloUser);
         var freshTableLists = await GetTablesFromTrello(currentBoards, trelloUser);
-        await AddNewBoardsToDb(freshTableLists, currentTables, currentBoards);
+        await AddNewTablesToDb(freshTableLists, currentTables, currentBoards);
+        await RemoveTablesNotInTrello(freshTableLists, currentTables, currentBoards);
     }
 
     // helpers for PopulateBoardsWithTables
-    private async Task<List<TrelloOperations.TrelloBoardTable>[]> GetTablesFromTrello(
+    private async Task<Dictionary<string, TrelloOperations.TrelloBoardTable>> GetTablesFromTrello(
         Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
     {
         TrelloOperations trelloOperation = new TrelloOperations();
@@ -80,9 +108,10 @@ public class WriteFromTrelloToDb
             fetchFreshTablesTask.Add(trelloOperation.GetBoardTables(board.TrelloBoardId,trelloUser));
         }
 
-        var freshTableListTest = await Task.WhenAll(fetchFreshTablesTask);
+        var freshTableLists = await Task.WhenAll(fetchFreshTablesTask);
+        var freshTablesMap = freshTableLists.SelectMany(list => list).ToDictionary(t => t.Id);
         
-        return freshTableListTest;
+        return freshTablesMap;
     }
 
     private (Dictionary<string, Board>, Dictionary<string, Table>) GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
@@ -102,32 +131,46 @@ public class WriteFromTrelloToDb
         }
     }
 
-    private async Task AddNewBoardsToDb(List<TrelloOperations.TrelloBoardTable>[] freshTableLists,
+    private async Task AddNewTablesToDb(Dictionary<string, TrelloOperations.TrelloBoardTable> freshTableLists,
         Dictionary<string, Table> currentTables, Dictionary<string, Board> currentBoards)
     {
-        using (BotDbContext dbContext = new())
+        var newTables = freshTableLists.Keys.Except(currentTables.Keys);
+        if (newTables.Any())
         {
-            foreach (var tableListOnBoard in freshTableLists)
-            { 
-                foreach (var table in tableListOnBoard)
+            using (BotDbContext dbContext = new())
+            {
+                foreach (var key in newTables)
                 {
-                    if (!currentTables.ContainsKey(table.Id))
-                    {
-                        Board? board = currentBoards.Values
-                            .FirstOrDefault(cb => cb.TrelloBoardId == table.BoardId);
+                    Board? board = currentBoards.Values
+                            .FirstOrDefault(cb => cb.TrelloBoardId == freshTableLists.GetValueOrDefault(key)!.BoardId);
 
                         dbContext.BoardTables.Add(new Table
                         {
-                            Name = table.Name,
-                            TableId = table.Id,
+                            Name = freshTableLists.GetValueOrDefault(key)!.Name,
+                            TableId = freshTableLists.GetValueOrDefault(key)!.Id,
                             BoardId = board.Id,
-                            TrelloUserBoard = board
                         });
-                    }
                 }
+                await dbContext.SaveChangesAsync();
             }
-            Console.WriteLine("table done");
-            await dbContext.SaveChangesAsync();
+        }
+    }
+
+    private async Task RemoveTablesNotInTrello(Dictionary<string, TrelloOperations.TrelloBoardTable> freshTableLists,
+        Dictionary<string, Table> currentTables, Dictionary<string, Board> currentBoards)
+    {
+        var tablesToRemove = currentTables.Keys.Except(currentTables.Keys);
+        if (tablesToRemove.Any())
+        {
+            using (BotDbContext dbContext = new())
+            {
+                foreach (var key in tablesToRemove)
+                { 
+                    dbContext.BoardTables.Remove(currentTables.GetValueOrDefault(key)!);
+                }
+                
+                await dbContext.SaveChangesAsync();
+            }
         }
     }
 
@@ -192,7 +235,6 @@ public class WriteFromTrelloToDb
                             Name = user.Name,
                             TrelloUserId = user.Id,
                             TrelloUserBoardId = board.Id,
-                            TrelloBoard = board
                         });
                         currentUsers.Add((user.Id, board.TrelloBoardId));
                     }
@@ -203,4 +245,6 @@ public class WriteFromTrelloToDb
             await dbContext.SaveChangesAsync();
         }
     }
+    
+    
 }
