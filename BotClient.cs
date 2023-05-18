@@ -13,8 +13,8 @@ public class BotClient
     private static readonly string TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
     private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
     
-    private TelegramBotClient _botClient = new TelegramBotClient(TelegramBotToken);
-    private DbOperations _dbOperation = new DbOperations();
+    private TelegramBotClient _botClient = new(TelegramBotToken);
+    private DbOperations _dbOperation = new();
     
     public async Task BotOperations()
     {

@@ -4,21 +4,20 @@ namespace TelegramToTrello.Dboperations;
 
 public class WriteFromTrelloToDb
 {
-    private readonly TrelloOperations _trelloInfo = new();
-
     public async Task PopulateDbWithBoardsUsersTables(RegisteredUser trelloUser)
     {
-        List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello =
-            await _trelloInfo.GetTrelloBoards(trelloUser);
-
-        await CreateBoards(boardsFoundInTrello);
+        await CreateBoards(trelloUser);
         await CreateUsersBoardsRelations(trelloUser);
         await PopulateBoardWithTables(trelloUser);
         await PopulateBoardsWithUsers(trelloUser);
     }
-
-    private async Task CreateBoards(List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
+    
+    private async Task CreateBoards(RegisteredUser trelloUser)
     {
+        TrelloOperations trelloOperation = new TrelloOperations();
+        List<TrelloOperations.TrelloUserBoard> boardsFoundInTrello =
+            await trelloOperation.GetTrelloBoards(trelloUser);
+        
         using (BotDbContext dbContext = new())
         {
             var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
@@ -63,6 +62,31 @@ public class WriteFromTrelloToDb
     
     private async Task PopulateBoardWithTables(RegisteredUser trelloUser)
     {
+        var (currentBoards, currentTables) = GetCurrentBoardsAndTablesFromDb(trelloUser);
+        var freshTableLists = await GetTablesFromTrello(currentBoards, trelloUser);
+        await AddNewBoardsToDb(freshTableLists, currentTables, currentBoards);
+    }
+
+    // helpers for PopulateBoardsWithTables
+    private async Task<List<TrelloOperations.TrelloBoardTable>[]> GetTablesFromTrello(
+        Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
+    {
+        TrelloOperations trelloOperation = new TrelloOperations();
+        
+        List<Task<List<TrelloOperations.TrelloBoardTable>>> fetchFreshTablesTask = new();
+            
+        foreach (var board in currentBoards.Values)
+        {
+            fetchFreshTablesTask.Add(trelloOperation.GetBoardTables(board.TrelloBoardId,trelloUser));
+        }
+
+        var freshTableListTest = await Task.WhenAll(fetchFreshTablesTask);
+        
+        return freshTableListTest;
+    }
+
+    private (Dictionary<string, Board>, Dictionary<string, Table>) GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
+    {
         using (BotDbContext dbContext = new())
         {
             var currentBoards = dbContext.Boards
@@ -74,16 +98,16 @@ public class WriteFromTrelloToDb
             var currentTables = dbContext.BoardTables
                 .ToDictionary(t => t.TableId);
 
-            List<Task<List<TrelloOperations.TrelloBoardTable>>> fetchFreshTablesTask = new();
-            
-            foreach (var board in currentBoards.Values)
-            {
-                fetchFreshTablesTask.Add(_trelloInfo.GetBoardTables(board.TrelloBoardId,trelloUser));
-            }
+            return (currentBoards, currentTables);
+        }
+    }
 
-            var freshTableListTest = await Task.WhenAll(fetchFreshTablesTask);
-            
-            foreach (var tableListOnBoard in freshTableListTest)
+    private async Task AddNewBoardsToDb(List<TrelloOperations.TrelloBoardTable>[] freshTableLists,
+        Dictionary<string, Table> currentTables, Dictionary<string, Board> currentBoards)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            foreach (var tableListOnBoard in freshTableLists)
             { 
                 foreach (var table in tableListOnBoard)
                 {
@@ -109,6 +133,16 @@ public class WriteFromTrelloToDb
 
     private async Task PopulateBoardsWithUsers(RegisteredUser trelloUser)
     {
+        var (currentBoards, currentUsers) = GetCurrentBoardsAndUsersFromDb(trelloUser);
+        var freshUsers = await GetUsersFromTrello(currentBoards, trelloUser);
+        await AddNewUsersToDb(freshUsers, currentBoards, currentUsers);
+    }
+
+    // helpers for PopulateBoardsWithUsers
+
+    private (Dictionary<string, Board> currentBoards, HashSet<(string userId, string boardId)> currentUsers)
+        GetCurrentBoardsAndUsersFromDb(RegisteredUser trelloUser)
+    {
         using (BotDbContext dbContext = new())
         {
             var currentBoards = dbContext.Boards
@@ -119,17 +153,34 @@ public class WriteFromTrelloToDb
             var currentUsers = new HashSet<(string userId, string boardId)>(dbContext.UsersOnBoards
                 .AsEnumerable()
                 .Select(uob => (uob.TrelloUserId, uob.TrelloBoard.TrelloBoardId)));
-
-            List<Task<List<TrelloOperations.TrelloBoardUser>>> fetchingUsersOnBoardsTasks = new();
-
-            foreach (var board in currentBoards.Values)
-            {
-                fetchingUsersOnBoardsTasks.Add(_trelloInfo.GetUsersOnBoard(board.TrelloBoardId,trelloUser));
-            }
-
-            var freshUsers = await Task.WhenAll(fetchingUsersOnBoardsTasks);
             
-            foreach (var usersList in freshUsers)
+            return (currentBoards, currentUsers);
+        }
+    }
+    
+    private async Task<List<TrelloOperations.TrelloBoardUser>[]> GetUsersFromTrello(
+        Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
+    {
+        TrelloOperations trelloOperation = new();
+            
+        List<Task<List<TrelloOperations.TrelloBoardUser>>> fetchingUsersOnBoardsTasks = new();
+
+        foreach (var board in currentBoards.Values)
+        {
+            fetchingUsersOnBoardsTasks.Add(trelloOperation.GetUsersOnBoard(board.TrelloBoardId,trelloUser));
+        }
+
+        var freshUsers = await Task.WhenAll(fetchingUsersOnBoardsTasks);
+
+        return freshUsers;
+    }
+
+    private async Task AddNewUsersToDb(List<TrelloOperations.TrelloBoardUser>[] freshUsersList,
+        Dictionary<string, Board> currentBoards, HashSet<(string userId, string boardId)> currentUsers)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            foreach (var usersList in freshUsersList)
             {
                 foreach (var user in usersList)
                 {
