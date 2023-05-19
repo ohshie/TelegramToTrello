@@ -45,23 +45,22 @@ public class CreatingTaskDbOperations : DbOperations
              dbContext.CreatingTasks.Update(UserTask);
              await dbContext.SaveChangesAsync();
          }
-     }
+     } 
     
-    public async Task<bool> AddBoardToTask(string boardName)
+    public async Task<string?> AddBoardToTask(string boardId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            string boardNameFetched = await BoardNameToId(boardName);
-
-            if (!string.IsNullOrEmpty(boardNameFetched))
+            Board? board = await CheckIfBoardExist(boardId);
+            if (board != null)
             {
-                UserTask.TrelloBoardId = boardNameFetched;
+                UserTask.TrelloBoardId = boardId;
                 dbContext.CreatingTasks.Update(UserTask);
                 await dbContext.SaveChangesAsync();
                 
-                return true;
+                return board.BoardName;
             }
-            return false;
+            return null;
         }
     }
 

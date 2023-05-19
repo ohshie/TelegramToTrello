@@ -10,10 +10,11 @@ public class BotTaskCreation
     private TrelloOperations _trelloOperations = new TrelloOperations();
     
     private Message Message { get; }
-    private TTTTask UserTask { get; set; }
-    private RegisteredUser TrelloUser { get; set; }
+    private TTTTask? UserTask { get; set; } = null;
+    private RegisteredUser? TrelloUser { get; set; } = null;
     private CreatingTaskDbOperations CreatingTaskDbOperations { get; set; }
     private DbOperations DbOperations { get; set; }
+    public  CallbackQuery CallbackQuery { get; set; }
 
     private ITelegramBotClient BotClient { get; }
 
@@ -21,19 +22,23 @@ public class BotTaskCreation
     {
         BotClient = botClient;
         Message = message;
-        UserTask = null;
-        TrelloUser = null;
+    }
+
+    public BotTaskCreation(ITelegramBotClient botClient, CallbackQuery callbackQuery)
+    {
+        BotClient = botClient;
+        CallbackQuery = callbackQuery;
+        Message = callbackQuery.Message;
     }
 
     private async Task GetTrelloUserAndTask()
     {
         DbOperations = new DbOperations();
         
-        TrelloUser = await DbOperations.RetrieveTrelloUser((int)Message.From.Id);
-
+        TrelloUser = await DbOperations.RetrieveTrelloUser((int)Message.Chat.Id);
         if (TrelloUser != null)
-        {
-            UserTask = await DbOperations.RetrieveUserTask((int)Message.From.Id);
+        {   
+            UserTask = await DbOperations.RetrieveUserTask((int)Message.Chat.Id);
         }
         
         CreatingTaskDbOperations = new CreatingTaskDbOperations(TrelloUser, UserTask);
@@ -41,7 +46,7 @@ public class BotTaskCreation
 
     private async Task SendNotRegisteredMessage()
     {
-        BotClient.SendTextMessageAsync(text: "Looks like you are not registered yet." + 
+        await BotClient.SendTextMessageAsync(text: "Looks like you are not registered yet." + 
                                              "Click on /register and follow commands to register",
             chatId: Message.Chat.Id,
             replyToMessageId: Message.MessageId);
@@ -87,67 +92,79 @@ public class BotTaskCreation
                 replyToMessageId: Message.MessageId);
             return;
         }
-        
-        // step 1
-        if (Message.Text.StartsWith("/board")) await NewTaskBoardSelection();
-        
-        // step 2
-        if (Message.Text.StartsWith("/list")) await NewTaskTableSelection();
-        
-        // step 3
-        if (Message.Text.StartsWith("/tag")) await NewTaskChanelTagSelection();
-        
-        // step 4 
-        if (Message.Text.StartsWith("/desc")) await GetDescriptionFromUser();
-        
+
         // step 5
         if (Message.Text.StartsWith("/part")) await ChoosingParticipants();
-        if (Message.Text.StartsWith("/name")) await AddParticipantToTask();
-        
+
         // step 6
         if (Message.Text.StartsWith("/date")) await AskUserForADate();
         
         // step 7
         if (Message.Text.StartsWith("/push")) await PushTaskToTrello();
     }
+
+    public async Task HandleInlineKeyBoardCallBack()
+    {
+        await GetTrelloUserAndTask();
+        if (TrelloUser == null)
+        {
+            await SendNotRegisteredMessage();
+            return;
+        }
+        
+        if (UserTask == null)
+        {
+            await BotClient.SendTextMessageAsync(text: "Lets not get ahead of ourselves." +
+                                                       "Click on /newtask first to start task creation process",
+                chatId: Message.Chat.Id,
+                replyToMessageId: Message.MessageId);
+            return;
+        }
+        
+        // step 1
+        if (CallbackQuery.Data.StartsWith("/board")) await NewTaskBoardSelection();
+        // step 2
+        if (CallbackQuery.Data.StartsWith("/list")) await NewTaskTableSelection();
+        // step 3
+        if (CallbackQuery.Data.StartsWith("/tag")) await NewTaskChanelTagSelection();
+        
+        if (CallbackQuery.Data.StartsWith("/name")) await AddParticipantToTask();
+        
+    }
     
     // step 1 getting a board for new task
     private async Task NewTaskBoard()
     {
         // creating bot keyboard with user boards
-        ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardBoardChoice();
+        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardBoardChoice();
         await BotClient.SendTextMessageAsync(text: "We will start with choosing a board for our task:",
             chatId: Message.Chat.Id,
-            replyMarkup: replyKeyboardMarkup,
+            replyMarkup: inlineKeyboardMarkup,
             replyToMessageId: Message.MessageId);
     }
     
-    private ReplyKeyboardMarkup KeyboardBoardChoice()
+    private InlineKeyboardMarkup KeyboardBoardChoice()
     {
-        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+        List<InlineKeyboardButton[]> keyboardButtonsList = new();
         
         foreach (var board in TrelloUser.UsersBoards.Select(ub => ub.Boards))
         {
-            keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/board {board.BoardName}") });
+            keyboardButtonsList.Add(new InlineKeyboardButton[]
+                {  InlineKeyboardButton.WithCallbackData($"{board.BoardName}",$"/board {board.TrelloBoardId}") });
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
-        {
-            ResizeKeyboard = true,
-            OneTimeKeyboard = true,
-            Selective = true
-        };
+        InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(keyboardButtonsList);
 
-        return replyKeyboardMarkup;
+        return inlineKeyboard;
     }
-
+    
     private async Task NewTaskBoardSelection()
     {
-        string boardName = Message.Text.Substring("/board".Length).Trim();
-        Console.WriteLine(boardName);
+        string boardId = CallbackQuery.Data.Substring("/board".Length).Trim();
+        Console.WriteLine(boardId);
 
-        bool boardExist = await CreatingTaskDbOperations.AddBoardToTask(boardName);
-        if (!boardExist)
+        string? boardName = await CreatingTaskDbOperations.AddBoardToTask(boardId);
+        if (string.IsNullOrEmpty(boardName))
         {
             await BotClient.SendTextMessageAsync(text: "Please choose board name from keyboard menu.",
                 chatId: Message.Chat.Id,
@@ -155,7 +172,7 @@ public class BotTaskCreation
             return;
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardTableChoice();
+        InlineKeyboardMarkup replyKeyboardMarkup = await KeyboardTableChoice();
 
         await BotClient.SendTextMessageAsync(text: $"Now choose list on {boardName}",
             chatId: Message.Chat.Id,
@@ -164,30 +181,28 @@ public class BotTaskCreation
     }
 
     // step 2 getting a table/list for a task on selected board
-    private async Task<ReplyKeyboardMarkup> KeyboardTableChoice()
+    private async Task<InlineKeyboardMarkup> KeyboardTableChoice()
     {
-        Board selectedBoard = await DbOperations.RetrieveBoards(UserTask.Id, UserTask.TrelloBoardId);
+        Board selectedBoard = await DbOperations.RetrieveBoard(UserTask.Id, UserTask.TrelloBoardId);
 
-        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+        List<InlineKeyboardButton[]> keyboardButtonsList = new List<InlineKeyboardButton[]>();
 
         foreach (var table in selectedBoard.Tables)
         {
-            keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/list {table.Name}") });
+            keyboardButtonsList.Add(new InlineKeyboardButton[]
+            {
+                InlineKeyboardButton.WithCallbackData($"{table.Name}",$"/list {table.Name}")
+            });
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
-        {
-            ResizeKeyboard = true,
-            OneTimeKeyboard = true,
-            Selective = true
-        };
+        InlineKeyboardMarkup replyKeyboardMarkup = new InlineKeyboardMarkup(keyboardButtonsList);
 
         return replyKeyboardMarkup;
     }
 
     private async Task NewTaskTableSelection()
     {
-        string listName = Message.Text.Substring("/list".Length).Trim();
+        string listName = CallbackQuery.Data.Substring("/list".Length).Trim();
         
         bool listExist = await CreatingTaskDbOperations.AddTableToTask(listName);
         if (!listExist)
@@ -198,7 +213,7 @@ public class BotTaskCreation
             return;
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = KeyboardTagChoice();
+        InlineKeyboardMarkup replyKeyboardMarkup = KeyboardTagChoice();
 
         await BotClient.SendTextMessageAsync(text: "Choose channel tag according to your task channel",
             chatId: Message.Chat.Id,
@@ -207,28 +222,23 @@ public class BotTaskCreation
     }
 
     // step 3 getting chanel tag for new task.
-    private ReplyKeyboardMarkup KeyboardTagChoice()
+    private InlineKeyboardMarkup KeyboardTagChoice()
     {
-        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+        List<InlineKeyboardButton[]> keyboardButtonsList = new();
 
         foreach (var tag in Enum.GetValues(typeof(ChanelTags)))
         {
-            keyboardButtonsList.Add(new KeyboardButton[] { new KeyboardButton($"/tag {tag}") });
+            keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData($"{tag}",$"/tag {tag}") });
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
-        {
-            ResizeKeyboard = true,
-            OneTimeKeyboard = true,
-            Selective = true
-        };
+        InlineKeyboardMarkup replyKeyboardMarkup = new(keyboardButtonsList);
 
         return replyKeyboardMarkup;
     }
 
     private async Task NewTaskChanelTagSelection()
     {
-        string tag = Message.Text.Substring("/tag".Length).Trim();
+        string tag =  CallbackQuery.Data.Substring("/tag".Length).Trim();
         
         if (!(Enum.TryParse(typeof(ChanelTags), tag, true, out _)))
         {
@@ -262,26 +272,16 @@ public class BotTaskCreation
         }
         
         await CreatingTaskDbOperations.SetTaskName(Message.Text);
-                
+        await CreatingTaskDbOperations.AddPlaceholderDescription();
+        
         await BotClient.SendTextMessageAsync(Message.Chat.Id,
             replyToMessageId: Message.MessageId,
             text: $"Task name successfully set to: {Message.Text}\n" +
-                  $"Press /desc when ready to add description.");
+                  $"Now please type description of your task in the next message.");
+        
+        
     }
     
-    // step 5 adding description to the task   
-    private async Task GetDescriptionFromUser()
-    {
-        if (!UserTask.NameSet) return;
-
-        await CreatingTaskDbOperations.AddPlaceholderDescription();
-        
-        await BotClient.SendTextMessageAsync(text: "Now please type description of your task in the next message.",
-            chatId: Message.Chat.Id,
-            replyMarkup: new ReplyKeyboardRemove(),
-            replyToMessageId: Message.MessageId);
-    }
-
     private async Task AddDescriptionToTask()
     {
         if (Message.Text.StartsWith("/"))
@@ -304,7 +304,7 @@ public class BotTaskCreation
     // step 6 adding participants
     private async Task ChoosingParticipants()
     {
-        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants();
+        InlineKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants();
         
         await BotClient.SendTextMessageAsync(text: "choose participant from a list",
             chatId: Message.Chat.Id,
@@ -312,54 +312,43 @@ public class BotTaskCreation
             replyToMessageId: Message.MessageId);
     }
 
-    private async Task<ReplyKeyboardMarkup> KeyboardParticipants()
+    private async Task<InlineKeyboardMarkup> KeyboardParticipants()
     {
-        List<KeyboardButton[]> keyboardButtonsList = new List<KeyboardButton[]>();
+        List<InlineKeyboardButton[]> keyboardButtonsList = new();
 
-        Board taskBoards = await DbOperations.RetrieveBoards(UserTask.Id, UserTask.TrelloBoardId);
+        Board taskBoard = await DbOperations.RetrieveBoard(UserTask.Id, UserTask.TrelloBoardId);
 
-        if (taskBoards != null)
+        if (taskBoard != null)
         {
-            keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton("/name press this when done")});
-
-            IEnumerable<UsersOnBoard> filteredUsers = taskBoards.UsersOnBoards;
+            IEnumerable<UsersOnBoard> filteredUsers = taskBoard.UsersOnBoards;
             
             if (UserTask.TaskPartName.Length > 0)
             {
                 string addedUsers = UserTask.TaskPartName.Remove(UserTask.TaskPartName.Length-1);
                 List<string> addedUsersList = addedUsers.Split(',').ToList();
-                filteredUsers = taskBoards.UsersOnBoards.Where(uob => !addedUsersList.Contains(uob.Name));
+                filteredUsers = taskBoard.UsersOnBoards.Where(uob => !addedUsersList.Contains(uob.Name));
             }
 
             foreach (var user in filteredUsers)
             {
-                keyboardButtonsList.Add(new KeyboardButton[] {new KeyboardButton($"/name {user.Name}")});
+                keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData($"{user.Name}",$"/name {user.Name}")});
             }
+            
+            keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("press this when done","/name press this when done") });
         }
 
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(keyboardButtonsList)
-        {
-            OneTimeKeyboard = true,
-            ResizeKeyboard = true,
-            Selective = true
-        };
-        
+        InlineKeyboardMarkup replyKeyboardMarkup = new(keyboardButtonsList);
+
         return replyKeyboardMarkup;
     }
 
     private async Task AddParticipantToTask()
     {
-        string participantName = Message.Text.Substring("/part".Length).Trim();
+        string participantName = CallbackQuery.Data.Substring("/name".Length).Trim();
         
         if (participantName == "press this when done")
         {
-            await BotClient.SendTextMessageAsync(
-                chatId: Message.Chat.Id,
-                text: "All participants added\n" +
-                      "All is left is to add a due date\n" +
-                      "Press /date when ready",
-                      replyMarkup: new ReplyKeyboardRemove(),
-                replyToMessageId: Message.MessageId);
+            await AskUserForADate();
             return;
         }
         
@@ -372,7 +361,7 @@ public class BotTaskCreation
             return;
         }
         
-        ReplyKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants();
+        InlineKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants();
 
         await BotClient.SendTextMessageAsync(text: $"{participantName} added to task: {UserTask.TaskName}",
             chatId: Message.Chat.Id,
@@ -386,8 +375,9 @@ public class BotTaskCreation
         if (!UserTask.DescSet) return;
         
         await CreatingTaskDbOperations.AddPlaceholderDate();
-    
-        await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
+        
+        await BotClient.SendTextMessageAsync(text: "All participants added\n\n" +
+                                                   "Now please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                                                        "Due date must be in the future.",
             chatId: Message.Chat.Id,
             replyToMessageId: Message.MessageId);
