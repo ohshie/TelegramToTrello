@@ -10,7 +10,7 @@ namespace TelegramToTrello;
 public class BotClient
 {
     private static Timer Timer;
-    private static readonly string TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
+    private static readonly string? TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
     private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
     
     private TelegramBotClient _botClient = new(TelegramBotToken);
@@ -50,7 +50,7 @@ public class BotClient
         if (message.Text is not {} messageText) return;
 
         var chatId = message.Chat.Id;
-        var userUsername = message.From.Username;
+        var userUsername = message.From?.Username;
 
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
 
@@ -82,7 +82,7 @@ public class BotClient
 
     private async Task Authenticate(Message message, ITelegramBotClient botClient)
     {
-        string oauthLink = AuthLink.CreateLink(message.From.Id);
+        string oauthLink = AuthLink.CreateLink(message.From!.Id);
 
         bool registerSuccess = await _dbOperation.RegisterNewUser(message);
         if (!registerSuccess)
@@ -96,13 +96,12 @@ public class BotClient
         await botClient.SendTextMessageAsync(message.Chat.Id,
             replyToMessageId: message.MessageId,
             text: "Please click on this link authenticate in trello:\n\n" +
-                  $"{oauthLink}\n\n" +
-                  "When done click /CompleteRegistration");
+                  $"{oauthLink}\n\n");
     }
     
     private async Task FinishAuth(Message message, ITelegramBotClient botClient)
     {
-        bool success = await _dbOperation.LinkBoardsFromTrello((int)message.From.Id);
+        bool success = await _dbOperation.LinkBoardsFromTrello((int)message.From!.Id);
         if (success)
         {
             await botClient.SendTextMessageAsync(message.Chat.Id,text: "All set, you can now create tasks with /newtask");

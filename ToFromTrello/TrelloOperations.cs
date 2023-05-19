@@ -5,9 +5,9 @@ namespace TelegramToTrello;
 
 public class TrelloOperations
 {
-    private static readonly string TrelloApiKey = Environment.GetEnvironmentVariable("Trello_API_Key");
+    private static readonly string? TrelloApiKey = Environment.GetEnvironmentVariable("Trello_API_Key");
 
-    public async Task<string> GetTrelloUserId(string token)
+    public async Task<string?> GetTrelloUserId(string token)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage responseMessage = (await httpClient.GetAsync(
@@ -29,7 +29,7 @@ public class TrelloOperations
         return null;
     }
     
-    public async Task<Dictionary<string, TrelloUserBoard>> GetTrelloBoards(RegisteredUser userName)
+    public async Task<Dictionary<string, TrelloUserBoard>?> GetTrelloBoards(RegisteredUser userName)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = (await httpClient.GetAsync(
@@ -38,14 +38,14 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var boardsMap = JsonSerializer.Deserialize<List<TrelloUserBoard>>(content).ToDictionary(b => b.Id);
+            Dictionary<string, TrelloUserBoard>? boardsMap = JsonSerializer.Deserialize<List<TrelloUserBoard>>(content)?.ToDictionary(b => b.Id);
             return boardsMap;
         }
 
         return null;
     }
 
-    public async Task<List<TrelloBoardTable>> GetBoardTables(string boardName, RegisteredUser trelloUser)
+    public async Task<List<TrelloBoardTable>?> GetBoardTables(string boardName, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = await httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
@@ -59,7 +59,7 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardUser>> GetUsersOnBoard(string boardId, RegisteredUser trelloUser)
+    public async Task<List<TrelloBoardUser>?> GetUsersOnBoard(string boardId, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response =
@@ -69,7 +69,7 @@ public class TrelloOperations
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var newUsers = JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
+            List<TrelloBoardUser>? newUsers = JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
 
             foreach (var user in newUsers)
             {
@@ -87,7 +87,7 @@ public class TrelloOperations
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
-            RegisteredUser trelloUser = await dbContext.Users.FindAsync(task.Id);
+            RegisteredUser? trelloUser = await dbContext.Users.FindAsync(task.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
             string correctDate = DateTime.Parse(task.Date).ToUniversalTime().ToString("o");
@@ -95,7 +95,7 @@ public class TrelloOperations
             string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
-                             $"&token={trelloUser.TrelloToken}" +
+                             $"&token={trelloUser?.TrelloToken}" +
                              $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
                              $"&idList={task.ListId}" +
                              $"&idMembers={Uri.EscapeDataString(participants)}" +
@@ -121,9 +121,9 @@ public class TrelloOperations
         using (BotDbContext dbContext = new BotDbContext())
         using (HttpClient httpClient = new HttpClient())
         {
-            RegisteredUser trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
+            RegisteredUser? trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?due={userCreatedTask.Date}&" +
-                                  $"key={TrelloApiKey}&token={trelloUser.TrelloToken}";
+                                  $"key={TrelloApiKey}&token={trelloUser?.TrelloToken}";
             
             HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
 
@@ -139,7 +139,7 @@ public class TrelloOperations
         }
     }
 
-    public async Task<List<TrelloCard>> GetCardsOnBoards(RegisteredUser user)
+    public async Task<List<TrelloCard>?> GetCardsOnBoards(RegisteredUser user)
     {
         using HttpClient httpClient = new HttpClient();
         {
@@ -163,7 +163,7 @@ public class TrelloOperations
             }
 
             string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
-            TrelloSearchResponse searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
+            TrelloSearchResponse? searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
             List<TrelloCard> cards = searchResponse.CardItems;
             
             DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
@@ -182,55 +182,55 @@ public class TrelloOperations
     // helper classes to create a list of trello boards/lists/users for selected user
     public class TrelloUserBoard
     {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
+        [JsonPropertyName("id")] 
+        public string Id { get; set; } = string.Empty;
         
         [JsonPropertyName("name")] 
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
     
     public class TrelloBoardTable
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         
         [JsonPropertyName("name")] 
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
         [JsonPropertyName("idBoard")]
-        public string BoardId { get; set; }
+        public string BoardId { get; set; } = string.Empty;
     }
 
     public class TrelloBoardUser
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         [JsonPropertyName("fullName")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         
-        public string BoardId { get; set; }
+        public string? BoardId { get; set; } 
     }
 
     public class TrelloSearchResponse
     {
         [JsonPropertyName("cards")]
-        public List<TrelloCard> CardItems { get; set; }
+        public List<TrelloCard>? CardItems { get; set; }
     }
     
     public class TrelloCard
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         [JsonPropertyName("due")]
-        public string? Due { get; set; }
+        public string? Due { get; set; } = string.Empty;
         [JsonPropertyName("idMembers")]
-        public string[] Members { get; set; }
+        public string[]? Members { get; set; } 
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         [JsonPropertyName("desc")]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         [JsonPropertyName("shortUrl")]
-        public string Url { get; set; }
+        public string Url { get; set; } = string.Empty;
         [JsonPropertyName("closed")]
         public bool Status { get; set; }
     }

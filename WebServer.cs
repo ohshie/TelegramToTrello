@@ -20,20 +20,40 @@ public class WebServer
     {
         if (context.Request.Method == "POST")
         {
+            string body;
             using (var reader = new StreamReader(context.Request.Body))
             {
-                var body = await reader.ReadToEndAsync();
-                JsonDocument json = JsonDocument.Parse(body);
-                string token = json.RootElement.GetProperty("token").GetString();
-                string telegramId = json.RootElement.GetProperty("state").GetString();
-                
-                TrelloOperations trelloOperations = new TrelloOperations();
-                
-                string trelloID = await trelloOperations.GetTrelloUserId(token);
-
-                DbOperations dbOperations = new DbOperations();
-                await dbOperations.AddTrelloTokenAndId(token, trelloID, int.Parse(telegramId));
+                body = await reader.ReadToEndAsync();
             }
+
+            var (token, telegramId) = JsonParse(body);
+            var trelloId = await ConvertTokenToTrelloId(token);
+
+            await UpdateDbWithNewUserInfo(token, trelloId, int.Parse(telegramId));
         }
+    }
+
+    private (string?, string?) JsonParse(string jsonBody)
+    {
+        JsonDocument json = JsonDocument.Parse(jsonBody);
+        string? token = json.RootElement.GetProperty("token").GetString();
+        string? telegramId = json.RootElement.GetProperty("state").GetString();
+
+        return (token, telegramId);
+    }
+    
+    private async Task<string> ConvertTokenToTrelloId(string? token)
+    {
+        TrelloOperations trelloOperations = new TrelloOperations();
+        string? trelloId = await trelloOperations.GetTrelloUserId(token);
+
+        return trelloId;
+    }
+
+    private async Task UpdateDbWithNewUserInfo(string token, string trelloId, int telegramId)
+    {
+        DbOperations dbOperations = new DbOperations();
+        await dbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
+        await dbOperations.LinkBoardsFromTrello(telegramId);
     }
 }
