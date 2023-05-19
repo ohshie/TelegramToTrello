@@ -79,10 +79,10 @@ public class DbOperations
         return null;
     }
 
-    public async Task<Board> RetrieveBoards(int telegramId, string boardName)
+    public async Task<Board> RetrieveBoard(int telegramId, string boardName)
     {
-        string checkIfId = await BoardNameToId(boardName);
-        if (checkIfId != null) boardName = checkIfId;
+        //string checkIfId = await CheckIfBoardExist(boardName);
+        //if (checkIfId != null) boardName = checkIfId;
         
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -121,15 +121,15 @@ public class DbOperations
         return null;
     }
     
-    public async Task<string> BoardNameToId(string boardName)
+    public async Task<Board?> CheckIfBoardExist(string boardId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
-            Board board = await dbContext.Boards.FirstOrDefaultAsync(b => b.BoardName == boardName);
+            Board board = await dbContext.Boards.FirstOrDefaultAsync(b => b.TrelloBoardId == boardId);
             
             if (board != null)
             {
-                return board.TrelloBoardId;
+                return board;
             }
                 
             return null;

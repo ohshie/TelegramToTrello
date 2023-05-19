@@ -3,6 +3,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TelegramToTrello.BotActions;
 
 namespace TelegramToTrello;
@@ -44,9 +45,20 @@ public class BotClient
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
+        // group chat protection
+        
+        
         botClient.GetUpdatesAsync();
+        Console.WriteLine(update.CallbackQuery?.Data);
+        
+        if (update.CallbackQuery is {} callbackQuery)
+        {
+            await CallBackDataManager(callbackQuery, botClient);
+            return;
+        }
         
         if (update.Message is not {} message) return;
+        if (message.Chat.Id != message.From.Id) return;
         if (message.Text is not {} messageText) return;
 
         var chatId = message.Chat.Id;
@@ -78,8 +90,43 @@ public class BotClient
 
         if (message.Text.StartsWith("/notifications"))
             await botNotificationCentre.ToggleNotificationsForUser();
+
+        if (message.Text.StartsWith("/testinline"))
+        {
+            InlineKeyboardMarkup inlineKeyboard = new(new[]
+            {
+                // first row
+                new []
+                {
+                    InlineKeyboardButton.WithCallbackData(text: "1.1", callbackData: "11"),
+                    InlineKeyboardButton.WithCallbackData(text: "1.2", callbackData: "12"),
+                },
+                // second row
+                new []
+                {
+                    InlineKeyboardButton.WithCallbackData(text: "2.1", callbackData: "21"),
+                    InlineKeyboardButton.WithCallbackData(text: "2.2", callbackData: "22"),
+                },
+            });
+            
+            Message sentMessage = await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "A message with an inline keyboard markup",
+                replyMarkup: inlineKeyboard,
+                cancellationToken: cancellationToken);
+        }
     }
 
+    private async Task CallBackDataManager(CallbackQuery callbackQuery, ITelegramBotClient botClient)
+    {
+        BotTaskCreation botTaskCreation = new BotTaskCreation(botClient, callbackQuery);
+
+        if (callbackQuery.Data.StartsWith("/board") 
+            || callbackQuery.Data.StartsWith("/list")
+            || callbackQuery.Data.StartsWith("/tag")
+            || callbackQuery.Data.StartsWith("/name"))
+            await botTaskCreation.HandleInlineKeyBoardCallBack();
+    }
     private async Task Authenticate(Message message, ITelegramBotClient botClient)
     {
         string oauthLink = AuthLink.CreateLink(message.From!.Id);

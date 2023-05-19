@@ -90,7 +90,7 @@ public class TrelloOperations
             RegisteredUser? trelloUser = await dbContext.Users.FindAsync(task.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
-            string correctDate = DateTime.Parse(task.Date).ToUniversalTime().ToString("o");
+            string correctDate = DateTime.Parse(task.Date).AddHours(-4).ToString("o");
             
             string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
