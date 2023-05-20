@@ -19,9 +19,6 @@ public class DbOperations
                 {
                     TelegramId = (int)message.From.Id,
                     TelegramName = message.From.Username,
-                    TrelloId = "",
-                    TrelloToken = "",
-                    TrelloName = ""
                 });
                 
                 await dbContext.SaveChangesAsync();
@@ -81,9 +78,6 @@ public class DbOperations
 
     public async Task<Board> RetrieveBoard(int telegramId, string boardName)
     {
-        //string checkIfId = await CheckIfBoardExist(boardName);
-        //if (checkIfId != null) boardName = checkIfId;
-        
         await using (BotDbContext dbContext = new BotDbContext())
         {
             RegisteredUser trelloUser = await dbContext.Users
@@ -102,7 +96,6 @@ public class DbOperations
                     .FirstOrDefault(b => b.TrelloBoardId == boardName);
             }
         }
-
         return null;
     }
 
@@ -117,7 +110,6 @@ public class DbOperations
                 return userCreatedTask;
             }
         }
-
         return null;
     }
     
@@ -131,7 +123,7 @@ public class DbOperations
             {
                 return board;
             }
-                
+            
             return null;
         }
     }
@@ -150,7 +142,6 @@ public class DbOperations
                 return tableNameToId.TableId;
             }
         }
-        
         return null;
     }
 
@@ -167,25 +158,7 @@ public class DbOperations
                 return user.TrelloUserId;
             }
         }
-
         return null;
-    }
-    
-    public async Task<string> BoardIdToName(string boardId)
-    {
-        using (BotDbContext dbContext = new BotDbContext())
-        {
-            Board board = await dbContext.Boards.FirstOrDefaultAsync(b =>
-                b.TrelloBoardId == boardId);
-
-            if (board != null)
-            {
-                string boardName = board.BoardName;
-                return boardName;
-            }
-        }
-
-        return "";
     }
 
     public async Task RemoveEntry(TTTTask userTask)

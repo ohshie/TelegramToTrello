@@ -129,6 +129,10 @@ namespace TelegramToTrello.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TrelloBoardName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("TrelloId")
                         .IsRequired()
                         .HasColumnType("text");
