@@ -3,8 +3,8 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 using TelegramToTrello.BotActions;
+using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello;
 
@@ -45,9 +45,6 @@ public class BotClient
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        // group chat protection
-        
-        
         botClient.GetUpdatesAsync();
         Console.WriteLine(update.CallbackQuery?.Data);
         
@@ -65,68 +62,61 @@ public class BotClient
         var userUsername = message.From?.Username;
 
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
-
-        BotTaskCreation botTaskCreation = new BotTaskCreation(botClient, message);
+        
         BotNotificationCentre botNotificationCentre = new BotNotificationCentre(message, botClient);
 
-        await botTaskCreation.MessagesToReplacePlaceholdersWithValues();
+        TaskPlaceholderOperator taskPlaceholderOperator = new();
+        {
+            await taskPlaceholderOperator.SortMessage(message, botClient);
+        }
         
         if (message.Text.StartsWith("/register")
             || message.Text.StartsWith("/start")) await Authenticate(message, botClient);
         if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
-        
+
         if (message.Text.StartsWith("/newtask"))
-            await botTaskCreation.InitialTaskCreator();
-
-        if (message.Text.StartsWith("/tag") 
-            || message.Text.StartsWith("/board") 
-            || message.Text.StartsWith("/list") 
-            || message.Text.StartsWith("/push")
-            || message.Text.StartsWith("/desc")
-            || message.Text.StartsWith("/part")
-            || message.Text.StartsWith("/name")
-            || message.Text.StartsWith("/date"))
-            await botTaskCreation.TaskCreationOperator();
-
+        {
+            StartTaskCreation startTaskCreation = new(message, botClient);
+            await startTaskCreation.CreateTask();
+        }
+        
         if (message.Text.StartsWith("/notifications"))
             await botNotificationCentre.ToggleNotificationsForUser();
-
-        if (message.Text.StartsWith("/testinline"))
-        {
-            InlineKeyboardMarkup inlineKeyboard = new(new[]
-            {
-                // first row
-                new []
-                {
-                    InlineKeyboardButton.WithCallbackData(text: "1.1", callbackData: "11"),
-                    InlineKeyboardButton.WithCallbackData(text: "1.2", callbackData: "12"),
-                },
-                // second row
-                new []
-                {
-                    InlineKeyboardButton.WithCallbackData(text: "2.1", callbackData: "21"),
-                    InlineKeyboardButton.WithCallbackData(text: "2.2", callbackData: "22"),
-                },
-            });
-            
-            Message sentMessage = await botClient.SendTextMessageAsync(
-                chatId: chatId,
-                text: "A message with an inline keyboard markup",
-                replyMarkup: inlineKeyboard,
-                cancellationToken: cancellationToken);
-        }
     }
 
     private async Task CallBackDataManager(CallbackQuery callbackQuery, ITelegramBotClient botClient)
     {
-        BotTaskCreation botTaskCreation = new BotTaskCreation(botClient, callbackQuery);
+        if (callbackQuery.Data.StartsWith("/board"))
+        {
+            AddBoardToTask addBoardToTask = new(callbackQuery, botClient);
+            await addBoardToTask.Execute();
+        }
 
-        if (callbackQuery.Data.StartsWith("/board") 
-            || callbackQuery.Data.StartsWith("/list")
-            || callbackQuery.Data.StartsWith("/tag")
-            || callbackQuery.Data.StartsWith("/name"))
-            await botTaskCreation.HandleInlineKeyBoardCallBack();
+        if (callbackQuery.Data.StartsWith("/list"))
+        {
+            AddTableToTask addTableToTask = new(callbackQuery, botClient);
+            await addTableToTask.Execute();
+        }
+
+        if (callbackQuery.Data.StartsWith("/tag"))
+        {
+            AddTagToTask addTagToTask = new(callbackQuery, botClient);
+            await addTagToTask.Execute();
+        }
+
+        if (callbackQuery.Data.StartsWith("/name"))
+        {
+            AddParticipantToTask addParticipantToTask = new(callbackQuery, botClient);
+            await addParticipantToTask.Execute();
+        }
+
+        if (callbackQuery.Data.StartsWith("/push"))
+        {
+            PushTask pushTask = new(callbackQuery, botClient);
+            await pushTask.Execute();
+        }
     }
+    
     private async Task Authenticate(Message message, ITelegramBotClient botClient)
     {
         string oauthLink = AuthLink.CreateLink(message.From!.Id);

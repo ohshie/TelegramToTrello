@@ -21,15 +21,6 @@ public class CreatingTaskDbOperations : DbOperations
                 {
                     Id = User.TelegramId,
                     TrelloId = User.TrelloId,
-                    TaskName = "",
-                    Tag = "",
-                    TrelloBoardId = "",
-                    ListId = "",
-                    TaskId = "",
-                    TaskDesc = "",
-                    TaskPartId = "",
-                    TaskPartName = "",
-                    Date = ""
                 });
                 
                 await dbContext.SaveChangesAsync();
@@ -54,7 +45,8 @@ public class CreatingTaskDbOperations : DbOperations
             Board? board = await CheckIfBoardExist(boardId);
             if (board != null)
             {
-                UserTask.TrelloBoardId = boardId;
+                UserTask.TrelloBoardId = board.TrelloBoardId;
+                UserTask.TrelloBoardName = board.BoardName;
                 dbContext.CreatingTasks.Update(UserTask);
                 await dbContext.SaveChangesAsync();
                 
