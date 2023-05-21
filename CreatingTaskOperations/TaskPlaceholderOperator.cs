@@ -8,7 +8,7 @@ public class TaskPlaceholderOperator
 {
     public async Task SortMessage(Message message, ITelegramBotClient botClient)
     {
-        var task = await GetTrelloUserAndTask(message);
+        TTTTask? task = await GetTrelloUserAndTask(message);
         if (task == null) return;
         
         if (task.TaskName == "###tempname###")
@@ -30,11 +30,11 @@ public class TaskPlaceholderOperator
         }
     }
     
-    private async Task<TTTTask> GetTrelloUserAndTask(Message message)
+    private async Task<TTTTask?> GetTrelloUserAndTask(Message message)
     {
         DbOperations dbOperations = new DbOperations();
         
-        var trelloUser = await dbOperations.RetrieveTrelloUser((int)message.Chat.Id);
+        RegisteredUser trelloUser = await dbOperations.RetrieveTrelloUser((int)message.Chat.Id);
         if (trelloUser != null)
         {   
             var task = await dbOperations.RetrieveUserTask((int)message.Chat.Id);

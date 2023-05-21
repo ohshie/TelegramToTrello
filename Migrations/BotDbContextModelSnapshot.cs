@@ -30,14 +30,12 @@ namespace TelegramToTrello.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BoardName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("TelegramId")
                         .HasColumnType("integer");
 
                     b.Property<string>("TrelloBoardId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -57,19 +55,15 @@ namespace TelegramToTrello.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TelegramName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloToken")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("TelegramId");
@@ -95,46 +89,36 @@ namespace TelegramToTrello.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("ListId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("NameSet")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Tag")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TaskDesc")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TaskId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TaskName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TaskPartId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TaskPartName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloBoardId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloBoardName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TrelloId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -154,11 +138,9 @@ namespace TelegramToTrello.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TableId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -217,14 +199,12 @@ namespace TelegramToTrello.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("TrelloUserBoardId")
                         .HasColumnType("integer");
 
                     b.Property<string>("TrelloUserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");

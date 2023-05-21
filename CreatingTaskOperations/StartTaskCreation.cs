@@ -19,6 +19,7 @@ public class StartTaskCreation
         var user = await GetUser();
 
         if (!await UserIsRegisteredUser(user)) return;
+        if (await UserIsCreatingATask(user)) return;
 
         CreatingTaskDbOperations creatingTaskDbOperations = new(user,null);
         await creatingTaskDbOperations.AddTaskToDb();
@@ -46,5 +47,21 @@ public class StartTaskCreation
         }
 
         return true;
+    }
+
+    private async Task<bool> UserIsCreatingATask(RegisteredUser user)
+    {
+        DbOperations dbOperations = new DbOperations();
+        var task = await dbOperations.RetrieveUserTask(user.TelegramId);
+
+        if (task != null)
+        {
+            await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
+                text: "Looks like you are already in the process of creating a task.\n" +
+                      "Please finish it first or drop it by pressing /drop");
+            return true;
+        }
+
+        return false;
     }
 }
