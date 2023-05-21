@@ -4,7 +4,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class DisplayCurrentTaskInfo : TaskCreationOperator
+public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
     public DisplayCurrentTaskInfo(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
 
@@ -37,7 +37,7 @@ public class DisplayCurrentTaskInfo : TaskCreationOperator
             },
             new[]
             {
-            InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/push"),
+            InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/edittaskboardandtable"),
             InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/push"),
             },
             new[]

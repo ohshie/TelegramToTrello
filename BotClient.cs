@@ -90,30 +90,57 @@ public class BotClient
         {
             AddBoardToTask addBoardToTask = new(callbackQuery, botClient);
             await addBoardToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/list"))
         {
             AddTableToTask addTableToTask = new(callbackQuery, botClient);
             await addTableToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/tag"))
         {
             AddTagToTask addTagToTask = new(callbackQuery, botClient);
             await addTagToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/name"))
         {
             AddParticipantToTask addParticipantToTask = new(callbackQuery, botClient);
             await addParticipantToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/push"))
         {
             PushTask pushTask = new(callbackQuery, botClient);
             await pushTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/edittaskboardandtable"))
+        {
+            CreateKeyboardWithBoards createKeyboardWithBoards =
+                new CreateKeyboardWithBoards(callbackQuery, botClient, isEdit:true);
+            await createKeyboardWithBoards.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/editboard"))
+        {
+            AddBoardToTask addBoardToTask = new AddBoardToTask(callbackQuery, botClient, isEdit: true);
+            await addBoardToTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/editlist"))
+        {
+            AddTableToTask addTableToTask = new AddTableToTask(callbackQuery, botClient, isEdit: true);
+            await addTableToTask.Execute();
+            return;
         }
     }
     

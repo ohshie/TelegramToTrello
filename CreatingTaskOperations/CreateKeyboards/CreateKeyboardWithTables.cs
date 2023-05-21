@@ -4,9 +4,15 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class CreateKeyboardWithTables : TaskCreationOperator
+public class CreateKeyboardWithTables : TaskCreationBaseHandler
 {
-    public CreateKeyboardWithTables(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
+    private bool IsEdit { get; }
+
+    public CreateKeyboardWithTables(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(
+        callback, botClient)
+    {
+        IsEdit = isEdit;
+    }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
@@ -26,6 +32,16 @@ public class CreateKeyboardWithTables : TaskCreationOperator
         DbOperations dbOperations = new DbOperations();
         Board selectedBoard = await dbOperations.RetrieveBoard(user.TelegramId, task.TrelloBoardId);
 
+        if (IsEdit)
+        {
+            return TablesKeyboardForEdit(selectedBoard);
+        }
+        
+        return TablesKeyboardNormal(selectedBoard);
+    }
+
+    private InlineKeyboardMarkup TablesKeyboardNormal(Board selectedBoard)
+    {
         if (selectedBoard.Tables.Count > 8)
         {
             InlineKeyboardMarkup replyKeyboardMarkup = new InlineKeyboardMarkup(TwoRowKeyboard(selectedBoard));
@@ -37,7 +53,21 @@ public class CreateKeyboardWithTables : TaskCreationOperator
             return replyKeyboardMarkup;
         }
     }
-    
+
+    private InlineKeyboardMarkup TablesKeyboardForEdit(Board selectedBoard)
+    {
+        if (selectedBoard.Tables.Count > 8)
+        {
+            InlineKeyboardMarkup replyKeyboardMarkup = new InlineKeyboardMarkup(TwoRowKeyboardEdit(selectedBoard));
+            return replyKeyboardMarkup;
+        }
+        else
+        {
+            InlineKeyboardMarkup replyKeyboardMarkup = new InlineKeyboardMarkup(SingleRowKeyboardEdit(selectedBoard));
+            return replyKeyboardMarkup;
+        }
+    }
+
     private List<InlineKeyboardButton[]> TwoRowKeyboard(Board board)
     {
         List<InlineKeyboardButton[]> keyboardButtonsList = new();
@@ -76,6 +106,50 @@ public class CreateKeyboardWithTables : TaskCreationOperator
             keyboardButtonsList.Add(new InlineKeyboardButton[]
             {
                 InlineKeyboardButton.WithCallbackData($"{table.Name}",$"/list {table.Name}")
+            }); 
+        }
+        
+        return keyboardButtonsList;
+    }
+    
+    private List<InlineKeyboardButton[]> TwoRowKeyboardEdit(Board board)
+    {
+        List<InlineKeyboardButton[]> keyboardButtonsList = new();
+
+        var tables = board.Tables!.ToArray();
+        for (int i = 0; i < tables.Length; i +=2)
+        {
+            if (i < tables.Length-1)
+            {
+                keyboardButtonsList.Add(new[]
+                {
+                    InlineKeyboardButton.WithCallbackData($"{tables[i]}",
+                        $"/editlist {tables[i]}"),
+                    InlineKeyboardButton.WithCallbackData($"{tables[i+1]}",
+                        $"/editlist {tables[i+1]}")
+                });
+            }
+            else
+            {
+                keyboardButtonsList.Add(new[]
+                {
+                    InlineKeyboardButton.WithCallbackData($"{tables[i]}",
+                        $"/editlist {tables[i]}")
+                });
+            }
+        }
+        return keyboardButtonsList;
+    }
+
+    private List<InlineKeyboardButton[]> SingleRowKeyboardEdit(Board board)
+    {
+        List<InlineKeyboardButton[]> keyboardButtonsList = new();
+
+        foreach (var table in board.Tables!)
+        {
+            keyboardButtonsList.Add(new InlineKeyboardButton[]
+            {
+                InlineKeyboardButton.WithCallbackData($"{table.Name}",$"/editlist {table.Name}")
             }); 
         }
         

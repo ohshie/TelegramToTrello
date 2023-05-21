@@ -3,7 +3,7 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class AddNameToTask : TaskCreationOperator
+public class AddNameToTask : TaskCreationBaseHandler
 {
     public AddNameToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
     {

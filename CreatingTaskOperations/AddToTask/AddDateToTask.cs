@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class AddDateToTask : TaskCreationOperator
+public class AddDateToTask : TaskCreationBaseHandler
 {
     public AddDateToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
     {
@@ -29,6 +29,7 @@ public class AddDateToTask : TaskCreationOperator
                                                        "Due date must be in the future.",
                 chatId: Message.Chat.Id,
                 replyToMessageId: Message.MessageId);
+            NextTask = null;
             return;
         }
 

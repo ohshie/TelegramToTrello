@@ -3,11 +3,9 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class PushTask : TaskCreationOperator
+public class PushTask : TaskCreationBaseHandler
 {
-    public PushTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient)
-    {
-    }
+    public PushTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {

@@ -4,7 +4,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class CreateKeyboardWithUsers : TaskCreationOperator
+public class CreateKeyboardWithUsers : TaskCreationBaseHandler
 {
     public CreateKeyboardWithUsers(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
 
@@ -102,7 +102,7 @@ public class CreateKeyboardWithUsers : TaskCreationOperator
 
         if (task.TaskPartName != null && task.TaskPartName.Length > 0)
         {
-            string? addedUsers = UserTask?.TaskPartName?.Remove(task.TaskPartName.Length-1);
+            string? addedUsers = task?.TaskPartName?.Remove(task.TaskPartName.Length-1);
             List<string> addedUsersList = addedUsers!.Split(',').ToList();
             filteredUsers = new List<UsersOnBoard>(taskBoard.UsersOnBoards!.Where(uob => !addedUsersList.Contains(uob.Name!)));
         }
