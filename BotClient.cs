@@ -142,6 +142,27 @@ public class BotClient
             await addTableToTask.Execute();
             return;
         }
+
+        if (callbackQuery.Data.StartsWith("/editdate"))
+        {
+            TaskDateRequest taskDateRequest = new TaskDateRequest(callbackQuery, botClient, isEdit: true);
+            await taskDateRequest.Execute();
+            return;
+        }
+        
+        if (callbackQuery.Data.StartsWith("/editname"))
+        {
+            TaskNameRequest taskNameRequest = new TaskNameRequest(callbackQuery, botClient, isEdit: true);
+            await taskNameRequest.Execute();
+            return;
+        }
+        
+        if (callbackQuery.Data.StartsWith("/editdesc"))
+        {
+            TaskDescriptionRequest taskDescriptionRequest = new TaskDescriptionRequest(callbackQuery, botClient, isEdit: true);
+            await taskDescriptionRequest.Execute();
+            return;
+        }
     }
     
     private async Task Authenticate(Message message, ITelegramBotClient botClient)

@@ -32,17 +32,17 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
             },
             new[]
             {
-                InlineKeyboardButton.WithCallbackData(text: "Edit name", callbackData:"/push"),
-                InlineKeyboardButton.WithCallbackData(text: "Edit description", callbackData:"/push"),
+                InlineKeyboardButton.WithCallbackData(text: "Edit name", callbackData:"/editname"),
+                InlineKeyboardButton.WithCallbackData(text: "Edit description", callbackData:"/editdesc"),
             },
             new[]
             {
             InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/edittaskboardandtable"),
-            InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/push"),
+            InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/editdate"),
             },
             new[]
             {
-                InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/push") 
+                InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/drop") 
             }
         });
 
