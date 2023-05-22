@@ -11,15 +11,13 @@ public class AddParticipantToTask : TaskCreationBaseHandler
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         string participantName = CallbackQuery.Data.Substring("/name".Length).Trim();
-        
+        CreatingTaskDbOperations dbOperations = new(user, task);
         if (participantName == "press this when done")
         {
-            await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
-            NextTask = new TaskDateRequest(CallbackQuery, BotClient);
+            await FinishAddingParticipants(task, dbOperations);
             return;
         }
-
-        CreatingTaskDbOperations dbOperations = new(user, task);
+        
         bool userFoundOnBoard = await dbOperations.AddParticipantToTask(participantName);
         if (!userFoundOnBoard)
         {
@@ -29,5 +27,20 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         }
         
         NextTask = new CreateKeyboardWithUsers(CallbackQuery, BotClient);
+    }
+
+    private async Task FinishAddingParticipants(TTTTask task, CreatingTaskDbOperations dbOperations)
+    {
+        
+        if (task.InEditMode)
+        {
+            await dbOperations.ToggleEditModeForTask(task);
+            NextTask = new DisplayCurrentTaskInfo(CallbackQuery, BotClient);
+        }
+        else
+        {
+            await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+            NextTask = new TaskDateRequest(CallbackQuery, BotClient);
+        }
     }
 }

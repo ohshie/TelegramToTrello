@@ -70,6 +70,7 @@ public class TTTTask
     public bool NameSet { get; set; }
     public bool DescSet { get; set; }
     public bool DateSet { get; set; }
+    public bool InEditMode { get; set; }
 }
 
 public class TaskNotification

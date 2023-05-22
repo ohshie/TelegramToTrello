@@ -23,5 +23,11 @@ public class AddNameToTask : TaskCreationBaseHandler
 
         CreatingTaskDbOperations dbOperations = new(user, task);
         await dbOperations.SetTaskName(Message.Text);
+        
+        if (task.InEditMode)
+        {
+            await dbOperations.ToggleEditModeForTask(task);
+            NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
+        }
     }
 }

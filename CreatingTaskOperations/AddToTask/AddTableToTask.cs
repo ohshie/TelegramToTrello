@@ -36,6 +36,10 @@ public class AddTableToTask : TaskCreationBaseHandler
             NextTask = null;
         }
 
-        if (IsEdit) NextTask = new DisplayCurrentTaskInfo(Message,BotClient);
+        if (IsEdit)
+        {
+            await dbOperations.ToggleEditModeForTask(task);
+            NextTask = new CreateKeyboardWithUsers(CallbackQuery,BotClient, isEdit: true);
+        }
     }
 }

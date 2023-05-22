@@ -65,6 +65,12 @@ public class BotClient
         
         BotNotificationCentre botNotificationCentre = new BotNotificationCentre(message, botClient);
 
+        if (message.Text.StartsWith("/drop"))
+        {
+            DropTask dropTask = new DropTask(message, botClient);
+            await dropTask.Execute();
+        }
+        
         TaskPlaceholderOperator taskPlaceholderOperator = new();
         {
             await taskPlaceholderOperator.SortMessage(message, botClient);
@@ -79,7 +85,7 @@ public class BotClient
             StartTaskCreation startTaskCreation = new(message, botClient);
             await startTaskCreation.CreateTask();
         }
-        
+
         if (message.Text.StartsWith("/notifications"))
             await botNotificationCentre.ToggleNotificationsForUser();
     }
@@ -162,6 +168,12 @@ public class BotClient
             TaskDescriptionRequest taskDescriptionRequest = new TaskDescriptionRequest(callbackQuery, botClient, isEdit: true);
             await taskDescriptionRequest.Execute();
             return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/drop"))
+        {
+            DropTask dropTask = new(callbackQuery, botClient);
+            await dropTask.Execute();
         }
     }
     

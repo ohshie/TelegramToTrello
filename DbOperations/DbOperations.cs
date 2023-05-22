@@ -113,7 +113,7 @@ public class DbOperations
         return null;
     }
     
-    public async Task<Board?> CheckIfBoardExist(string boardId)
+    internal async Task<Board?> CheckIfBoardExist(string boardId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -128,7 +128,7 @@ public class DbOperations
         }
     }
 
-    public async Task<string> TableNameToId(string tableName, int telegramId)
+    internal async Task<string> TableNameToId(string tableName, int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -145,7 +145,7 @@ public class DbOperations
         return null;
     }
 
-    public async Task<string> UserNameToId(string boardName, string userName)
+    internal async Task<string> UserNameToId(string boardName, string userName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -166,6 +166,28 @@ public class DbOperations
         using (BotDbContext dbContext = new BotDbContext())
         {
             dbContext.RemoveRange(userTask);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
+    public async Task ToggleEditModeForTask(TTTTask userTask)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            userTask.InEditMode = !userTask.InEditMode;
+            dbContext.CreatingTasks.Update(userTask);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+
+    public async Task ResetParticipants(TTTTask userTask)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            userTask.TaskPartId = null;
+            userTask.TaskPartName = null;
+
+            dbContext.CreatingTasks.Update(userTask);
             await dbContext.SaveChangesAsync();
         }
     }

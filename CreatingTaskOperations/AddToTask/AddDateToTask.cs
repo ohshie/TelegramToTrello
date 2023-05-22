@@ -13,16 +13,7 @@ public class AddDateToTask : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        if (Message.Text.StartsWith("/"))
-        {
-            await BotClient.SendTextMessageAsync(Message.Chat.Id,
-                replyToMessageId: Message.MessageId,
-                text: $"Task date should not start with \"/\"\n" +
-                      $"Please type a new date for a task.");
-            return;
-        }
-        
-        string possibleDate = DateConverter(Message.Text);
+        string? possibleDate = DateConverter(Message.Text);
         if (possibleDate == null)
         {
             await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
@@ -35,13 +26,18 @@ public class AddDateToTask : TaskCreationBaseHandler
 
         CreatingTaskDbOperations dbOperations = new(user, task);
         await dbOperations.AddDateToTask(possibleDate);
+        
+        if (task.InEditMode)
+        {
+            await dbOperations.ToggleEditModeForTask(task);
+            NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
+        }
     }
     
-    private string DateConverter(string date)
+    private string? DateConverter(string date)
     {
-        DateTime properDate;
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
-            out properDate);
+            out var properDate);
         if (properDate < DateTime.Today) return null;
        
         if (DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
