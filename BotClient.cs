@@ -174,6 +174,14 @@ public class BotClient
         {
             DropTask dropTask = new(callbackQuery, botClient);
             await dropTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/autodate"))
+        {
+            AddDateToTask addDateToTask = new AddDateToTask(callbackQuery, botClient);
+            await addDateToTask.Execute();
+            return;
         }
     }
     

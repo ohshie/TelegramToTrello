@@ -82,20 +82,14 @@ namespace TelegramToTrello.Migrations
                     b.Property<string>("Date")
                         .HasColumnType("text");
 
-                    b.Property<bool>("DateSet")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("DescSet")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("InEditMode")
                         .HasColumnType("boolean");
 
                     b.Property<string>("ListId")
                         .HasColumnType("text");
 
-                    b.Property<bool>("NameSet")
-                        .HasColumnType("boolean");
+                    b.Property<int>("MessageForDeletionId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Tag")
                         .HasColumnType("text");

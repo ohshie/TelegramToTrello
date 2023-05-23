@@ -59,7 +59,7 @@ public class DbOperations
         }
     }
     
-    public async Task<RegisteredUser> RetrieveTrelloUser(int telegramId)
+    public async Task<RegisteredUser?> RetrieveTrelloUser(int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {

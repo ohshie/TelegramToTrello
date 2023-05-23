@@ -10,30 +10,72 @@ public class AddDateToTask : TaskCreationBaseHandler
     {
         NextTask = new DisplayCurrentTaskInfo(message, botClient);
     }
+    
+    public AddDateToTask(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(callbackQuery, botClient)
+    {
+        NextTask = new DisplayCurrentTaskInfo(Message, botClient);
+    }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        string? possibleDate = DateConverter(Message.Text);
+        var possibleDate = GetPossibleDate();
+
         if (possibleDate == null)
         {
+            NextTask = null;
+            if (task.InEditMode)
+            {
+                await BotClient.EditMessageTextAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
+                                                           "Due date must be in the future.",
+                    chatId: CallbackQuery.Message.Chat.Id,
+                    messageId:task.MessageForDeletionId);
+                return;
+            }
+           
             await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                                                        "Due date must be in the future.",
-                chatId: Message.Chat.Id,
-                replyToMessageId: Message.MessageId);
-            NextTask = null;
+                chatId: Message.Chat.Id);
             return;
         }
 
         CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.AddDateToTask(possibleDate);
         
-        if (task.InEditMode)
-        {
-            await dbOperations.ToggleEditModeForTask(task);
-            NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
-        }
+        await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, task.MessageForDeletionId);
+        await dbOperations.AddDateToTask(possibleDate, Message.MessageId);
+        
+        if (task.InEditMode) await SetNextTaskIfEditMode(task, dbOperations);
     }
-    
+
+    private async Task SetNextTaskIfEditMode(TTTTask task, CreatingTaskDbOperations dbOperations)
+    {
+        await dbOperations.ToggleEditModeForTask(task);
+        
+        if (CallbackQuery != null)
+        {
+            NextTask = new DisplayCurrentTaskInfo(CallbackQuery, BotClient);
+            return;
+        }
+
+        NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
+    }
+
+    private string? GetPossibleDate()
+    {
+        string? possibleDate;
+        
+        if (CallbackQuery != null)
+        {
+            string callbackDate = CallbackQuery.Data.Substring("/autodate".Length).Trim();
+            possibleDate = DateConverter(callbackDate);
+        }
+        else
+        {
+            possibleDate = DateConverter(Message.Text);
+        }
+
+        return possibleDate;
+    }
+
     private string? DateConverter(string date)
     {
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,

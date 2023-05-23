@@ -72,7 +72,7 @@ public abstract class TaskCreationBaseHandler
         if (task == null)
         {
             await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
-                text: "Lets not get ahead of ourselves." +
+                text: "Lets not get ahead of ourselves.\n" +
                       "Click on /newtask first to start task creation process");
             return false;
         }
