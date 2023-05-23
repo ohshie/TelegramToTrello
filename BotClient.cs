@@ -10,7 +10,9 @@ namespace TelegramToTrello;
 
 public class BotClient
 {
-    private static Timer Timer;
+    private static Timer NotificationsTimer;
+    private static Timer SyncTimer;
+    
     private static readonly string? TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
     private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
     private static readonly int SyncBoardsWithBot = int.Parse(Environment.GetEnvironmentVariable("SyncTimer"));
@@ -25,9 +27,8 @@ public class BotClient
         {
             AllowedUpdates = Array.Empty<UpdateType>()
         };
-
-        BotNotificationCentre botNotificationCentre = new BotNotificationCentre(_botClient);
-        NotificationService(botNotificationCentre);
+        
+        RunServices(_botClient);
 
         _botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
@@ -72,10 +73,15 @@ public class BotClient
         }
     }
 
-    private async Task NotificationService(BotNotificationCentre botNotificationCentre)
+    private async Task RunServices(ITelegramBotClient botClient)
     {
-        TimeSpan interval = TimeSpan.FromMinutes(TasksUpdateTimer);
-        Timer = new Timer(async _ => await botNotificationCentre.NotificationManager(), null, interval, interval);
+        TimeSpan taskUpdateInterval = TimeSpan.FromMinutes(TasksUpdateTimer);
+        TimeSpan syncInterval = TimeSpan.FromMinutes(SyncBoardsWithBot);
+        
+        BotNotificationCentre botNotificationCentre = new(botClient);
+        SyncService syncService = new();
+        NotificationsTimer = new Timer(async _ => await botNotificationCentre.NotificationManager(), null, taskUpdateInterval, taskUpdateInterval);
+        NotificationsTimer = new Timer(async _ => await syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
     }
     
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

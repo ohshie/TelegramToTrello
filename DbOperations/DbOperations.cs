@@ -191,4 +191,13 @@ public class DbOperations
             await dbContext.SaveChangesAsync();
         }
     }
+
+    public async Task<List<RegisteredUser>> FetchAllUsers()
+    {
+        using (BotDbContext dbContext = new())
+        {
+            List<RegisteredUser> allUsers = dbContext.Users.ToList();
+            return allUsers;
+        }
+    }
 }

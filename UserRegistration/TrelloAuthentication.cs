@@ -14,7 +14,7 @@ public class TrelloAuthentication
 
     private Message Message { get; set; }
     private ITelegramBotClient BotClient { get; set; }
-    public DbOperations DbOperations { get; set; }
+    private DbOperations DbOperations { get; set; }
     
     public async Task Authenticate()
     {
