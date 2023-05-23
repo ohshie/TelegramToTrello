@@ -13,10 +13,10 @@ public class BotClient
     private static Timer Timer;
     private static readonly string? TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
     private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
-    
+    private static readonly int SyncBoardsWithBot = int.Parse(Environment.GetEnvironmentVariable("SyncTimer"));
+
     private TelegramBotClient _botClient = new(TelegramBotToken);
-    private DbOperations _dbOperation = new();
-    
+
     public async Task BotOperations()
     {
         using CancellationTokenSource cts = new CancellationTokenSource();
@@ -25,198 +25,51 @@ public class BotClient
         {
             AllowedUpdates = Array.Empty<UpdateType>()
         };
-        
+
         BotNotificationCentre botNotificationCentre = new BotNotificationCentre(_botClient);
         NotificationService(botNotificationCentre);
-        
+
         _botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
             pollingErrorHandler: HandlePollingErrorAsync,
             receiverOptions: receiverOptions,
             cancellationToken: cts.Token);
-        
-        var me = await _botClient.GetMeAsync(cancellationToken:cts.Token);
+
+        var me = await _botClient.GetMeAsync(cancellationToken: cts.Token);
         Console.WriteLine(_botClient.Timeout);
         Console.WriteLine($"Listening for @{me.Username}");
         Console.ReadLine();
-        
+
         cts.Cancel();
     }
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         botClient.GetUpdatesAsync();
-        Console.WriteLine(update.CallbackQuery?.Data);
         
-        if (update.CallbackQuery is {} callbackQuery)
+        if (update.CallbackQuery is { } callbackQuery)
         {
-            await CallBackDataManager(callbackQuery, botClient);
+            TaskCallbackFactory callbackFactory = new();
+            await callbackFactory.CallBackDataManager(callbackQuery, botClient);
             return;
         }
-        
-        if (update.Message is not {} message) return;
-        if (message.Chat.Id != message.From.Id) return;
-        if (message.Text is not {} messageText) return;
 
+        if (update.Message is not { } message) return;
+        if (message.Chat.Id != message.From.Id) return;
+        if (message.Text is not { } messageText) return;
+        
         var chatId = message.Chat.Id;
         var userUsername = message.From?.Username;
 
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
         
-        BotNotificationCentre botNotificationCentre = new BotNotificationCentre(message, botClient);
-
-        if (message.Text.StartsWith("/drop"))
-        {
-            DropTask dropTask = new DropTask(message, botClient);
-            await dropTask.Execute();
-        }
+        ActionsFactory actionsFactory = new();
+        await actionsFactory.BotActionFactory(message, botClient);
         
         TaskPlaceholderOperator taskPlaceholderOperator = new();
         {
             await taskPlaceholderOperator.SortMessage(message, botClient);
         }
-        
-        if (message.Text.StartsWith("/register")
-            || message.Text.StartsWith("/start")) await Authenticate(message, botClient);
-        if (message.Text.StartsWith("/CompleteRegistration")) await FinishAuth(message, botClient);
-
-        if (message.Text.StartsWith("/newtask"))
-        {
-            StartTaskCreation startTaskCreation = new(message, botClient);
-            await startTaskCreation.CreateTask();
-        }
-
-        if (message.Text.StartsWith("/notifications"))
-            await botNotificationCentre.ToggleNotificationsForUser();
-    }
-
-    private async Task CallBackDataManager(CallbackQuery callbackQuery, ITelegramBotClient botClient)
-    {
-        if (callbackQuery.Data.StartsWith("/board"))
-        {
-            AddBoardToTask addBoardToTask = new(callbackQuery, botClient);
-            await addBoardToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/list"))
-        {
-            AddTableToTask addTableToTask = new(callbackQuery, botClient);
-            await addTableToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/tag"))
-        {
-            AddTagToTask addTagToTask = new(callbackQuery, botClient);
-            await addTagToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/name"))
-        {
-            AddParticipantToTask addParticipantToTask = new(callbackQuery, botClient);
-            await addParticipantToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/push"))
-        {
-            PushTask pushTask = new(callbackQuery, botClient);
-            await pushTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/edittaskboardandtable"))
-        {
-            CreateKeyboardWithBoards createKeyboardWithBoards =
-                new CreateKeyboardWithBoards(callbackQuery, botClient, isEdit:true);
-            await createKeyboardWithBoards.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/editboard"))
-        {
-            AddBoardToTask addBoardToTask = new AddBoardToTask(callbackQuery, botClient, isEdit: true);
-            await addBoardToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/editlist"))
-        {
-            AddTableToTask addTableToTask = new AddTableToTask(callbackQuery, botClient, isEdit: true);
-            await addTableToTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/editdate"))
-        {
-            TaskDateRequest taskDateRequest = new TaskDateRequest(callbackQuery, botClient, isEdit: true);
-            await taskDateRequest.Execute();
-            return;
-        }
-        
-        if (callbackQuery.Data.StartsWith("/editname"))
-        {
-            TaskNameRequest taskNameRequest = new TaskNameRequest(callbackQuery, botClient, isEdit: true);
-            await taskNameRequest.Execute();
-            return;
-        }
-        
-        if (callbackQuery.Data.StartsWith("/editdesc"))
-        {
-            TaskDescriptionRequest taskDescriptionRequest = new TaskDescriptionRequest(callbackQuery, botClient, isEdit: true);
-            await taskDescriptionRequest.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/drop"))
-        {
-            DropTask dropTask = new(callbackQuery, botClient);
-            await dropTask.Execute();
-            return;
-        }
-
-        if (callbackQuery.Data.StartsWith("/autodate"))
-        {
-            AddDateToTask addDateToTask = new AddDateToTask(callbackQuery, botClient);
-            await addDateToTask.Execute();
-            return;
-        }
-    }
-    
-    private async Task Authenticate(Message message, ITelegramBotClient botClient)
-    {
-        string oauthLink = AuthLink.CreateLink(message.From!.Id);
-
-        bool registerSuccess = await _dbOperation.RegisterNewUser(message);
-        if (!registerSuccess)
-        {
-            await botClient.SendTextMessageAsync(message.Chat.Id,
-                replyToMessageId: message.MessageId,
-                text: "User already registered.");
-            return;
-        }
-        
-        await botClient.SendTextMessageAsync(message.Chat.Id,
-            replyToMessageId: message.MessageId,
-            text: "Please click on this link authenticate in trello:\n\n" +
-                  $"{oauthLink}\n\n");
-    }
-    
-    private async Task FinishAuth(Message message, ITelegramBotClient botClient)
-    {
-        bool success = await _dbOperation.LinkBoardsFromTrello((int)message.From!.Id);
-        if (success)
-        {
-            await botClient.SendTextMessageAsync(message.Chat.Id,text: "All set, you can now create tasks with /newtask");
-            return;
-        }
-
-        await botClient.SendTextMessageAsync(message.Chat.Id, 
-            replyToMessageId: message.MessageId,
-            text: "Looks like you haven't completed authentication via trello.\n" + 
-                  "Click /register and finish authorization via trello website.");
     }
 
     private async Task NotificationService(BotNotificationCentre botNotificationCentre)
