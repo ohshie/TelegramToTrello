@@ -113,7 +113,6 @@ public class CreatingTaskDbOperations : DbOperations
         await using (BotDbContext dbContext = new BotDbContext())
         {
             UserTask.TaskName = taskName;
-            UserTask.NameSet = true;
             dbContext.CreatingTasks.Update(UserTask);
             await dbContext.SaveChangesAsync();
         }
@@ -124,7 +123,6 @@ public class CreatingTaskDbOperations : DbOperations
         await using (BotDbContext dbContext = new BotDbContext())
         {
             UserTask.TaskDesc = description;
-            UserTask.DescSet = true;
             dbContext.CreatingTasks.Update(UserTask);
             await dbContext.SaveChangesAsync();
         }
@@ -146,12 +144,23 @@ public class CreatingTaskDbOperations : DbOperations
         return true;
     }
 
-    public async Task AddDateToTask(string date)
+    public async Task AddDateToTask(string date, int messageId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
             UserTask.Date = date;
-            
+
+            dbContext.CreatingTasks.Update(UserTask);
+            await dbContext.SaveChangesAsync();
+        }
+    }
+    
+    public async Task MarkMessageForDeletion(int messageId)
+    {
+        using (BotDbContext dbContext = new())
+        {
+            UserTask.MessageForDeletionId = messageId;
+
             dbContext.CreatingTasks.Update(UserTask);
             await dbContext.SaveChangesAsync();
         }

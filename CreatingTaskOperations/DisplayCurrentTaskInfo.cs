@@ -4,13 +4,18 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class DisplayCurrentTaskInfo : TaskCreationOperator
+public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
+    private bool IsEdit { get; set; }
     public DisplayCurrentTaskInfo(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
+
+    public DisplayCurrentTaskInfo(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(
+        callbackQuery, botClient) {}
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         var replyMarkup = ReplyKeyboard();
+        //if (CallbackQuery != null) await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
         
         await BotClient.SendTextMessageAsync(text: "Lets review current task:\n\n" +
                                                    $"Task name: [{task.Tag}] {task.TaskName}\n" +
@@ -32,17 +37,17 @@ public class DisplayCurrentTaskInfo : TaskCreationOperator
             },
             new[]
             {
-                InlineKeyboardButton.WithCallbackData(text: "Edit name", callbackData:"/push"),
-                InlineKeyboardButton.WithCallbackData(text: "Edit description", callbackData:"/push"),
+                InlineKeyboardButton.WithCallbackData(text: "Edit name", callbackData:"/editname"),
+                InlineKeyboardButton.WithCallbackData(text: "Edit description", callbackData:"/editdesc"),
             },
             new[]
             {
-            InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/push"),
-            InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/push"),
+            InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/edittaskboardandtable"),
+            InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/editdate"),
             },
             new[]
             {
-                InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/push") 
+                InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/drop") 
             }
         });
 

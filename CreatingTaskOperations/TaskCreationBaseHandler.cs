@@ -3,25 +3,22 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public abstract class TaskCreationOperator
+public abstract class TaskCreationBaseHandler
 {
     protected Message? Message { get; }
     protected CallbackQuery? CallbackQuery { get; }
     protected ITelegramBotClient BotClient { get; }
 
-    protected RegisteredUser? User { get; set; }
-    protected TTTTask? UserTask { get; set; }
-    
-    protected TaskCreationOperator? NextTask { get; set; }
-    protected TaskCreationOperator? SubTask { get; set; }
+    protected TaskCreationBaseHandler? NextTask { get; set; }
+    protected TaskCreationBaseHandler? SubTask { get; set; }
 
-    protected TaskCreationOperator(Message message, ITelegramBotClient botClient)
+    protected TaskCreationBaseHandler(Message message, ITelegramBotClient botClient)
     {
         Message = message;
         BotClient = botClient;
     }
     
-    protected TaskCreationOperator(CallbackQuery callback, ITelegramBotClient botClient)
+    protected TaskCreationBaseHandler(CallbackQuery callback, ITelegramBotClient botClient)
     {
         CallbackQuery = callback;
         Message = callback.Message;
@@ -30,15 +27,15 @@ public abstract class TaskCreationOperator
     
     public async Task Execute()
     {
-        User ??= await GetUser();
-        UserTask ??= await GetTask();
+        RegisteredUser user = await GetUser();
+        TTTTask task = await GetTask();
 
-        if (!await UserIsRegisteredUser(User)) return;
-        if (!await TaskExist(UserTask)) return;
+        if (!await UserIsRegisteredUser(user)) return;
+        if (!await TaskExist(task)) return;
 
-       await HandleTask(User, UserTask);
-
-       if (NextTask != null) await NextTask.Execute();
+        await HandleTask(user, task);
+        
+        if (NextTask != null) await NextTask.Execute();
     }
 
     private async Task<RegisteredUser> GetUser()
@@ -75,7 +72,7 @@ public abstract class TaskCreationOperator
         if (task == null)
         {
             await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
-                text: "Lets not get ahead of ourselves." +
+                text: "Lets not get ahead of ourselves.\n" +
                       "Click on /newtask first to start task creation process");
             return false;
         }

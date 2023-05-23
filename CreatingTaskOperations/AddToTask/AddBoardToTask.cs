@@ -3,18 +3,20 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class AddBoardToTask : TaskCreationOperator
+public class AddBoardToTask : TaskCreationBaseHandler
 {
-    public AddBoardToTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient)
+    private bool IsEdit { get; set; }
+    
+    public AddBoardToTask(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback, botClient)
     {
         NextTask = new CreateKeyboardWithTables(callback, botClient);
+        IsEdit = isEdit;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        string boardId = CallbackQuery.Data.Substring("/board".Length).Trim();
-        Console.WriteLine(boardId);
-
+        string boardId = CheckIfEditForBoardId();
+        
         CreatingTaskDbOperations dbOperations = new(user,task);
         string? boardName = await dbOperations.AddBoardToTask(boardId);
         if (string.IsNullOrEmpty(boardName))
@@ -23,6 +25,27 @@ public class AddBoardToTask : TaskCreationOperator
                 chatId: Message.Chat.Id,
                 replyToMessageId: Message.MessageId);
             NextTask = null;
+            return;
         }
+
+        if (IsEdit)
+        {
+            NextTask = new CreateKeyboardWithTables(CallbackQuery, BotClient, true);
+        }
+    }
+
+    private string CheckIfEditForBoardId()
+    {
+        string boardId;
+        if (IsEdit)
+        {
+            boardId = CallbackQuery.Data.Substring("/editboard".Length).Trim();
+        }
+        else
+        {
+            boardId = CallbackQuery.Data.Substring("/board".Length).Trim();
+        }
+
+        return boardId;
     }
 }

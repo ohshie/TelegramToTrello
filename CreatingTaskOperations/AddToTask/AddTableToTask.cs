@@ -3,16 +3,28 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class AddTableToTask : TaskCreationOperator
+public class AddTableToTask : TaskCreationBaseHandler
 {
-    public AddTableToTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient)
+    private bool IsEdit { get; set; }
+    
+    public AddTableToTask(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback, botClient)
     {
         NextTask = new CreateKeyboardWithTags(callback,botClient);
+        IsEdit = isEdit;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        string listName = CallbackQuery.Data.Substring("/list".Length).Trim();
+        string listName = string.Empty;
+        if (IsEdit)
+        {
+            listName = CallbackQuery.Data.Substring("/editlist".Length).Trim(); 
+        }
+        else
+        {
+            listName = CallbackQuery.Data.Substring("/list".Length).Trim();
+        }
+        
 
         CreatingTaskDbOperations dbOperations = new(user, task);
         bool listExist = await dbOperations.AddTableToTask(listName);
@@ -22,6 +34,12 @@ public class AddTableToTask : TaskCreationOperator
                 chatId: Message.Chat.Id,
                 replyToMessageId: Message.MessageId);
             NextTask = null;
+        }
+
+        if (IsEdit)
+        {
+            await dbOperations.ToggleEditModeForTask(task);
+            NextTask = new CreateKeyboardWithUsers(CallbackQuery,BotClient, isEdit: true);
         }
     }
 }

@@ -4,14 +4,25 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class CreateKeyboardWithUsers : TaskCreationOperator
+public class CreateKeyboardWithUsers : TaskCreationBaseHandler
 {
+    public bool IsEdit { get; set; }
     public CreateKeyboardWithUsers(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
 
-    public CreateKeyboardWithUsers(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(callbackQuery, botClient) {}
+    public CreateKeyboardWithUsers(CallbackQuery callbackQuery, ITelegramBotClient botClient, bool isEdit = false) : base(callbackQuery,
+        botClient)
+    {
+        IsEdit = isEdit;
+    }
     
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
+        if (IsEdit)
+        {
+            DbOperations dbOperations = new();
+            await dbOperations.ResetParticipants(task);
+        }
+        
         InlineKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants(task);
 
         if (CallbackQuery == null)
@@ -24,7 +35,7 @@ public class CreateKeyboardWithUsers : TaskCreationOperator
 
         await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message!.Chat.Id,
             messageId: CallbackQuery.Message.MessageId,
-            text: $"choose another participant from a list");
+            text: $"Choose participant from a list");
             
         await BotClient.EditMessageReplyMarkupAsync(chatId: Message!.Chat.Id, 
                 messageId:CallbackQuery.Message.MessageId,
@@ -102,7 +113,7 @@ public class CreateKeyboardWithUsers : TaskCreationOperator
 
         if (task.TaskPartName != null && task.TaskPartName.Length > 0)
         {
-            string? addedUsers = UserTask?.TaskPartName?.Remove(task.TaskPartName.Length-1);
+            string? addedUsers = task?.TaskPartName?.Remove(task.TaskPartName.Length-1);
             List<string> addedUsersList = addedUsers!.Split(',').ToList();
             filteredUsers = new List<UsersOnBoard>(taskBoard.UsersOnBoards!.Where(uob => !addedUsersList.Contains(uob.Name!)));
         }

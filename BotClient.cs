@@ -65,6 +65,12 @@ public class BotClient
         
         BotNotificationCentre botNotificationCentre = new BotNotificationCentre(message, botClient);
 
+        if (message.Text.StartsWith("/drop"))
+        {
+            DropTask dropTask = new DropTask(message, botClient);
+            await dropTask.Execute();
+        }
+        
         TaskPlaceholderOperator taskPlaceholderOperator = new();
         {
             await taskPlaceholderOperator.SortMessage(message, botClient);
@@ -79,7 +85,7 @@ public class BotClient
             StartTaskCreation startTaskCreation = new(message, botClient);
             await startTaskCreation.CreateTask();
         }
-        
+
         if (message.Text.StartsWith("/notifications"))
             await botNotificationCentre.ToggleNotificationsForUser();
     }
@@ -90,30 +96,92 @@ public class BotClient
         {
             AddBoardToTask addBoardToTask = new(callbackQuery, botClient);
             await addBoardToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/list"))
         {
             AddTableToTask addTableToTask = new(callbackQuery, botClient);
             await addTableToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/tag"))
         {
             AddTagToTask addTagToTask = new(callbackQuery, botClient);
             await addTagToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/name"))
         {
             AddParticipantToTask addParticipantToTask = new(callbackQuery, botClient);
             await addParticipantToTask.Execute();
+            return;
         }
 
         if (callbackQuery.Data.StartsWith("/push"))
         {
             PushTask pushTask = new(callbackQuery, botClient);
             await pushTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/edittaskboardandtable"))
+        {
+            CreateKeyboardWithBoards createKeyboardWithBoards =
+                new CreateKeyboardWithBoards(callbackQuery, botClient, isEdit:true);
+            await createKeyboardWithBoards.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/editboard"))
+        {
+            AddBoardToTask addBoardToTask = new AddBoardToTask(callbackQuery, botClient, isEdit: true);
+            await addBoardToTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/editlist"))
+        {
+            AddTableToTask addTableToTask = new AddTableToTask(callbackQuery, botClient, isEdit: true);
+            await addTableToTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/editdate"))
+        {
+            TaskDateRequest taskDateRequest = new TaskDateRequest(callbackQuery, botClient, isEdit: true);
+            await taskDateRequest.Execute();
+            return;
+        }
+        
+        if (callbackQuery.Data.StartsWith("/editname"))
+        {
+            TaskNameRequest taskNameRequest = new TaskNameRequest(callbackQuery, botClient, isEdit: true);
+            await taskNameRequest.Execute();
+            return;
+        }
+        
+        if (callbackQuery.Data.StartsWith("/editdesc"))
+        {
+            TaskDescriptionRequest taskDescriptionRequest = new TaskDescriptionRequest(callbackQuery, botClient, isEdit: true);
+            await taskDescriptionRequest.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/drop"))
+        {
+            DropTask dropTask = new(callbackQuery, botClient);
+            await dropTask.Execute();
+            return;
+        }
+
+        if (callbackQuery.Data.StartsWith("/autodate"))
+        {
+            AddDateToTask addDateToTask = new AddDateToTask(callbackQuery, botClient);
+            await addDateToTask.Execute();
+            return;
         }
     }
     

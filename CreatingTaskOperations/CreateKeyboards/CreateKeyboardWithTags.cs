@@ -4,7 +4,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class CreateKeyboardWithTags : TaskCreationOperator
+public class CreateKeyboardWithTags : TaskCreationBaseHandler
 {
     public CreateKeyboardWithTags(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
 
