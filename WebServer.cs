@@ -1,4 +1,5 @@
 using System.Text.Json;
+using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello;
 
@@ -44,7 +45,7 @@ public class WebServer
     
     private async Task<string> ConvertTokenToTrelloId(string? token)
     {
-        TrelloOperations trelloOperations = new TrelloOperations();
+        TrelloOperations trelloOperations = new();
         string? trelloId = await trelloOperations.GetTrelloUserId(token);
 
         return trelloId;
@@ -52,8 +53,13 @@ public class WebServer
 
     private async Task UpdateDbWithNewUserInfo(string token, string trelloId, int telegramId)
     {
-        DbOperations dbOperations = new DbOperations();
-        await dbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
-        await dbOperations.LinkBoardsFromTrello(telegramId);
+        UserDbOperations dbOperations = new();
+        RegisteredUser? user = await dbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
+        if (user != null)
+        {
+            SyncService syncService = new();
+            await syncService.SyncBoardsToTrello(user);
+        }
+        
     }
 }

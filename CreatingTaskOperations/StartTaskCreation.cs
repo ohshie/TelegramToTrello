@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
@@ -30,7 +31,7 @@ public class StartTaskCreation
     
     private async Task<RegisteredUser> GetUser()
     {
-        DbOperations dbOperations = new DbOperations();
+        UserDbOperations dbOperations = new();
         RegisteredUser trelloUser = await dbOperations.RetrieveTrelloUser((int)Message.Chat.Id);
 
         return trelloUser;

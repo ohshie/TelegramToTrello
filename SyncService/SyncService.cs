@@ -1,8 +1,11 @@
+using TelegramToTrello.Dboperations;
+using TelegramToTrello.UserRegistration;
+
 namespace TelegramToTrello;
 
 public class SyncService
 {
-    private DbOperations _dbOperations = new();
+    private readonly UserDbOperations _dbOperations = new();
 
     public async Task SynchronizeDataToTrello()
     {
@@ -10,8 +13,18 @@ public class SyncService
         
         foreach (var user in allUsersList)
         {
-            await _dbOperations.LinkBoardsFromTrello(user.TelegramId);
+            await SyncBoardsToTrello(user);
             Console.WriteLine("synced");
         }
+    }
+    
+    public async Task<bool> SyncBoardsToTrello(RegisteredUser user)
+    {
+        if (user.TrelloId == string.Empty) return false;
+
+        WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
+        await writeFromTrelloToDb.PopulateDbWithBoardsUsersTables(user);
+        
+        return true;
     }
 }

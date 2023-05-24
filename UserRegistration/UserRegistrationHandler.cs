@@ -3,24 +3,26 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello.UserRegistration;
 
-public class TrelloAuthentication
+public class UserRegistrationHandler
 {
-    public TrelloAuthentication(Message message, ITelegramBotClient botClient)
+    public UserRegistrationHandler(Message message, ITelegramBotClient botClient)
     {
         Message = message;
         BotClient = botClient;
-        DbOperations = new DbOperations();
+        SyncService = new();
+        UserDbOperations = new();
     }
 
-    private Message Message { get; set; }
-    private ITelegramBotClient BotClient { get; set; }
-    private DbOperations DbOperations { get; set; }
+    private Message Message { get; }
+    private ITelegramBotClient BotClient { get; }
+    private SyncService SyncService { get; }
+    private UserDbOperations UserDbOperations { get; set; }
     
     public async Task Authenticate()
     {
         string oauthLink = AuthLink.CreateLink(Message.From!.Id);
-
-        bool registerSuccess = await DbOperations.RegisterNewUser(Message);
+        
+        bool registerSuccess = await UserDbOperations.RegisterNewUser(Message);
         if (!registerSuccess)
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
@@ -37,7 +39,8 @@ public class TrelloAuthentication
     
     public async Task SyncBoards()
     {
-        bool success = await DbOperations.LinkBoardsFromTrello((int)Message.From!.Id);
+        RegisteredUser? user = await UserDbOperations.RetrieveTrelloUser((int)Message.From!.Id);
+        bool success = await SyncService.SyncBoardsToTrello(user);
         if (success)
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,text: "All set, you can now create tasks with /newtask");

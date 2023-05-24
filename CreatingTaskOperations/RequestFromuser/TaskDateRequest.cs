@@ -6,7 +6,7 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class TaskDateRequest : TaskCreationBaseHandler
 {
-    public bool IsEdit { get; set; }
+    private bool IsEdit { get; set; }
 
     public TaskDateRequest(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback,
         botClient)

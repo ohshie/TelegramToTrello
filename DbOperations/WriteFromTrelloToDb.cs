@@ -5,8 +5,10 @@ namespace TelegramToTrello.Dboperations;
 
 public class WriteFromTrelloToDb
 {
-    public async Task PopulateDbWithBoardsUsersTables(RegisteredUser trelloUser)
+    public async Task PopulateDbWithBoardsUsersTables(RegisteredUser? trelloUser)
     {
+        if (trelloUser == null) return;
+       
         await CreateBoards(trelloUser);
         await CreateUsersBoardsRelations(trelloUser);
         await PopulateBoardWithTables(trelloUser);
