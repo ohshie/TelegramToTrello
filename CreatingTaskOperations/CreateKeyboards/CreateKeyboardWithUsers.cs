@@ -23,7 +23,7 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
             await dbOperations.ResetParticipants(task);
         }
         
-        InlineKeyboardMarkup replyKeyboardMarkup = await KeyboardParticipants(task);
+        InlineKeyboardMarkup? replyKeyboardMarkup = await KeyboardParticipants(task);
 
         if (CallbackQuery == null)
         {
@@ -35,11 +35,8 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
 
         await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message!.Chat.Id,
             messageId: CallbackQuery.Message.MessageId,
-            text: $"Choose participant from a list");
-            
-        await BotClient.EditMessageReplyMarkupAsync(chatId: Message!.Chat.Id, 
-                messageId:CallbackQuery.Message.MessageId,
-                replyMarkup: replyKeyboardMarkup);
+            text: $"Choose participant from a list", 
+            replyMarkup: replyKeyboardMarkup);
     }
     
     private async Task<InlineKeyboardMarkup?> KeyboardParticipants(TTTTask task)

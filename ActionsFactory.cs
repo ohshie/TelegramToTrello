@@ -21,13 +21,9 @@ public class ActionsFactory
 
     public async Task BotActionFactory(Message message, ITelegramBotClient botClient)
     {
-        foreach (var key in BotTaskFactory.Keys)
+        if (BotTaskFactory.ContainsKey(message.Text))
         {
-            if (message.Text.StartsWith(key))
-            {
-                await BotTaskFactory[key](message, botClient);
-                return;
-            }
+            await BotTaskFactory[message.Text](message, botClient);
         }
     }
 }

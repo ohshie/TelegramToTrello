@@ -7,7 +7,7 @@ public class TaskCallbackFactory
 {
    
     
-    private readonly Dictionary<string, Func<CallbackQuery, ITelegramBotClient, Task>> _taskFactoryByPrefix = 
+    private readonly Dictionary<string, Func<CallbackQuery, ITelegramBotClient, Task>> BotTaskFactory = 
         new(){
             { "/board", (callbackQuery, botClient) => new AddBoardToTask(callbackQuery, botClient).Execute() },
             { "/list", (callbackQuery, botClient) => new AddTableToTask(callbackQuery, botClient).Execute() },
@@ -27,13 +27,11 @@ public class TaskCallbackFactory
     
     public async Task CallBackDataManager(CallbackQuery callbackQuery, ITelegramBotClient botClient)
     {
-        foreach (var key in _taskFactoryByPrefix.Keys)
+        string key = callbackQuery.Data.Split(" ")[0];
+        
+        if (callbackQuery.Data != null && BotTaskFactory.ContainsKey(key))
         {
-            if (callbackQuery.Data.StartsWith(key))
-            {
-                await _taskFactoryByPrefix[key](callbackQuery,botClient);
-                return;
-            }
+            await BotTaskFactory[key](callbackQuery,botClient);
         }
     }
 }
