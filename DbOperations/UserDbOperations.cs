@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types;
 
-namespace TelegramToTrello.UserRegistration;
+namespace TelegramToTrello;
 
 public class UserDbOperations
 {

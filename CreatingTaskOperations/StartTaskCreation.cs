@@ -23,7 +23,7 @@ public class StartTaskCreation
         if (await UserIsCreatingATask(user)) return;
 
         CreatingTaskDbOperations creatingTaskDbOperations = new(user,null);
-        await creatingTaskDbOperations.AddTaskToDb();
+        await creatingTaskDbOperations.CreateTask();
 
         CreateKeyboardWithBoards createKeyboardWithBoards = new(Message, BotClient);
         await createKeyboardWithBoards.Execute();
@@ -52,7 +52,7 @@ public class StartTaskCreation
 
     private async Task<bool> UserIsCreatingATask(RegisteredUser user)
     {
-        DbOperations dbOperations = new DbOperations();
+        TaskDbOperations dbOperations = new();
         var task = await dbOperations.RetrieveUserTask(user.TelegramId);
 
         if (task != null)

@@ -14,11 +14,11 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         CreatingTaskDbOperations dbOperations = new(user, task);
         if (participantName == "press this when done")
         {
-            await FinishAddingParticipants(task, dbOperations);
+            await FinishAddingParticipants(task);
             return;
         }
         
-        bool userFoundOnBoard = await dbOperations.AddParticipantToTask(participantName);
+        bool userFoundOnBoard = await dbOperations.AddParticipant(participantName);
         if (!userFoundOnBoard)
         {
             await BotClient.SendTextMessageAsync(text: "Please choose name from keyboard menu.",
@@ -29,17 +29,17 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         NextTask = new CreateKeyboardWithUsers(CallbackQuery, BotClient);
     }
 
-    private async Task FinishAddingParticipants(TTTTask task, CreatingTaskDbOperations dbOperations)
+    private async Task FinishAddingParticipants(TTTTask task)
     {
-        
+        await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
         if (task.InEditMode)
         {
-            await dbOperations.ToggleEditModeForTask(task);
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ToggleEditModeForTask(task);
             NextTask = new DisplayCurrentTaskInfo(CallbackQuery, BotClient);
         }
         else
         {
-            await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
             NextTask = new TaskDateRequest(CallbackQuery, BotClient);
         }
     }

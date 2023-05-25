@@ -6,7 +6,6 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
     public DisplayCurrentTaskInfo(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
 
     public DisplayCurrentTaskInfo(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(

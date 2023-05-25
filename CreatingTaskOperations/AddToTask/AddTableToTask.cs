@@ -27,7 +27,7 @@ public class AddTableToTask : TaskCreationBaseHandler
         
 
         CreatingTaskDbOperations dbOperations = new(user, task);
-        bool listExist = await dbOperations.AddTableToTask(listName);
+        bool listExist = await dbOperations.AddTable(listName);
         if (!listExist)
         {
             await BotClient.SendTextMessageAsync(text: "Please choose list name from keyboard menu.",
@@ -38,7 +38,8 @@ public class AddTableToTask : TaskCreationBaseHandler
 
         if (IsEdit)
         {
-            await dbOperations.ToggleEditModeForTask(task);
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ToggleEditModeForTask(task);
             NextTask = new CreateKeyboardWithUsers(CallbackQuery,BotClient, isEdit: true);
         }
     }

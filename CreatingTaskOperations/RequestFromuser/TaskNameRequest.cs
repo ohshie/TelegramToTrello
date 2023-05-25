@@ -16,19 +16,18 @@ public class TaskNameRequest : TaskCreationBaseHandler
     {
         CreatingTaskDbOperations dbOperations = new(user, task); 
         await dbOperations.AddPlaceholderName();
-
-        if (IsEdit)
-        {
-            await SendRequestToUser(dbOperations, task);
-            return;
-        }
         
-        await SendRequestToUser(dbOperations, task);
+        await SendRequestToUser(task);
     }
 
-    private async Task SendRequestToUser(DbOperations dbOperations, TTTTask task)
+    private async Task SendRequestToUser(TTTTask task)
     {
-        if (IsEdit) await dbOperations.ToggleEditModeForTask(task);
+        if (IsEdit)
+        {
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ToggleEditModeForTask(task);
+        }
+        
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId);
         await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",

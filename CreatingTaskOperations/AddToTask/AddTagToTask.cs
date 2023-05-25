@@ -24,6 +24,6 @@ public class AddTagToTask : TaskCreationBaseHandler
         }
 
         CreatingTaskDbOperations dbOperations = new(user, task); 
-        await dbOperations.AddTagToTask(tag);
+        await dbOperations.AddTag(tag);
     }
 }

@@ -23,7 +23,7 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
 
         if (IsEdit)
         {
-            await SendRequestToUser(dbOperations, task);
+            await SendRequestToUser(task);
             return;
         }
         
@@ -33,9 +33,10 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
                   $"Now please type description of your task in the next message.");
     }
     
-    private async Task SendRequestToUser(DbOperations dbOperations, TTTTask task)
+    private async Task SendRequestToUser(TTTTask task)
     {
-        await dbOperations.ToggleEditModeForTask(task);
+        TaskDbOperations taskDbOperations = new();
+        await taskDbOperations.ToggleEditModeForTask(task);
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId);
         await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",

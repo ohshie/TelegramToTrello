@@ -1,4 +1,4 @@
-using TelegramToTrello;
+namespace TelegramToTrello;
 
 public class NotificationsDbOperations
 {
@@ -20,6 +20,7 @@ public class NotificationsDbOperations
             return false;
         }
     }
+    
     public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, List<TrelloOperations.TrelloCard> cards)
     {
         using BotDbContext dbContext = new BotDbContext();

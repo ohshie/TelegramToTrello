@@ -49,7 +49,7 @@ public abstract class TaskCreationBaseHandler
 
     private async Task<TTTTask> GetTask()
     {
-        DbOperations dbOperations = new DbOperations();
+        TaskDbOperations dbOperations = new();
         TTTTask userTask = await dbOperations.RetrieveUserTask((int)Message.Chat.Id);
 
         return userTask;

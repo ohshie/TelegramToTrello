@@ -1,6 +1,3 @@
-using TelegramToTrello.Dboperations;
-using TelegramToTrello.UserRegistration;
-
 namespace TelegramToTrello;
 
 public class SyncService

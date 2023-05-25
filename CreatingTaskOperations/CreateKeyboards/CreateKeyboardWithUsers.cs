@@ -19,8 +19,8 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
     {
         if (IsEdit)
         {
-            DbOperations dbOperations = new();
-            await dbOperations.ResetParticipants(task);
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ResetParticipants(task);
         }
         
         InlineKeyboardMarkup? replyKeyboardMarkup = await KeyboardParticipants(task);

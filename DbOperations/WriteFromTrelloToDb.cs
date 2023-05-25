@@ -1,7 +1,6 @@
-using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace TelegramToTrello.Dboperations;
+namespace TelegramToTrello;
 
 public class WriteFromTrelloToDb
 {
@@ -152,7 +151,7 @@ public class WriteFromTrelloToDb
                 foreach (var key in newTables)
                 {
                     Board? board = currentBoards.Values
-                            .FirstOrDefault(cb => cb.TrelloBoardId == freshTableLists.GetValueOrDefault(key)!.BoardId);
+                        .FirstOrDefault(cb => cb.TrelloBoardId == freshTableLists.GetValueOrDefault(key)!.BoardId);
 
                     var newTable = new Table
                     {

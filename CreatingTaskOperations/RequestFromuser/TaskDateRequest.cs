@@ -34,9 +34,10 @@ public class TaskDateRequest : TaskCreationBaseHandler
         await dbOperations.MarkMessageForDeletion(newMessage.MessageId);
     }
 
-    private async Task ToggleEditModeRequestDate(TTTTask task, CreatingTaskDbOperations dbOperations)
+    private async Task ToggleEditModeRequestDate(TTTTask task, CreatingTaskDbOperations creatingTaskDbOperations)
     {
-        await dbOperations.ToggleEditModeForTask(task);
+        TaskDbOperations taskDbOperations = new();
+        await taskDbOperations.ToggleEditModeForTask(task);
         
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId);
@@ -47,7 +48,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
             chatId: Message.Chat.Id,
             replyMarkup: CreateKeyboard());
         
-        await dbOperations.MarkMessageForDeletion(newMessage.MessageId);
+        await creatingTaskDbOperations.MarkMessageForDeletion(newMessage.MessageId);
     }
 
     private InlineKeyboardMarkup CreateKeyboard()
