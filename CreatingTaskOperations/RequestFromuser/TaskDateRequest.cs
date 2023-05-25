@@ -84,7 +84,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
 
     private static DateTime GetFriday()
     {
-        var endOfTheWeek = DateTime.Today;
+        var endOfTheWeek = GetTodayDate();
         switch (endOfTheWeek.DayOfWeek)
         {
             case DayOfWeek.Monday:
@@ -118,24 +118,15 @@ public class TaskDateRequest : TaskCreationBaseHandler
                 break;
             }
         }
-
-        TimeSpan eithteenOClock = new TimeSpan(18, 0, 0);
-        endOfTheWeek += eithteenOClock;
+        
         return endOfTheWeek;
     }
 
     private static DateTime GetTodayDate()
     {
         DateTime date = DateTime.Today;
-        Console.WriteLine("keyboard date" + date);
         TimeSpan eithteenOClock = new TimeSpan(18, 0, 0);
         date += eithteenOClock;
-        // var properDate = date.ToString("dd.MM.yyyy HH:mm");
-        //
-        //
-        // DateTime.TryParseExact(properDate, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture,
-        //     DateTimeStyles.None, out date);
-        // Console.WriteLine("keyboard new date" + date);
         return date;
     }
 }
