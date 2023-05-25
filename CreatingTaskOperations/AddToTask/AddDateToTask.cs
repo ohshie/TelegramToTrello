@@ -23,15 +23,6 @@ public class AddDateToTask : TaskCreationBaseHandler
         if (possibleDate == null)
         {
             NextTask = null;
-            if (task.InEditMode)
-            {
-                await BotClient.EditMessageTextAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
-                                                           "Due date must be in the future.",
-                    chatId: CallbackQuery.Message.Chat.Id,
-                    messageId:task.MessageForDeletionId);
-                return;
-            }
-           
             await BotClient.SendTextMessageAsync(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                                                        "Due date must be in the future.",
                 chatId: Message.Chat.Id);
@@ -82,16 +73,9 @@ public class AddDateToTask : TaskCreationBaseHandler
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
             out var properDate);
         Console.WriteLine("pd "+properDate);
-        Console.WriteLine("today "+ DateTime.UtcNow);
-        if (properDate < DateTime.Today) return null;
-       
-        if (DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
-                out properDate))
-        {
-            string trelloDate = properDate.ToString("o");
-            return trelloDate;
-        }
+        Console.WriteLine("today "+ DateTime.Now);
+        if (properDate < DateTime.Now) return null;
         
-        return null;
+        return properDate.ToString("o");
     }
 }
