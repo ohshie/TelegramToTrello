@@ -1,3 +1,4 @@
+using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -126,8 +127,15 @@ public class TaskDateRequest : TaskCreationBaseHandler
     private static DateTime GetTodayDate()
     {
         DateTime date = DateTime.Today;
+        Console.WriteLine("keyboard date" + date);
         TimeSpan eithteenOClock = new TimeSpan(18, 0, 0);
         date += eithteenOClock;
+
+        var properDate = date.ToString();
+        
+        DateTime.TryParseExact(properDate.Substring(0,properDate.Length - 3), "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out date);
+        Console.WriteLine("keyboard new date" + date);
         return date;
     }
 }
