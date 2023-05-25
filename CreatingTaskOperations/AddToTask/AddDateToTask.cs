@@ -70,6 +70,7 @@ public class AddDateToTask : TaskCreationBaseHandler
 
     private string? DateConverter(string date)
     {
+        Console.WriteLine("incomming date " + date);
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
             out var properDate);
         Console.WriteLine("pd "+properDate);
