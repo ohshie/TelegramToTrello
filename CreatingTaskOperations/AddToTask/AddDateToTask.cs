@@ -81,6 +81,8 @@ public class AddDateToTask : TaskCreationBaseHandler
     {
         DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
             out var properDate);
+        Console.WriteLine("pd "+properDate);
+        Console.WriteLine("today "+ DateTime.UtcNow);
         if (properDate < DateTime.Today) return null;
        
         if (DateTime.TryParseExact(date, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None,
