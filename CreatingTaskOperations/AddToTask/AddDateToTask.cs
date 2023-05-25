@@ -74,6 +74,6 @@ public class AddDateToTask : TaskCreationBaseHandler
             out var properDate);
         if (properDate < DateTime.Now) return null;
         
-        return properDate.ToString("dd.MM.yyyy HH:mm");
+        return properDate.ToString("o");
     }
 }
