@@ -62,20 +62,20 @@ public class TaskDateRequest : TaskCreationBaseHandler
             new[]
             {
                 InlineKeyboardButton.WithCallbackData($"Today",
-                    $"/autodate {today.ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {today.ToString("dd.MM.yyyy HH:mm")}"),
                 InlineKeyboardButton.WithCallbackData($"Tomorrow",
-                    $"/autodate {today.AddDays(1).ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {today.AddDays(1).ToString("dd.MM.yyyy HH:mm")}"),
             },
             new[]
             {
                 InlineKeyboardButton.WithCallbackData($"Friday",
-                    $"/autodate {endOfTheWeek.ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {endOfTheWeek.ToString("dd.MM.yyyy HH:mm")}"),
                 InlineKeyboardButton.WithCallbackData($"Next Monday",
-                    $"/autodate {endOfTheWeek.AddDays(3).ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {endOfTheWeek.AddDays(3).ToString("dd.MM.yyyy HH:mm")}"),
                 InlineKeyboardButton.WithCallbackData($"Next Wednesday",
-                    $"/autodate {endOfTheWeek.AddDays(5).ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {endOfTheWeek.AddDays(5).ToString("dd.MM.yyyy HH:mm")}"),
                 InlineKeyboardButton.WithCallbackData($"Next Friday",
-                    $"/autodate {endOfTheWeek.AddDays(7).ToString().Substring(0,today.ToString().Length-3)}"),
+                    $"/autodate {endOfTheWeek.AddDays(7).ToString("dd.MM.yyyy HH:mm")}"),
             }
         });
 
@@ -130,12 +130,12 @@ public class TaskDateRequest : TaskCreationBaseHandler
         Console.WriteLine("keyboard date" + date);
         TimeSpan eithteenOClock = new TimeSpan(18, 0, 0);
         date += eithteenOClock;
-
-        var properDate = date.ToString("dd.MM.yyyy HH:mm");
-        
-        DateTime.TryParseExact(properDate, "dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture,
-            DateTimeStyles.None, out date);
-        Console.WriteLine("keyboard new date" + date);
+        // var properDate = date.ToString("dd.MM.yyyy HH:mm");
+        //
+        //
+        // DateTime.TryParseExact(properDate, "dd.MM.yyyy HH:mm:ss", CultureInfo.InvariantCulture,
+        //     DateTimeStyles.None, out date);
+        // Console.WriteLine("keyboard new date" + date);
         return date;
     }
 }
