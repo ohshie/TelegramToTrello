@@ -26,11 +26,7 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
         {
             await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
                 messageId: CallbackQuery.Message.MessageId,
-                text: $"Choose new board from list");
-            
-            await BotClient.EditMessageReplyMarkupAsync(chatId: CallbackQuery.Message.Chat.Id, 
-                messageId:CallbackQuery.Message.MessageId,
-                replyMarkup: inlineKeyboardMarkup);
+                text: $"Choose new board from list", replyMarkup: inlineKeyboardMarkup);
             return;
         }
         

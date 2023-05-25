@@ -6,7 +6,6 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
     public DisplayCurrentTaskInfo(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
 
     public DisplayCurrentTaskInfo(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(
@@ -15,7 +14,6 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         var replyMarkup = ReplyKeyboard();
-        //if (CallbackQuery != null) await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
         
         await BotClient.SendTextMessageAsync(text: "Lets review current task:\n\n" +
                                                    $"Task name: [{task.Tag}] {task.TaskName}\n" +

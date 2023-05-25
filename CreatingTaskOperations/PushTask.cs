@@ -24,7 +24,7 @@ public class PushTask : TaskCreationBaseHandler
 
     private async Task RemoveTaskFromDb(TTTTask task)
     {
-        DbOperations dbOperations = new DbOperations();
+        TaskDbOperations dbOperations = new();
         await dbOperations.RemoveEntry(task);
     }
 }

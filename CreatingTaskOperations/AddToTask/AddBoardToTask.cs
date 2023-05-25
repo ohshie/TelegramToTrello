@@ -18,7 +18,7 @@ public class AddBoardToTask : TaskCreationBaseHandler
         string boardId = CheckIfEditForBoardId();
         
         CreatingTaskDbOperations dbOperations = new(user,task);
-        string? boardName = await dbOperations.AddBoardToTask(boardId);
+        string? boardName = await dbOperations.AddBoard(boardId);
         if (string.IsNullOrEmpty(boardName))
         {
             await BotClient.SendTextMessageAsync(text: "Please choose board name from keyboard menu.",

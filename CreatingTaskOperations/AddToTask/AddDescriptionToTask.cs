@@ -23,11 +23,12 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         }
 
         CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.SetDescription(Message.Text);
+        await dbOperations.AddDescription(Message.Text);
         
         if (task.InEditMode)
         {
-            await dbOperations.ToggleEditModeForTask(task);
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ToggleEditModeForTask(task);
             NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
         }
     }

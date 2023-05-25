@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
@@ -22,7 +23,7 @@ public class StartTaskCreation
         if (await UserIsCreatingATask(user)) return;
 
         CreatingTaskDbOperations creatingTaskDbOperations = new(user,null);
-        await creatingTaskDbOperations.AddTaskToDb();
+        await creatingTaskDbOperations.CreateTask();
 
         CreateKeyboardWithBoards createKeyboardWithBoards = new(Message, BotClient);
         await createKeyboardWithBoards.Execute();
@@ -30,7 +31,7 @@ public class StartTaskCreation
     
     private async Task<RegisteredUser> GetUser()
     {
-        DbOperations dbOperations = new DbOperations();
+        UserDbOperations dbOperations = new();
         RegisteredUser trelloUser = await dbOperations.RetrieveTrelloUser((int)Message.Chat.Id);
 
         return trelloUser;
@@ -51,7 +52,7 @@ public class StartTaskCreation
 
     private async Task<bool> UserIsCreatingATask(RegisteredUser user)
     {
-        DbOperations dbOperations = new DbOperations();
+        TaskDbOperations dbOperations = new();
         var task = await dbOperations.RetrieveUserTask(user.TelegramId);
 
         if (task != null)

@@ -20,11 +20,8 @@ public class CreateKeyboardWithTables : TaskCreationBaseHandler
         
         await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
                 messageId: CallbackQuery.Message.MessageId,
-                text: $"Now choose list on {task.TrelloBoardName}");
-            
-        await BotClient.EditMessageReplyMarkupAsync(chatId: Message.Chat.Id, 
-            messageId:CallbackQuery.Message.MessageId,
-            replyMarkup: replyKeyboardMarkup);
+                text: $"Now choose list on {task.TrelloBoardName}", 
+                replyMarkup: replyKeyboardMarkup);
     }
     
     private async Task<InlineKeyboardMarkup> KeyboardTableChoice(RegisteredUser user, TTTTask task)

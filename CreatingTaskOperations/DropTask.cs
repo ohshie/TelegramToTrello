@@ -13,7 +13,7 @@ public class DropTask : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        DbOperations dbOperations = new();
+        TaskDbOperations dbOperations = new();
         await dbOperations.RemoveEntry(task);
 
         if (CallbackQuery != null)

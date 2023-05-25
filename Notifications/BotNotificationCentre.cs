@@ -1,13 +1,14 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello.BotActions;
 
 public class BotNotificationCentre
 {
-    private DbOperations DbOperations { get; }
-    private NotificationsDbOperations _notificationsDbOperations = new NotificationsDbOperations();
-    private TrelloOperations _trelloOperations = new TrelloOperations();
+    private NotificationsDbOperations _notificationsDbOperations = new();
+    private readonly UserDbOperations _dbOperations = new();
+    private TrelloOperations _trelloOperations = new();
     private ITelegramBotClient BotClient { get; }
     private Message Message { get; }
 
@@ -15,8 +16,6 @@ public class BotNotificationCentre
     {
         BotClient = botClient;
         Message = message;
-
-        DbOperations = new DbOperations();
     }
 
     public BotNotificationCentre(ITelegramBotClient botClient)
@@ -26,7 +25,7 @@ public class BotNotificationCentre
 
     public async Task ToggleNotificationsForUser()
     {
-        RegisteredUser trelloUser = await DbOperations.RetrieveTrelloUser((int)Message.From.Id);
+        RegisteredUser trelloUser = await _dbOperations.RetrieveTrelloUser((int)Message.From.Id);
         if (trelloUser == null) return;
         
 

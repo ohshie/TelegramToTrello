@@ -11,7 +11,7 @@ public class CreatingTaskDbOperations : DbOperations
         UserTask = userTask;
     }
     
-    public async Task AddTaskToDb()
+    public async Task CreateTask()
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -28,17 +28,17 @@ public class CreatingTaskDbOperations : DbOperations
         }
     }
      
-     public async Task AddTagToTask(string tag)
-     {
-         await using (BotDbContext dbContext = new BotDbContext())
-         {
-             UserTask.Tag = tag;
-             dbContext.CreatingTasks.Update(UserTask);
-             await dbContext.SaveChangesAsync();
-         }
-     } 
+    public async Task AddTag(string tag)
+    {
+        await using (BotDbContext dbContext = new BotDbContext())
+        {
+            UserTask.Tag = tag;
+            dbContext.CreatingTasks.Update(UserTask);
+            await dbContext.SaveChangesAsync();
+        }
+    } 
     
-    public async Task<string?> AddBoardToTask(string boardId)
+    public async Task<string?> AddBoard(string boardId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -56,7 +56,7 @@ public class CreatingTaskDbOperations : DbOperations
         }
     }
 
-    public async Task<bool> AddTableToTask(string listName)
+    public async Task<bool> AddTable(string listName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -108,7 +108,7 @@ public class CreatingTaskDbOperations : DbOperations
         }
     }
     
-    public async Task SetTaskName(string taskName)
+    public async Task AddName(string taskName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -118,7 +118,7 @@ public class CreatingTaskDbOperations : DbOperations
         }
     }
     
-    public async Task SetDescription(string description)
+    public async Task AddDescription(string description)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -128,7 +128,7 @@ public class CreatingTaskDbOperations : DbOperations
         }
     }
 
-    public async Task<bool> AddParticipantToTask(string participantName)
+    public async Task<bool> AddParticipant(string participantName)
     {
         string trelloIdOfParticipant = await UserNameToId(UserTask.TrelloBoardId, participantName);
         if (trelloIdOfParticipant == null) return false;
@@ -144,7 +144,7 @@ public class CreatingTaskDbOperations : DbOperations
         return true;
     }
 
-    public async Task AddDateToTask(string date, int messageId)
+    public async Task AddDate(string date, int messageId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {

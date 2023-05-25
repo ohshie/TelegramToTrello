@@ -13,11 +13,7 @@ public class CreateKeyboardWithTags : TaskCreationBaseHandler
         InlineKeyboardMarkup replyKeyboardMarkup = KeyboardTagChoice();
         await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId,
-            text: $"Choose channel tag according to your task channel");
-            
-        await BotClient.EditMessageReplyMarkupAsync(chatId: Message.Chat.Id, 
-                messageId:CallbackQuery.Message.MessageId,
-                replyMarkup: replyKeyboardMarkup);
+            text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
     }
     
     private InlineKeyboardMarkup KeyboardTagChoice()

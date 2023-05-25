@@ -22,11 +22,12 @@ public class AddNameToTask : TaskCreationBaseHandler
         }
 
         CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.SetTaskName(Message.Text);
+        await dbOperations.AddName(Message.Text);
         
         if (task.InEditMode)
         {
-            await dbOperations.ToggleEditModeForTask(task);
+            TaskDbOperations taskDbOperations = new();
+            await taskDbOperations.ToggleEditModeForTask(task);
             NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
         }
     }

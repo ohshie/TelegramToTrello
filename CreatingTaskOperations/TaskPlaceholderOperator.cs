@@ -6,6 +6,10 @@ namespace TelegramToTrello.BotActions;
 
 public class TaskPlaceholderOperator
 {
+    private readonly TaskDbOperations _taskDbOperations = new();
+    private readonly UserDbOperations _userDbOperations = new();
+    
+    
     public async Task SortMessage(Message message, ITelegramBotClient botClient)
     {
         TTTTask? task = await GetTrelloUserAndTask(message);
@@ -32,12 +36,10 @@ public class TaskPlaceholderOperator
     
     private async Task<TTTTask?> GetTrelloUserAndTask(Message message)
     {
-        DbOperations dbOperations = new DbOperations();
-        
-        RegisteredUser trelloUser = await dbOperations.RetrieveTrelloUser((int)message.Chat.Id);
+        RegisteredUser ?trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
         if (trelloUser != null)
         {   
-            var task = await dbOperations.RetrieveUserTask((int)message.Chat.Id);
+            var task = await _taskDbOperations.RetrieveUserTask((int)message.Chat.Id);
             return task;
         }
 
