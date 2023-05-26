@@ -9,7 +9,6 @@ public class BotDbContext : DbContext
     public DbSet<TTTTask> CreatingTasks { get; set; }
     public DbSet<Table> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
-    public DbSet<UsersBoards> UsersBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
 
     private string dbConnectionstring = Environment.GetEnvironmentVariable("DbConnectionString");
@@ -33,21 +32,10 @@ public class BotDbContext : DbContext
         modelBuilder.Entity<UsersOnBoard>()
             .HasKey(uob => uob.Id);
 
-        modelBuilder.Entity<UsersBoards>()
-            .HasKey(ub => new
-            {
-                ub.UserId, ub.BoardId
-            });
-
-        modelBuilder.Entity<UsersBoards>()
-            .HasOne(ub => ub.RegisteredUsers)
-            .WithMany(u => u.UsersBoards)
-            .HasForeignKey(ub => ub.UserId);
-        
-        modelBuilder.Entity<UsersBoards>()
-            .HasOne(ub => ub.Boards)
-            .WithMany(u => u.UsersBoards)
-            .HasForeignKey(ub => ub.BoardId);
+        modelBuilder.Entity<RegisteredUser>()
+            .HasMany(ru => ru.Boards)
+            .WithMany(b => b.Users)
+            .UsingEntity(etb => etb.ToTable("UsersBoards"));
 
         modelBuilder.Entity<UsersOnBoard>()
             .HasOne(uob => uob.TrelloBoard)

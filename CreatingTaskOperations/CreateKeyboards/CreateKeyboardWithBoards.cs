@@ -38,7 +38,7 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
     
     private InlineKeyboardMarkup KeyboardBoardChoice(RegisteredUser? user)
     {
-        Board?[] boards = user.UsersBoards.Select(ub => ub.Boards).ToArray();
+        Board?[] boards = user.Boards.ToArray();
         
         if (IsEdit)
         {

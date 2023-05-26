@@ -49,8 +49,7 @@ public class UserDbOperations
         await using (BotDbContext dbContext = new BotDbContext())
         {
             RegisteredUser? trelloUser = await dbContext.Users
-                .Include(ru => ru.UsersBoards!)
-                .ThenInclude(ub => ub.Boards)
+                .Include(ub => ub.Boards)
                 .FirstOrDefaultAsync(um => um.TelegramId == telegramId);
 
             if (trelloUser != null)

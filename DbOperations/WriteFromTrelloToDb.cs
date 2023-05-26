@@ -9,7 +9,6 @@ public class WriteFromTrelloToDb
         if (trelloUser == null) return;
        
         await CreateBoards(trelloUser);
-        await CreateUsersBoardsRelations(trelloUser);
         await PopulateBoardWithTables(trelloUser);
         await PopulateBoardsWithUsers(trelloUser);
     }
@@ -20,28 +19,50 @@ public class WriteFromTrelloToDb
         var boardsFoundInTrello =
             await trelloOperation.GetTrelloBoards(trelloUser);
         
-        await AddNewBoards(boardsFoundInTrello);
+        await AddNewBoards(boardsFoundInTrello, trelloUser);
         await RemoveBoardThatWereNotInTrello(boardsFoundInTrello, trelloUser);
     }
 
-    private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
+    private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
         using (BotDbContext dbContext = new())
         {
-            var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
+            var trackedUser = dbContext.Users
+                .Include(u => u.Boards)
+                .Single(u => u.TelegramId == trelloUser.TelegramId);
+            
+            var currentBoardsInDb = dbContext.Boards
+                .Include(b => b.Users)
+                .ToDictionary(b => b.TrelloBoardId);
 
             var newEntries = boardsFoundInTrello.Keys.Except(currentBoardsInDb.Keys);
+            
             if (newEntries.Any())
             {
+                Board board;
                 List<Board> newBoardsList = new();
+                
                 foreach (var key in newEntries)
                 {
-                    Board newBoard = new Board
+                    if (currentBoardsInDb.TryGetValue(key, out var existingBoard))
                     {
-                        TrelloBoardId = boardsFoundInTrello.GetValueOrDefault(key)!.Id,
-                        BoardName = boardsFoundInTrello.GetValueOrDefault(key)!.Name
-                    };
-                    newBoardsList.Add(newBoard);
+                        board = existingBoard;
+                    }
+                    else
+                    {
+                        board = new Board
+                        {
+                            TrelloBoardId = boardsFoundInTrello.GetValueOrDefault(key)!.Id,
+                            BoardName = boardsFoundInTrello.GetValueOrDefault(key)!.Name,
+                        };
+                    }
+
+                    if (!trackedUser.Boards.Any(u => u.TrelloBoardId == board.TrelloBoardId))
+                    {
+                        trackedUser.Boards.Add(board);
+                    }
+                    
+                    newBoardsList.Add(board);
                 }
                 dbContext.Boards.AddRange(newBoardsList);
                 await dbContext.SaveChangesAsync();
@@ -55,8 +76,7 @@ public class WriteFromTrelloToDb
         using (BotDbContext dbContext = new BotDbContext())
         {
             var currentBoardsInDb = dbContext.Boards
-                .Include(b => b.UsersBoards)
-                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .Where(b => b.TelegramId == trelloUser.TelegramId)
                 .ToDictionary(b => b.TrelloBoardId);
 
             var entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys);
@@ -71,30 +91,6 @@ public class WriteFromTrelloToDb
                 dbContext.Boards.RemoveRange(boardToRemoveList);
                 await dbContext.SaveChangesAsync();
             }
-        }
-    }
-    
-    private async Task CreateUsersBoardsRelations(RegisteredUser trelloUser)
-    {
-        using (BotDbContext dbContext = new())
-        {
-            var usersBoardsMap = dbContext.UsersBoards.ToDictionary(ub => ub.BoardId);
-            
-            List<UsersBoards> usersBoardsList = new();
-            foreach (var board in dbContext.Boards)
-            {
-                if (!usersBoardsMap.ContainsKey(board.Id))
-                {
-                    var usersBoards = new UsersBoards
-                    {
-                        UserId = trelloUser.TelegramId,
-                        BoardId = board.Id
-                    };
-                    usersBoardsList.Add(usersBoards);
-                }
-            }
-            dbContext.UsersBoards.AddRange(usersBoardsList);
-            await dbContext.SaveChangesAsync();
         }
     }
     
@@ -130,12 +126,14 @@ public class WriteFromTrelloToDb
         using (BotDbContext dbContext = new())
         {
             var currentBoards = dbContext.Boards
-                .Include(b => b.UsersBoards)
                 .Include(b => b.Tables)
-                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .Include(b => b.Users)
+                .Where(b => b.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(b => b.TrelloBoardId, b=> b);
 
             var currentTables = dbContext.BoardTables
+                .Include(bt => bt.TrelloUserBoard)
+                .Where(bt => bt.TrelloUserBoard.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(t => t.TableId);
 
             return (currentBoards, currentTables);
@@ -206,11 +204,15 @@ public class WriteFromTrelloToDb
         using (BotDbContext dbContext = new())
         {
             var currentBoards = dbContext.Boards
-                .Include(b => b.UsersBoards)
-                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .Include(b => b.UsersOnBoards)
+                .Include(b => b.Users)
+                .Where(b => b.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(b => b.TrelloBoardId);
 
-            var currentUsers = new HashSet<(string userId, string userName, string boardId)>(dbContext.UsersOnBoards
+            var currentUsers = new HashSet<(string userId, string userName, string boardId)>
+            (dbContext.UsersOnBoards
+                .Include(uob => uob.TrelloBoard)
+                .Where(uob => uob.TrelloBoard.Users.Any(u => u.TelegramId == trelloUser.TelegramId) )
                 .AsEnumerable()
                 .Select(uob => (uob.TrelloUserId, uob.Name ,uob.TrelloBoard.TrelloBoardId)));
             

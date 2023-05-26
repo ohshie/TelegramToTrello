@@ -21,6 +21,21 @@ namespace TelegramToTrello.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BoardRegisteredUser", b =>
+                {
+                    b.Property<int>("BoardsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UsersTelegramId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("BoardsId", "UsersTelegramId");
+
+                    b.HasIndex("UsersTelegramId");
+
+                    b.ToTable("UsersBoards", (string)null);
+                });
+
             modelBuilder.Entity("TelegramToTrello.Board", b =>
                 {
                     b.Property<int>("Id")
@@ -169,21 +184,6 @@ namespace TelegramToTrello.Migrations
                     b.ToTable("TaskNotifications");
                 });
 
-            modelBuilder.Entity("TelegramToTrello.UsersBoards", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("BoardId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("UserId", "BoardId");
-
-                    b.HasIndex("BoardId");
-
-                    b.ToTable("UsersBoards");
-                });
-
             modelBuilder.Entity("TelegramToTrello.UsersOnBoard", b =>
                 {
                     b.Property<int>("Id")
@@ -208,6 +208,21 @@ namespace TelegramToTrello.Migrations
                     b.ToTable("UsersOnBoards");
                 });
 
+            modelBuilder.Entity("BoardRegisteredUser", b =>
+                {
+                    b.HasOne("TelegramToTrello.Board", null)
+                        .WithMany()
+                        .HasForeignKey("BoardsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TelegramToTrello.RegisteredUser", null)
+                        .WithMany()
+                        .HasForeignKey("UsersTelegramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TelegramToTrello.Table", b =>
                 {
                     b.HasOne("TelegramToTrello.Board", "TrelloUserBoard")
@@ -217,25 +232,6 @@ namespace TelegramToTrello.Migrations
                         .IsRequired();
 
                     b.Navigation("TrelloUserBoard");
-                });
-
-            modelBuilder.Entity("TelegramToTrello.UsersBoards", b =>
-                {
-                    b.HasOne("TelegramToTrello.Board", "Boards")
-                        .WithMany("UsersBoards")
-                        .HasForeignKey("BoardId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TelegramToTrello.RegisteredUser", "RegisteredUsers")
-                        .WithMany("UsersBoards")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Boards");
-
-                    b.Navigation("RegisteredUsers");
                 });
 
             modelBuilder.Entity("TelegramToTrello.UsersOnBoard", b =>
@@ -253,14 +249,7 @@ namespace TelegramToTrello.Migrations
                 {
                     b.Navigation("Tables");
 
-                    b.Navigation("UsersBoards");
-
                     b.Navigation("UsersOnBoards");
-                });
-
-            modelBuilder.Entity("TelegramToTrello.RegisteredUser", b =>
-                {
-                    b.Navigation("UsersBoards");
                 });
 #pragma warning restore 612, 618
         }

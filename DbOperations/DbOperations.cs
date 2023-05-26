@@ -4,24 +4,20 @@ namespace TelegramToTrello;
 
 public class DbOperations
 { 
-    public async Task<Board> RetrieveBoard(int telegramId, string boardName)
+    public async Task<Board?> RetrieveBoard(int telegramId, string boardName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
             RegisteredUser trelloUser = await dbContext.Users
-                .Include(ru => ru.UsersBoards)
-                .ThenInclude(ub => ub.Boards)
+                .Include(ru => ru.Boards)
                 .ThenInclude(b => b.Tables)
-                .Include(ru => ru.UsersBoards)
-                .ThenInclude(ub => ub.Boards)
+                .Include(ru => ru.Boards)
                 .ThenInclude(b => b.UsersOnBoards)
                 .FirstOrDefaultAsync(um => um.TelegramId == telegramId);
             
             if (trelloUser != null)
             {
-                return trelloUser.UsersBoards
-                    .Select(ub => ub.Boards)
-                    .FirstOrDefault(b => b.TrelloBoardId == boardName);
+                return trelloUser.Boards!.FirstOrDefault(b => b.TrelloBoardId == boardName);
             }
         }
         return null;

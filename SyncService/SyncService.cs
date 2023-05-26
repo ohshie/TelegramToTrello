@@ -17,11 +17,13 @@ public class SyncService
     
     public async Task<bool> SyncBoardsToTrello(RegisteredUser user)
     {
-        if (user.TrelloId == string.Empty) return false;
+        if (user != null)
+        {
+            if (user.TrelloId == string.Empty) return false;
 
-        WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
-        await writeFromTrelloToDb.PopulateDbWithBoardsUsersTables(user);
-        
+            WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
+            await writeFromTrelloToDb.PopulateDbWithBoardsUsersTables(user);
+        }
         return true;
     }
 }

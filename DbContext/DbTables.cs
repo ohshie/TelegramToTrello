@@ -1,7 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TelegramToTrello;
 
 public class RegisteredUser
 {
+    [Key]
     public int TelegramId { get; set; }
     public string? TelegramName { get; set; }
     public string? TrelloToken { get; set; }
@@ -9,11 +12,12 @@ public class RegisteredUser
     public string? TrelloName { get; set; }
     public bool NotificationsEnabled { get; set; }
 
-    public ICollection<UsersBoards>? UsersBoards { get; set; }
+    public ICollection<Board>? Boards { get; set; }
 }
 
 public class Board
 {
+    [Key]
     public int Id { get; set; }
     public string? TrelloBoardId { get; set; }
     public string? BoardName { get; set; }
@@ -21,20 +25,12 @@ public class Board
 
     public ICollection<Table>? Tables { get; set; }
     public ICollection<UsersOnBoard>? UsersOnBoards { get; set; }
-    public ICollection<UsersBoards>? UsersBoards { get; set; }
-}
-
-public class UsersBoards
-{
-    public int UserId { get; set; }
-    public RegisteredUser? RegisteredUsers { get; set; }
-
-    public int BoardId { get; set; }
-    public Board? Boards { get; set; }
+    public ICollection<RegisteredUser>? Users { get; set; } = new List<RegisteredUser>();
 }
 
 public class Table
 {
+    [Key]
     public int Id { get; set; }
     public string? Name { get; set; }
     public string? TableId { get; set; }
@@ -45,6 +41,7 @@ public class Table
 
 public class UsersOnBoard
 {
+    [Key]
     public int Id { get; set; }
     public string? TrelloUserId { get; set; }
     public string? Name { get; set; }
@@ -55,6 +52,7 @@ public class UsersOnBoard
 
 public class TTTTask
 {
+    [Key]
     public int Id { get; set; }
     public string? TrelloId { get; set; }
     public string? TaskName { get; set; }
@@ -73,6 +71,7 @@ public class TTTTask
 
 public class TaskNotification
 {
+    [Key]
     public string? Id { get; set; }
     public string? Due { get; set; }
     public string? Url { get; set; }
