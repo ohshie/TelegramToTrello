@@ -6,51 +6,45 @@ public class NotificationsDbOperations
     {
         using BotDbContext dbContext = new BotDbContext();
         {
-            if (user.NotificationsEnabled == false)
-            {
-                user.NotificationsEnabled = true;
-                dbContext.Update(user);
-                await dbContext.SaveChangesAsync();
-                return true;
-            }
-           
-            user.NotificationsEnabled = false;
+            user.NotificationsEnabled = !user.NotificationsEnabled;
             dbContext.Update(user);
             await dbContext.SaveChangesAsync();
-            return false;
+            return user.NotificationsEnabled;
         }
     }
     
-    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, List<TrelloOperations.TrelloCard> cards)
+    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, Dictionary<string, TrelloOperations.TrelloCard> cards)
     {
         using BotDbContext dbContext = new BotDbContext();
         {
             await RemoveTasksThatAreNotInTrello(dbContext, user, cards);
             
             List<TaskNotification> newTasks = new List<TaskNotification>();
+
+            var currentNotifications = dbContext.TaskNotifications.ToDictionary(tn => tn.Id);
+            var newNotificationsKeys = cards.Keys.Except(currentNotifications.Keys);
             
-            foreach (var card in cards)
+            if (newNotificationsKeys.Any())
             {
-                TaskNotification notification = await dbContext.TaskNotifications.FindAsync(card.Id);
-                if (notification == null)
+                List<TaskNotification> createNewNotificationsList = new();
+                foreach (var key in newNotificationsKeys)
                 {
-                    string correctDueDate = DateTime.Parse(card.Due).ToUniversalTime().ToString("o");
+                    string correctDueDate = DateTime.Parse(cards[key].Due).ToUniversalTime().ToString("o");
                     
-                    notification = new TaskNotification()
+                    TaskNotification newNotification = new()
                     {
-                        Id = card.Id,
-                        Name = card.Name,
+                        Id = cards[key].Id,
+                        Name = cards[key].Name,
                         Due = correctDueDate,
-                        Url = card.Url,
+                        Url = cards[key].Url,
                         User = user.TelegramId
                     };
-                    newTasks.Add(notification);
+                    createNewNotificationsList.Add(newNotification);
                 }
             }
+            
             dbContext.TaskNotifications.AddRange(newTasks);
             await dbContext.SaveChangesAsync();
-
-            
             
             return newTasks;
         }
@@ -67,10 +61,10 @@ public class NotificationsDbOperations
         }
     }
 
-    private async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, List<TrelloOperations.TrelloCard> cards)
+    private async Task RemoveTasksThatAreNotInTrello(BotDbContext dbContext, RegisteredUser user, Dictionary<string, TrelloOperations.TrelloCard> cards)
     {
         List<TaskNotification> notificationsList = dbContext.TaskNotifications.Where(tn => tn.User == user.TelegramId).ToList();
-        List<string> cardsIds = cards.Select(c => c.Id).ToList();
+        List<string> cardsIds = cards.Values.Select(c => c.Id).ToList();
             
         notificationsList.RemoveAll(item => cardsIds.Contains(item.Id));
         dbContext.TaskNotifications.RemoveRange(notificationsList);

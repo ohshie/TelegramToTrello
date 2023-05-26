@@ -139,7 +139,7 @@ public class TrelloOperations
         }
     }
 
-    public async Task<List<TrelloCard>?> GetCardsOnBoards(RegisteredUser user)
+    public async Task<Dictionary<string, TrelloCard>?> GetCardsOnBoards(RegisteredUser user)
     {
         using HttpClient httpClient = new HttpClient();
         {
@@ -169,10 +169,10 @@ public class TrelloOperations
             DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
             DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
             
-            List<TrelloCard> filteredCards = cards.Where(card => card.Due != null &&
+            var filteredCards = cards.Where(card => card.Due != null &&
                                                            DateTime.Parse(card.Due) >= minDueDate &&
                                                            DateTime.Parse(card.Due) <= maxDueDate &&
-                                                           card.Members.Contains(user.TrelloId)).ToList();
+                                                           card.Members.Contains(user.TrelloId)).ToDictionary(c => c.Id);
             
             return filteredCards;
         }

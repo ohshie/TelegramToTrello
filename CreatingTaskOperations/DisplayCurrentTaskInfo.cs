@@ -22,7 +22,7 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
                                                    $"Description: {task.TaskDesc}\n"+
                                                    $"Participants: {task.TaskPartName}\n"+
                                                    $"Due date: {DateTime.Parse(task.Date, CultureInfo.InvariantCulture)}\n\n" +
-                                                   $"If everything is correct press /push to post this task to trello\n", 
+                                                   $"If everything is correct press push to post this task to trello\n", 
             chatId: Message.Chat.Id, replyMarkup: replyMarkup);
     }
 

@@ -21,7 +21,7 @@ public class WriteFromTrelloToDb
             await trelloOperation.GetTrelloBoards(trelloUser);
         
         await AddNewBoards(boardsFoundInTrello);
-        await RemoveBoardThatWereNotInTrello(boardsFoundInTrello);
+        await RemoveBoardThatWereNotInTrello(boardsFoundInTrello, trelloUser);
     }
 
     private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
@@ -50,11 +50,14 @@ public class WriteFromTrelloToDb
     }
 
     private async Task RemoveBoardThatWereNotInTrello(
-        Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello)
+        Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
         using (BotDbContext dbContext = new BotDbContext())
         {
-            var currentBoardsInDb = dbContext.Boards.ToDictionary(b => b.TrelloBoardId);
+            var currentBoardsInDb = dbContext.Boards
+                .Include(b => b.UsersBoards)
+                .Where(b => b.UsersBoards.Any(ub => ub.UserId == trelloUser.TelegramId))
+                .ToDictionary(b => b.TrelloBoardId);
 
             var entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys);
             if (entriesToRemove.Any())
@@ -100,7 +103,7 @@ public class WriteFromTrelloToDb
         var (currentBoards, currentTables) = GetCurrentBoardsAndTablesFromDb(trelloUser);
         var freshTableLists = await GetTablesFromTrello(currentBoards, trelloUser);
         await AddNewTablesToDb(freshTableLists, currentTables, currentBoards);
-        await RemoveTablesNotInTrello(freshTableLists, currentTables, currentBoards);
+        await RemoveTablesNotInTrello(freshTableLists, currentTables);
     }
 
     // helpers for PopulateBoardsWithTables
@@ -169,9 +172,9 @@ public class WriteFromTrelloToDb
     }
 
     private async Task RemoveTablesNotInTrello(Dictionary<string, TrelloOperations.TrelloBoardTable> freshTableLists,
-        Dictionary<string, Table> currentTables, Dictionary<string, Board> currentBoards)
+        Dictionary<string, Table> currentTables)
     {
-        var tablesToRemove = currentTables.Keys.Except(currentTables.Keys);
+        var tablesToRemove = currentTables.Keys.Except(freshTableLists.Keys);
         if (tablesToRemove.Any())
         {
             List<Table> tablesToRemoveList = new();
