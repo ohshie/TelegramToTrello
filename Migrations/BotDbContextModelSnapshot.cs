@@ -47,9 +47,6 @@ namespace TelegramToTrello.Migrations
                     b.Property<string>("BoardName")
                         .HasColumnType("text");
 
-                    b.Property<int>("TelegramId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("TrelloBoardId")
                         .HasColumnType("text");
 

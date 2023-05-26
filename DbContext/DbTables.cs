@@ -21,7 +21,6 @@ public class Board
     public int Id { get; set; }
     public string? TrelloBoardId { get; set; }
     public string? BoardName { get; set; }
-    public int TelegramId { get; set; }
 
     public ICollection<Table>? Tables { get; set; }
     public ICollection<UsersOnBoard>? UsersOnBoards { get; set; }

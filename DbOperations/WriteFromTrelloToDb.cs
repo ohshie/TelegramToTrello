@@ -34,15 +34,9 @@ public class WriteFromTrelloToDb
             var currentBoardsInDb = dbContext.Boards
                 .Include(b => b.Users)
                 .ToDictionary(b => b.TrelloBoardId);
-
-            var newEntries = boardsFoundInTrello.Keys.Except(currentBoardsInDb.Keys);
             
-            if (newEntries.Any())
-            {
                 Board board;
-                List<Board> newBoardsList = new();
-                
-                foreach (var key in newEntries)
+                foreach (var key in boardsFoundInTrello.Keys)
                 {
                     if (currentBoardsInDb.TryGetValue(key, out var existingBoard))
                     {
@@ -55,18 +49,16 @@ public class WriteFromTrelloToDb
                             TrelloBoardId = boardsFoundInTrello.GetValueOrDefault(key)!.Id,
                             BoardName = boardsFoundInTrello.GetValueOrDefault(key)!.Name,
                         };
+                        dbContext.Boards.Add(board);
                     }
 
-                    if (!trackedUser.Boards.Any(u => u.TrelloBoardId == board.TrelloBoardId))
+                    if (!trackedUser.Boards.Any(b => b.TrelloBoardId == board.TrelloBoardId))
                     {
                         trackedUser.Boards.Add(board);
+                        board.Users.Add(trackedUser); 
                     }
-                    
-                    newBoardsList.Add(board);
                 }
-                dbContext.Boards.AddRange(newBoardsList);
                 await dbContext.SaveChangesAsync();
-            }
         }
     }
 
@@ -76,7 +68,7 @@ public class WriteFromTrelloToDb
         using (BotDbContext dbContext = new BotDbContext())
         {
             var currentBoardsInDb = dbContext.Boards
-                .Where(b => b.TelegramId == trelloUser.TelegramId)
+                .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))
                 .ToDictionary(b => b.TrelloBoardId);
 
             var entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys);
