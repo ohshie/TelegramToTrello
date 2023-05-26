@@ -40,7 +40,7 @@ public class UserRegistrationHandler
     public async Task SyncBoards()
     {
         RegisteredUser? user = await UserDbOperations.RetrieveTrelloUser((int)Message.From!.Id);
-        bool success = await SyncService.SyncBoardsToTrello(user);
+        bool success = await SyncService.SyncStateToTrello(user);
         if (success)
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,text: "All set, you can now create tasks with /newtask");

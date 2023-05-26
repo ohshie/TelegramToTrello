@@ -27,9 +27,9 @@ public class WriteFromTrelloToDb
     {
         using (BotDbContext dbContext = new())
         {
-            var trackedUser = dbContext.Users
-                .Include(u => u.Boards)
-                .Single(u => u.TelegramId == trelloUser.TelegramId);
+            // var trackedUser = dbContext.Users
+            //     .Include(u => u.Boards)
+            //     .Single(u => u.TelegramId == trelloUser.TelegramId);
             
             var currentBoardsInDb = dbContext.Boards
                 .Include(b => b.Users)
@@ -52,10 +52,10 @@ public class WriteFromTrelloToDb
                         dbContext.Boards.Add(board);
                     }
 
-                    if (!trackedUser.Boards.Any(b => b.TrelloBoardId == board.TrelloBoardId))
+                    if (!trelloUser.Boards.Any(b => b.TrelloBoardId == board.TrelloBoardId))
                     {
-                        trackedUser.Boards.Add(board);
-                        board.Users.Add(trackedUser); 
+                        trelloUser.Boards.Add(board);
+                        board.Users.Add(trelloUser); 
                     }
                 }
                 await dbContext.SaveChangesAsync();
@@ -80,6 +80,7 @@ public class WriteFromTrelloToDb
                     Board boardToRemove = currentBoardsInDb.GetValueOrDefault(key);
                     boardToRemoveList.Add(boardToRemove);
                 }
+                
                 dbContext.Boards.RemoveRange(boardToRemoveList);
                 await dbContext.SaveChangesAsync();
             }

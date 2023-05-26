@@ -58,7 +58,7 @@ public class WebServer
         if (user != null)
         {
             SyncService syncService = new();
-            await syncService.SyncBoardsToTrello(user);
+            await syncService.SyncStateToTrello(user);
         }
         
     }

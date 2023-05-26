@@ -64,7 +64,9 @@ public class UserDbOperations
     {
         using (BotDbContext dbContext = new())
         {
-            return await dbContext.Users.ToListAsync();
+            return await dbContext.Users
+                .Include(u => u.Boards)
+                .ToListAsync();
         }
     }
 }
