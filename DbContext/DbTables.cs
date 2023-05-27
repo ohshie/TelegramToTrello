@@ -78,3 +78,16 @@ public class TaskNotification
     public int User { get; set; }
 }
 
+public class AssignedTask
+{
+    [Key]
+    public int TaskId { get; set; }
+    public string? BoardId { get; set; }
+    public string? ListId { get; set; }
+    public string? Date { get; set; }
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public string? Participants { get; set; }
+    public bool EditMode { get; set; }
+}
+

@@ -36,6 +36,40 @@ namespace TelegramToTrello.Migrations
                     b.ToTable("UsersBoards", (string)null);
                 });
 
+            modelBuilder.Entity("TelegramToTrello.AssignedTask", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaskId"));
+
+                    b.Property<string>("BoardId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Date")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("EditMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ListId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Participants")
+                        .HasColumnType("text");
+
+                    b.HasKey("TaskId");
+
+                    b.ToTable("AssignedTasks");
+                });
+
             modelBuilder.Entity("TelegramToTrello.Board", b =>
                 {
                     b.Property<int>("Id")

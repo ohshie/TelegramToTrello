@@ -10,6 +10,7 @@ public class BotDbContext : DbContext
     public DbSet<Table> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
+    public DbSet<AssignedTask> AssignedTasks { get; set; }
 
     private string dbConnectionstring = Environment.GetEnvironmentVariable("DbConnectionString");
 

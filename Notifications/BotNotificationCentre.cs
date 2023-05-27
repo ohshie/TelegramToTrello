@@ -6,11 +6,11 @@ namespace TelegramToTrello.BotActions;
 
 public class BotNotificationCentre
 {
-    private NotificationsDbOperations _notificationsDbOperations = new();
+    private readonly NotificationsDbOperations _notificationsDbOperations = new();
     private readonly UserDbOperations _dbOperations = new();
-    private TrelloOperations _trelloOperations = new();
+    private readonly TrelloOperations _trelloOperations = new();
     private ITelegramBotClient BotClient { get; }
-    private Message Message { get; }
+    private Message? Message { get; }
 
     public BotNotificationCentre(Message message, ITelegramBotClient botClient)
     {
@@ -49,7 +49,7 @@ public class BotNotificationCentre
 
     private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
     {
-        var cards = await _trelloOperations.GetCardsOnBoards(trelloUser);
+        var cards = await _trelloOperations.GetCardsForNotifications(trelloUser);
 
         Console.WriteLine("done");
         

@@ -139,44 +139,73 @@ public class TrelloOperations
         }
     }
 
-    public async Task<Dictionary<string, TrelloCard>?> GetCardsOnBoards(RegisteredUser user)
+    public async Task<Dictionary<string, TrelloCard>?> GetCardsForNotifications(RegisteredUser user)
     {
+        List<TrelloCard>? cards = await FetchCardsFromTrello(user);
+        if (cards != null)
+        {
+            DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
+            DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
+            
+            var filteredCards = cards.Where(card => card.Due != null &&
+                                                    DateTime.Parse(card.Due) >= minDueDate &&
+                                                    DateTime.Parse(card.Due) <= maxDueDate &&
+                                                    card.Members.Contains(user.TrelloId)).ToDictionary(c => c.Id);
+            
+            return filteredCards;
+        }
+        return null;
+    }
+
+    private async Task<List<TrelloCard>?> FetchCardsFromTrello(RegisteredUser user)
+    {
+        HttpResponseMessage cardsResponse;
         using HttpClient httpClient = new HttpClient();
         {
             string isOpenFilter = "is:open";
             string cardLimit = "150";
-            
+
             string cardsUrl =
-                $"https://api.trello.com/1/search?"+
+                $"https://api.trello.com/1/search?" +
                 $"query={isOpenFilter}&" +
                 $"key={TrelloApiKey}&" +
                 $"token={user.TrelloToken}&" +
                 $"idBoards=mine&" +
                 $"cards_limit={cardLimit}";
             
-            HttpResponseMessage cardsResponse = await httpClient.GetAsync(cardsUrl);
-            
-            if (!cardsResponse.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"Failed to fetch cards for board");
-                return null;
-            }
+            cardsResponse = await httpClient.GetAsync(cardsUrl);
+        }
+        
+        if (!cardsResponse.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Failed to fetch cards for board");
+            return null;
+        }
+        
+        string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
+        TrelloSearchResponse? searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
+        List<TrelloCard> cards = searchResponse.CardItems;
 
-            string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
-            TrelloSearchResponse? searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
-            List<TrelloCard> cards = searchResponse.CardItems;
-            
+        return cards;
+    }
+
+    public async Task<Dictionary<string, TrelloCard>?> GetSubscribedTasks(RegisteredUser user)
+    {
+        List<TrelloCard?> cards = await FetchCardsFromTrello(user);
+        if (cards != null)
+        {
             DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
             DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
             
-            var filteredCards = cards.Where(card => card.Due != null &&
-                                                           DateTime.Parse(card.Due) >= minDueDate &&
-                                                           DateTime.Parse(card.Due) <= maxDueDate &&
-                                                           card.Members.Contains(user.TrelloId)).ToDictionary(c => c.Id);
+            Dictionary<string, TrelloCard> filteredCards = cards.Where(card => card.Due != null &&
+                                                                                DateTime.Parse(card.Due) >= minDueDate &&
+                                                                                DateTime.Parse(card.Due) <= maxDueDate &&
+                                                                                card.SubscribeStatus).ToDictionary(c => c.Id);
             
             return filteredCards;
         }
-        
+
+        return null;
     }
 
     // helper classes to create a list of trello boards/lists/users for selected user
@@ -225,6 +254,8 @@ public class TrelloOperations
         public string? Due { get; set; } = string.Empty;
         [JsonPropertyName("idMembers")]
         public string[]? Members { get; set; } 
+        [JsonPropertyName("subscribed")] 
+        public bool SubscribeStatus { get; set; }
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
         [JsonPropertyName("desc")]
@@ -233,5 +264,9 @@ public class TrelloOperations
         public string Url { get; set; } = string.Empty;
         [JsonPropertyName("closed")]
         public bool Status { get; set; }
+        [JsonPropertyName("idBoard")]
+        public string BoardId { get; set; }
+        [JsonPropertyName("idList")]
+        public string ListId { get; set; }
     }
 }

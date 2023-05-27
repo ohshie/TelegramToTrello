@@ -2,6 +2,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.BotActions;
 using TelegramToTrello.CreatingTaskOperations;
+using TelegramToTrello.CurrentTaskOperations;
 using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello;
@@ -16,7 +17,8 @@ public class ActionsFactory
             { "/SyncBoards", (message, botClient) => new UserRegistrationHandler(message, botClient).SyncBoards() },
             { "/newtask", (message, botClient) => new StartTaskCreation(message, botClient).CreateTask() },
             { "/notifications", (message, botClient) => new BotNotificationCentre(message,botClient).ToggleNotificationsForUser()},
-            { "/drop", (message, botClient) => new DropTask(message,botClient).Execute()}
+            { "/drop", (message, botClient) => new DropTask(message,botClient).Execute()},
+            {"/display", (message, botClient) => new CurrentTasksDisplay(message, botClient).Execute()}
         };
 
     public async Task BotActionFactory(Message message, ITelegramBotClient botClient)
