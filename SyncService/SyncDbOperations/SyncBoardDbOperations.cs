@@ -2,16 +2,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TelegramToTrello.SyncDbOperations;
 
-internal class SyncBoardDbOperations : SyncService
+internal class SyncBoardDbOperations
 {
-    internal async Task CreateBoards(RegisteredUser user)
+    internal async Task Execute(RegisteredUser user)
     {
         TrelloOperations trelloOperation = new TrelloOperations();
         var boardsFoundInTrello =
             await trelloOperation.GetTrelloBoards(user);
-        
-        await AddNewBoards(boardsFoundInTrello, user);
-        await RemoveBoardThatWereNotInTrello(boardsFoundInTrello, user);
+
+        if (boardsFoundInTrello != null)
+        {
+            await AddNewBoards(boardsFoundInTrello, user);
+            await RemoveBoardThatWereNotInTrello(boardsFoundInTrello, user);
+        }
     }
     
     private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
@@ -35,18 +38,17 @@ internal class SyncBoardDbOperations : SyncService
         if (!user.Boards.Any(b => b.TrelloBoardId == board.TrelloBoardId))
         {
             user.Boards.Add(board);
-            board.Users.Add(user);
+            board.Users?.Add(user);
         }
     }
 
-    private Board HandleBoard(Dictionary<string?, Board> currentBoardsInDb, 
+    private Board HandleBoard(Dictionary<string, Board> currentBoardsInDb, 
         KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair, 
         BotDbContext dbContext)
     {
-        Board board;
         if (currentBoardsInDb.TryGetValue(keyBoardPair.Key, out var existingBoard)) return existingBoard;
       
-        board = new Board
+        Board board = new Board
         {
                 TrelloBoardId = keyBoardPair.Value.Id,
                 BoardName = keyBoardPair.Value.Name, 
@@ -57,16 +59,16 @@ internal class SyncBoardDbOperations : SyncService
         return board;
     }
 
-    private (RegisteredUser trackedUser, Dictionary<string?, Board> currentBoardsInDb) GetUserAndUserBoards(RegisteredUser trelloUser,
+    private (RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb) GetUserAndUserBoards(RegisteredUser trelloUser,
         BotDbContext dbContext)
     {
         RegisteredUser trackedUser = dbContext.Users
             .Include(u => u.Boards)
             .Single(u => u.TelegramId == trelloUser.TelegramId);
 
-        var currentBoardsInDb = dbContext.Boards
+        Dictionary<string,Board> currentBoardsInDb = dbContext.Boards
             .Include(b => b.Users)
-            .ToDictionary(b => b.TrelloBoardId);
+            .ToDictionary(b => b.TrelloBoardId!);
         
         return (trackedUser, currentBoardsInDb);
     }
@@ -74,24 +76,23 @@ internal class SyncBoardDbOperations : SyncService
     private async Task RemoveBoardThatWereNotInTrello(
         Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
-        using (BotDbContext dbContext = new BotDbContext())
-        {
-            var currentBoardsInDb = dbContext.Boards
-                .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))
-                .ToDictionary(b => b.TrelloBoardId);
+        await using BotDbContext dbContext = new BotDbContext();
+        var currentBoardsInDb = dbContext.Boards
+            .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))
+            .ToDictionary(b => b.TrelloBoardId!);
 
-            var entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys);
-            if (entriesToRemove.Any())
+        string[] entriesToRemove = currentBoardsInDb.Keys.Except(boardsFoundInTrello.Keys).ToArray();
+        
+        if (entriesToRemove.Any())
+        {
+            List<Board> boardToRemoveList = new();
+            foreach (var key in entriesToRemove)
             {
-                List<Board> boardToRemoveList = new();
-                foreach (var key in entriesToRemove)
-                {
-                    Board boardToRemove = currentBoardsInDb.GetValueOrDefault(key);
-                    boardToRemoveList.Add(boardToRemove);
-                }
-                dbContext.Boards.RemoveRange(boardToRemoveList);
-                await dbContext.SaveChangesAsync();
+                Board? boardToRemove = currentBoardsInDb.GetValueOrDefault(key);
+                boardToRemoveList.Add(boardToRemove);
             }
+            dbContext.Boards.RemoveRange(boardToRemoveList);
+            await dbContext.SaveChangesAsync();
         }
     }
 }

@@ -5,6 +5,9 @@ namespace TelegramToTrello;
 public class SyncService
 {
     private readonly UserDbOperations _dbOperations = new();
+    private readonly SyncBoardDbOperations _boardDbOperations = new();
+    private readonly SyncTablesDbOperations _tablesDbOperations = new();
+    private readonly SyncUsersDbOperations _userDbOperations = new();
 
     public async Task SynchronizeDataToTrello()
     {
@@ -22,16 +25,16 @@ public class SyncService
         if (user != null)
         {
             if (user.TrelloId == string.Empty) return false;
-
-            WriteFromTrelloToDb writeFromTrelloToDb = new WriteFromTrelloToDb();
-            await writeFromTrelloToDb.PopulateDbWithBoardsUsersTables(user);
+            
+            await SyncProcessor(user);
         }
         return true;
     }
 
     private async Task SyncProcessor(RegisteredUser user)
     {
-        SyncBoardDbOperations boardDbOperations = new();
-        await boardDbOperations.CreateBoards(user);
+        await _boardDbOperations.Execute(user);
+        await _tablesDbOperations.Execute(user);
+        await _userDbOperations.Execute(user);
     }
 }
