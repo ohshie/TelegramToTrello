@@ -164,9 +164,6 @@ namespace TelegramToTrello.Migrations
                     b.Property<string>("TaskId")
                         .HasColumnType("text");
 
-                    b.Property<string>("BoardId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -176,14 +173,17 @@ namespace TelegramToTrello.Migrations
                     b.Property<bool>("EditMode")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("ListId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
                     b.Property<string[]>("Participants")
                         .HasColumnType("text[]");
+
+                    b.Property<string>("TaskBoard")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TaskList")
+                        .HasColumnType("text");
 
                     b.Property<string>("Url")
                         .HasColumnType("text");

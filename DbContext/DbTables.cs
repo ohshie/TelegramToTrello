@@ -72,8 +72,8 @@ public class TaskNotification
 {
     [Key]
     public string? TaskId { get; set; }
-    public string? BoardId { get; set; }
-    public string? ListId { get; set; }
+    public string? TaskBoard { get; set; }
+    public string? TaskList { get; set; }
     public string? Due { get; set; }
     public string? Url { get; set; }
     public string? Name { get; set; }

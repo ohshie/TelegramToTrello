@@ -1,15 +1,25 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace TelegramToTrello;
 
 public class NotificationsDbOperations
 {
-    public async Task<bool> ToggleNotifications(RegisteredUser user)
+    public async Task<RegisteredUser> ToggleNotifications(int telegramId)
     {
         using BotDbContext dbContext = new BotDbContext();
         {
-            user.NotificationsEnabled = !user.NotificationsEnabled;
-            dbContext.Update(user);
-            await dbContext.SaveChangesAsync();
-            return user.NotificationsEnabled;
+            RegisteredUser? user = await dbContext.Users
+                .Include(u => u.Boards)
+                .FirstOrDefaultAsync(u => u.TelegramId == telegramId);
+            if ( user!= null)
+            {
+                user.NotificationsEnabled = !user.NotificationsEnabled;
+                dbContext.Update(user);
+                await dbContext.SaveChangesAsync();
+                return user;
+            }
+
+            return null;
         }
     }
     
@@ -26,7 +36,6 @@ public class NotificationsDbOperations
             
             if (newNotificationsKeys.Any())
             {
-                List<TaskNotification> createNewNotificationsList = new();
                 foreach (var key in newNotificationsKeys)
                 {
                     string correctDueDate = DateTime.Parse(cards[key].Due).ToUniversalTime().ToString("o");
@@ -40,10 +49,10 @@ public class NotificationsDbOperations
                         User = user.TelegramId,
                         Description = cards[key].Description,
                         Participants = cards[key].Members,
-                        BoardId = cards[key].BoardId,
-                        ListId = cards[key].ListId
+                        TaskBoard = cards[key].BoardId,
+                        TaskList = cards[key].ListId
                     };
-                    createNewNotificationsList.Add(newNotification);
+                    newTasks.Add(newNotification);
                 }
             }
             

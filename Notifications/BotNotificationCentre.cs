@@ -25,26 +25,23 @@ public class BotNotificationCentre
 
     public async Task ToggleNotificationsForUser()
     {
-        RegisteredUser trelloUser = await _dbOperations.RetrieveTrelloUser((int)Message.From.Id);
-        if (trelloUser == null) return;
-        
-
-        bool turnedOn = await _notificationsDbOperations.ToggleNotifications(trelloUser);
-        
-        if (turnedOn)
+        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)Message.From.Id);
+        if (user == null) return;
+     
+        if (user.NotificationsEnabled)
         {
-            await GetCardsForNotifications(trelloUser);
+            await GetCardsForNotifications(user);
             
             await BotClient.SendTextMessageAsync(text: $"Notifications turned on.\n" +
                                                        $"You will now receive messages with new tasks set on your name and when task due is less than 3 hours.\n" +
                                                        $"if you want to disable notifications press /notifications",
-            chatId: trelloUser.TelegramId);
+            chatId: user.TelegramId);
             return;
         }
         
         await BotClient.SendTextMessageAsync(text: $"Notifications turned off.\n" +
                                                    $"To enable notifications press /notifications",
-            chatId: trelloUser.TelegramId);
+            chatId: user.TelegramId);
     }
 
     private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
