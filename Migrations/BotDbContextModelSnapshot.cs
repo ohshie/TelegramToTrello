@@ -36,40 +36,6 @@ namespace TelegramToTrello.Migrations
                     b.ToTable("UsersBoards", (string)null);
                 });
 
-            modelBuilder.Entity("TelegramToTrello.AssignedTask", b =>
-                {
-                    b.Property<int>("TaskId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaskId"));
-
-                    b.Property<string>("BoardId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Date")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("EditMode")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ListId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Participants")
-                        .HasColumnType("text");
-
-                    b.HasKey("TaskId");
-
-                    b.ToTable("AssignedTasks");
-                });
-
             modelBuilder.Entity("TelegramToTrello.Board", b =>
                 {
                     b.Property<int>("Id")
@@ -195,14 +161,29 @@ namespace TelegramToTrello.Migrations
 
             modelBuilder.Entity("TelegramToTrello.TaskNotification", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("TaskId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BoardId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<string>("Due")
                         .HasColumnType("text");
 
+                    b.Property<bool>("EditMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ListId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .HasColumnType("text");
+
+                    b.Property<string[]>("Participants")
+                        .HasColumnType("text[]");
 
                     b.Property<string>("Url")
                         .HasColumnType("text");
@@ -210,7 +191,7 @@ namespace TelegramToTrello.Migrations
                     b.Property<int>("User")
                         .HasColumnType("integer");
 
-                    b.HasKey("Id");
+                    b.HasKey("TaskId");
 
                     b.ToTable("TaskNotifications");
                 });

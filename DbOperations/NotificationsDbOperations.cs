@@ -21,7 +21,7 @@ public class NotificationsDbOperations
             
             List<TaskNotification> newTasks = new List<TaskNotification>();
 
-            var currentNotifications = dbContext.TaskNotifications.ToDictionary(tn => tn.Id);
+            var currentNotifications = dbContext.TaskNotifications.ToDictionary(tn => tn.TaskId);
             var newNotificationsKeys = cards.Keys.Except(currentNotifications.Keys);
             
             if (newNotificationsKeys.Any())
@@ -33,11 +33,15 @@ public class NotificationsDbOperations
                     
                     TaskNotification newNotification = new()
                     {
-                        Id = cards[key].Id,
+                        TaskId = cards[key].Id,
                         Name = cards[key].Name,
                         Due = correctDueDate,
                         Url = cards[key].Url,
-                        User = user.TelegramId
+                        User = user.TelegramId,
+                        Description = cards[key].Description,
+                        Participants = cards[key].Members,
+                        BoardId = cards[key].BoardId,
+                        ListId = cards[key].ListId
                     };
                     createNewNotificationsList.Add(newNotification);
                 }
@@ -66,7 +70,7 @@ public class NotificationsDbOperations
         List<TaskNotification> notificationsList = dbContext.TaskNotifications.Where(tn => tn.User == user.TelegramId).ToList();
         List<string> cardsIds = cards.Values.Select(c => c.Id).ToList();
             
-        notificationsList.RemoveAll(item => cardsIds.Contains(item.Id));
+        notificationsList.RemoveAll(item => cardsIds.Contains(item.TaskId));
         dbContext.TaskNotifications.RemoveRange(notificationsList);
         await dbContext.SaveChangesAsync();
     }
