@@ -182,7 +182,13 @@ namespace TelegramToTrello.Migrations
                     b.Property<string>("TaskBoard")
                         .HasColumnType("text");
 
+                    b.Property<string>("TaskBoardId")
+                        .HasColumnType("text");
+
                     b.Property<string>("TaskList")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TaskListId")
                         .HasColumnType("text");
 
                     b.Property<string>("Url")

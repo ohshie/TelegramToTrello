@@ -46,7 +46,7 @@ public class BotNotificationCentre
 
     private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
     {
-        var cards = await _trelloOperations.GetCardsForNotifications(trelloUser);
+        var cards = await _trelloOperations.GetSubscribedTasks(trelloUser);
 
         Console.WriteLine("done");
         

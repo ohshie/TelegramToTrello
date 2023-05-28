@@ -50,7 +50,7 @@ public class BotClient
         
         if (update.CallbackQuery is { } callbackQuery)
         {
-            TaskCallbackFactory callbackFactory = new();
+            CallbackFactory callbackFactory = new();
             await callbackFactory.CallBackDataManager(callbackQuery, botClient);
             return;
         }

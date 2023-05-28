@@ -91,9 +91,9 @@ public class TrelloOperations
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
             string correctDate = DateTime.Parse(task.Date).AddHours(-4).ToString("o");
-            
-            string participants = task.TaskPartId.Remove(task.TaskPartId.Length-1);
+            string participants = $"{task.TaskPartId}{task.TrelloId}";
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
+            
             var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
                              $"&token={trelloUser?.TrelloToken}" +
                              $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
@@ -104,59 +104,68 @@ public class TrelloOperations
 
             HttpResponseMessage response = await httpClient.PostAsync(requestUri, null);
 
-            if (response.IsSuccessStatusCode)
-            {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(responseBody);
-                return true;
-            }
+            if (await AddTaskToNotifications(task, response, dbContext, correctDate, trelloUser)) return true;
 
             Console.WriteLine($"failed {response}");
             return false;
         }
     }
 
-    private async Task<bool> PushDateToTrello(TTTTask userCreatedTask)
+    private async Task<bool> AddTaskToNotifications(TTTTask task, HttpResponseMessage response, BotDbContext dbContext,
+        string correctDate, RegisteredUser? trelloUser)
     {
-        using (BotDbContext dbContext = new BotDbContext())
-        using (HttpClient httpClient = new HttpClient())
+        if (response.IsSuccessStatusCode)
         {
-            RegisteredUser? trelloUser = await dbContext.Users.FindAsync(userCreatedTask.Id);
-            string trelloApiUri = $"https://api.trello.com/1/cards/{userCreatedTask.TaskId}?due={userCreatedTask.Date}&" +
-                                  $"key={TrelloApiKey}&token={trelloUser?.TrelloToken}";
-            
-            HttpResponseMessage response = await httpClient.PutAsync(trelloApiUri, null);
+            string content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(content);
+            JsonDocument trelloResponse = JsonDocument.Parse(content);
+            string? taskId = trelloResponse.RootElement.GetProperty("id").GetString();
+            string taskUrl = trelloResponse.RootElement.GetProperty("shortUrl").GetString();
 
-            if (response.IsSuccessStatusCode)
+            if (taskId != null)
             {
-                string responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(responseBody);
+                dbContext.TaskNotifications.Add(new TaskNotification
+                {
+                    TaskId = taskId,
+                    TaskList = task.ListId,
+                    TaskBoard = task.TrelloBoardId,
+                    Due = correctDate,
+                    Name = task.TaskName,
+                    Description = task.TaskDesc,
+                    Url = taskUrl,
+                    User = trelloUser!.TelegramId
+                });
+                await dbContext.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task<bool> MarkTaskAsComplete(string taskId, RegisteredUser user)
+    {
+        using (HttpClient httpClient = new())
+        {
+            string requestUrl = $"https://api.trello.com/1/cards/{taskId}?key={TrelloApiKey}" +
+                                $"&token={user.TrelloToken}" +
+                                $"&dueComplete=true" +
+                                $"&subscribed=false";
+
+            HttpResponseMessage responseMessage = await httpClient.PutAsync(requestUrl, null);
+            
+            if (responseMessage.IsSuccessStatusCode)
+            {
+                Console.WriteLine(responseMessage);
                 return true;
             }
 
-            Console.WriteLine($"failed {response}");
+            Console.WriteLine(responseMessage +"failed");
             return false;
         }
     }
-
-    public async Task<Dictionary<string, TrelloCard>?> GetCardsForNotifications(RegisteredUser user)
-    {
-        List<TrelloCard>? cards = await FetchCardsFromTrello(user);
-        if (cards != null)
-        {
-            DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
-            DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
-            
-            var filteredCards = cards.Where(card => card.Due != null &&
-                                                    DateTime.Parse(card.Due) >= minDueDate &&
-                                                    DateTime.Parse(card.Due) <= maxDueDate &&
-                                                    card.Members.Contains(user.TrelloId)).ToDictionary(c => c.Id);
-            
-            return filteredCards;
-        }
-        return null;
-    }
-
+    
     private async Task<List<TrelloCard>?> FetchCardsFromTrello(RegisteredUser user)
     {
         HttpResponseMessage cardsResponse;
@@ -200,7 +209,7 @@ public class TrelloOperations
             Dictionary<string, TrelloCard> filteredCards = cards.Where(card => card.Due != null &&
                                                                                 DateTime.Parse(card.Due) >= minDueDate &&
                                                                                 DateTime.Parse(card.Due) <= maxDueDate &&
-                                                                                card.SubscribeStatus).ToDictionary(c => c.Id);
+                                                                                card.SubscribeStatus && !card.Status).ToDictionary(c => c.Id);
             
             return filteredCards;
         }
@@ -262,7 +271,7 @@ public class TrelloOperations
         public string Description { get; set; } = string.Empty;
         [JsonPropertyName("shortUrl")]
         public string Url { get; set; } = string.Empty;
-        [JsonPropertyName("closed")]
+        [JsonPropertyName("dueComplete")]
         public bool Status { get; set; }
         [JsonPropertyName("idBoard")]
         public string BoardId { get; set; }

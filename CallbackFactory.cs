@@ -1,12 +1,11 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.CurrentTaskOperations;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
-public class TaskCallbackFactory
+public class CallbackFactory
 {
-   
-    
     private readonly Dictionary<string, Func<CallbackQuery, ITelegramBotClient, Task>> BotTaskFactory = 
         new(){
             { "/board", (callbackQuery, botClient) => new AddBoardToTask(callbackQuery, botClient).Execute() },
@@ -22,6 +21,9 @@ public class TaskCallbackFactory
             { "/editdesc", (callbackQuery, botClient) => new TaskDescriptionRequest(callbackQuery, botClient, isEdit:true).Execute() },
             { "/drop", (callbackQuery, botClient) => new DropTask(callbackQuery, botClient).Execute() },
             { "/autodate", (callbackQuery, botClient) => new AddDateToTask(callbackQuery, botClient).Execute() },
+            { "/edittask", (callbackQuery, botClient) => new TaskInfoDisplay(callbackQuery, botClient).Execute() },
+            { "/taskComplete", (callbackQuery, botClient) => new MarkTaskAsCompleted(callbackQuery, botClient).Execute() },
+            { "/taskMove", (callbackQuery, botClient) => new TaskInfoDisplay(callbackQuery, botClient).Execute() }
         };
     
     

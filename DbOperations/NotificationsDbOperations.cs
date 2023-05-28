@@ -38,8 +38,10 @@ public class NotificationsDbOperations
             {
                 foreach (var key in newNotificationsKeys)
                 {
-                    string correctDueDate = DateTime.Parse(cards[key].Due).ToUniversalTime().ToString("o");
-                    
+                    string correctDueDate = DateTime.Parse(cards[key].Due).AddHours(4).ToUniversalTime().ToString("o");
+                    Board? board = await dbContext.Boards.FirstOrDefaultAsync(b => b.TrelloBoardId == cards[key].BoardId);
+                    Table? table = await dbContext.BoardTables.FirstOrDefaultAsync(t => t.TableId == cards[key].ListId);
+
                     TaskNotification newNotification = new()
                     {
                         TaskId = cards[key].Id,
@@ -49,8 +51,10 @@ public class NotificationsDbOperations
                         User = user.TelegramId,
                         Description = cards[key].Description,
                         Participants = cards[key].Members,
-                        TaskBoard = cards[key].BoardId,
-                        TaskList = cards[key].ListId
+                        TaskBoardId = cards[key].BoardId,
+                        TaskListId = cards[key].ListId,
+                        TaskBoard = board.BoardName,
+                        TaskList = table.Name
                     };
                     newTasks.Add(newNotification);
                 }

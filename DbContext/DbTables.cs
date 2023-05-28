@@ -72,7 +72,9 @@ public class TaskNotification
 {
     [Key]
     public string? TaskId { get; set; }
+    public string? TaskBoardId { get; set; }
     public string? TaskBoard { get; set; }
+    public string? TaskListId { get; set; }
     public string? TaskList { get; set; }
     public string? Due { get; set; }
     public string? Url { get; set; }
