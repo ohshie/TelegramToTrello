@@ -159,7 +159,7 @@ public class CreatingTaskDbOperations : DbOperations
     {
         using (BotDbContext dbContext = new())
         {
-            UserTask.MessageForDeletionId = messageId;
+            UserTask.LastBotMessage = messageId;
 
             dbContext.CreatingTasks.Update(UserTask);
             await dbContext.SaveChangesAsync();

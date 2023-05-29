@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.SyncDbOperations;
 

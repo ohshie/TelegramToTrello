@@ -1,6 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.CurrentTaskOperations;
 
@@ -23,12 +24,16 @@ public class CurrentTasksDisplay
         if (user != null)
         {
             var cards = await _trelloOperations.GetSubscribedTasks(user);
-
+            
+            BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, messageId: Message.MessageId);
+            
             InlineKeyboardMarkup keyboardMarkup = CreateKeyboard(cards);
 
             var botMessageText = CreateBotMessageText(cards);
 
-            await BotClient.SendTextMessageAsync(text: botMessageText, chatId: Message.Chat.Id, replyMarkup: keyboardMarkup);
+            await BotClient.SendTextMessageAsync(text: botMessageText,
+                chatId: Message.Chat.Id, 
+                replyMarkup: keyboardMarkup);
         }
     }
 

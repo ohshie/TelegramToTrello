@@ -18,13 +18,15 @@ public class StartTaskCreation
     public async Task CreateTask()
     {
         var user = await GetUser();
-
+        
         if (!await UserIsRegisteredUser(user)) return;
         if (await UserIsCreatingATask(user)) return;
-
+        
         CreatingTaskDbOperations creatingTaskDbOperations = new(user,null);
         await creatingTaskDbOperations.CreateTask();
 
+        await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, Message.MessageId);
+        
         CreateKeyboardWithBoards createKeyboardWithBoards = new(Message, BotClient);
         await createKeyboardWithBoards.Execute();
     }
@@ -41,6 +43,7 @@ public class StartTaskCreation
     {
         if (user == null)
         {
+            await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, Message.MessageId);
             await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
                 text: "Looks like you are not registered yet." +
                       "Click on /register and follow commands to register");
@@ -57,6 +60,7 @@ public class StartTaskCreation
 
         if (task != null)
         {
+            await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, Message.MessageId);
             await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
                 text: "Looks like you are already in the process of creating a task.\n" +
                       "Please finish it first or drop it by pressing /drop");

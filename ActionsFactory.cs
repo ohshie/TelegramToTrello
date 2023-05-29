@@ -15,10 +15,13 @@ public class ActionsFactory
             { "/start", (message, botClient) => new UserRegistrationHandler(message, botClient).Authenticate() },
             { "/register", (message, botClient) => new UserRegistrationHandler(message, botClient).Authenticate() },
             { "/SyncBoards", (message, botClient) => new UserRegistrationHandler(message, botClient).SyncBoards() },
+            { "🟰Sync changes", (message, botClient) => new UserRegistrationHandler(message, botClient).SyncBoards() },
             { "/newtask", (message, botClient) => new StartTaskCreation(message, botClient).CreateTask() },
+            { "➕New Task", (message, botClient) => new StartTaskCreation(message, botClient).CreateTask() },
             { "/notifications", (message, botClient) => new BotNotificationCentre(message,botClient).ToggleNotificationsForUser()},
             { "/drop", (message, botClient) => new DropTask(message,botClient).Execute()},
-            {"/display", (message, botClient) => new CurrentTasksDisplay(message, botClient).Execute()}
+            { "➖Cancel action", (message, botClient) => new DropTask(message,botClient).Execute()},
+            { "♾️Show my tasks", (message, botClient) => new CurrentTasksDisplay(message, botClient).Execute()}
         };
 
     public async Task BotActionFactory(Message message, ITelegramBotClient botClient)

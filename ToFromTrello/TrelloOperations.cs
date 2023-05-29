@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
-namespace TelegramToTrello;
+namespace TelegramToTrello.ToFromTrello;
 
 public class TrelloOperations
 {
@@ -67,20 +67,18 @@ public class TrelloOperations
             await httpClient.GetAsync(
                 $"https://api.trello.com/1/boards/{boardId}/members?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
 
-        if (response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode) return null;
+        
+        var content = await response.Content.ReadAsStringAsync();
+        List<TrelloBoardUser>? newUsers = JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
+
+        if (newUsers == null) return null;
+        
+        foreach (var user in newUsers)
         {
-            var content = await response.Content.ReadAsStringAsync();
-            List<TrelloBoardUser>? newUsers = JsonSerializer.Deserialize<List<TrelloBoardUser>>(content);
-
-            foreach (var user in newUsers)
-            {
-                user.BoardId = boardId;
-            }
-
-            return newUsers;
+            user.BoardId = boardId;
         }
-
-        return null;
+        return newUsers;
     }
     
     public async Task<bool> PushTaskToTrello(TTTTask task)
@@ -91,7 +89,7 @@ public class TrelloOperations
             RegisteredUser? trelloUser = await dbContext.Users.FindAsync(task.Id);
             string trelloApiUri = $"https://api.trello.com/1/cards";
 
-            string correctDate = DateTime.Parse(task.Date).AddHours(-4).ToString("o");
+            string correctDate = DateTime.Parse(task.Date!).AddHours(-4).ToString("o");
             string participants = $"{task.TaskPartId}{task.TrelloId}";
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             
@@ -101,7 +99,7 @@ public class TrelloOperations
                              $"&idList={task.ListId}" +
                              $"&idMembers={Uri.EscapeDataString(participants)}" +
                              $"&due={Uri.EscapeDataString(correctDate)}" +
-                             $"&desc={Uri.EscapeDataString(task.TaskDesc)}";
+                             $"&desc={Uri.EscapeDataString(task.TaskDesc!)}";
 
             HttpResponseMessage response = await httpClient.PostAsync(requestUri, null);
 
@@ -121,7 +119,7 @@ public class TrelloOperations
             Console.WriteLine(content);
             JsonDocument trelloResponse = JsonDocument.Parse(content);
             string? taskId = trelloResponse.RootElement.GetProperty("id").GetString();
-            string taskUrl = trelloResponse.RootElement.GetProperty("shortUrl").GetString();
+            string? taskUrl = trelloResponse.RootElement.GetProperty("shortUrl").GetString();
             string? tableName = await dbContext.BoardTables
                 .Where(bt => bt.TableId == task.ListId)
                 .Select(bt => bt.Name)
@@ -200,14 +198,14 @@ public class TrelloOperations
         
         string cardsJson = await cardsResponse.Content.ReadAsStringAsync();
         TrelloSearchResponse? searchResponse = JsonSerializer.Deserialize<TrelloSearchResponse>(cardsJson);
-        List<TrelloCard> cards = searchResponse.CardItems;
+        List<TrelloCard>? cards = searchResponse?.CardItems;
 
         return cards;
     }
 
     public async Task<Dictionary<string, TrelloCard>?> GetSubscribedTasks(RegisteredUser user)
     {
-        List<TrelloCard?> cards = await FetchCardsFromTrello(user);
+        List<TrelloCard>? cards = await FetchCardsFromTrello(user);
         if (cards != null)
         {
             DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
@@ -278,8 +276,8 @@ public class TrelloOperations
         [JsonPropertyName("dueComplete")]
         public bool Status { get; set; }
         [JsonPropertyName("idBoard")]
-        public string BoardId { get; set; }
+        public string? BoardId { get; set; }
         [JsonPropertyName("idList")]
-        public string ListId { get; set; }
+        public string? ListId { get; set; }
     }
 }

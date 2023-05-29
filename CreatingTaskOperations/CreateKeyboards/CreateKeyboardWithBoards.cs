@@ -32,8 +32,7 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
         
         await BotClient.SendTextMessageAsync(text: "We will start with choosing a board for our task:",
             chatId: Message.Chat.Id,
-            replyMarkup: inlineKeyboardMarkup,
-            replyToMessageId: Message.MessageId);
+            replyMarkup: inlineKeyboardMarkup);
     }
     
     private InlineKeyboardMarkup KeyboardBoardChoice(RegisteredUser? user)

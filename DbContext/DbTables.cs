@@ -65,7 +65,7 @@ public class TTTTask
     public string? TaskPartName { get; set; }
     public string? Date { get; set; }
     public bool InEditMode { get; set; }
-    public int MessageForDeletionId { get; set; }
+    public int LastBotMessage { get; set; }
 }
 
 public class TaskNotification

@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramToTrello.UserRegistration;
 
@@ -27,14 +28,16 @@ public class UserRegistrationHandler
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
                 replyToMessageId: Message.MessageId,
-                text: "User already registered.");
+                text: "User already registered.",
+                replyMarkup: CreateKeyboard());
             return;
         }
         
         await BotClient.SendTextMessageAsync(Message.Chat.Id,
             replyToMessageId: Message.MessageId,
             text: "Please click on this link authenticate in trello:\n\n" +
-                  $"{oauthLink}\n\n");
+                  $"{oauthLink}\n\n",
+            replyMarkup:CreateKeyboard());
     }
     
     public async Task SyncBoards()
@@ -51,5 +54,20 @@ public class UserRegistrationHandler
             replyToMessageId: Message.MessageId,
             text: "Looks like you haven't completed authentication via trello.\n" + 
                   "Click /register and finish authorization via trello website.");
+    }
+
+    private ReplyKeyboardMarkup CreateKeyboard()
+    {
+        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(new[]
+        {
+            new KeyboardButton[] {"➕New Task", "➖Cancel action"},
+            new KeyboardButton[] {"♾️Show my tasks", "🟰Sync changes"}
+        })
+        {
+            ResizeKeyboard = true,
+            OneTimeKeyboard = false,
+            IsPersistent = true
+        };
+        return keyboard;
     }
 }

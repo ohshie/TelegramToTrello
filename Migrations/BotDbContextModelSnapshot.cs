@@ -97,11 +97,11 @@ namespace TelegramToTrello.Migrations
                     b.Property<bool>("InEditMode")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("LastBotMessage")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ListId")
                         .HasColumnType("text");
-
-                    b.Property<int>("MessageForDeletionId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Tag")
                         .HasColumnType("text");
