@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace TelegramToTrello;
 
@@ -121,14 +122,20 @@ public class TrelloOperations
             JsonDocument trelloResponse = JsonDocument.Parse(content);
             string? taskId = trelloResponse.RootElement.GetProperty("id").GetString();
             string taskUrl = trelloResponse.RootElement.GetProperty("shortUrl").GetString();
-
+            string? tableName = await dbContext.BoardTables
+                .Where(bt => bt.TableId == task.ListId)
+                .Select(bt => bt.Name)
+                .FirstOrDefaultAsync();
+            
             if (taskId != null)
             {
                 dbContext.TaskNotifications.Add(new TaskNotification
                 {
                     TaskId = taskId,
-                    TaskList = task.ListId,
-                    TaskBoard = task.TrelloBoardId,
+                    TaskListId = task.ListId,
+                    TaskList = tableName,
+                    TaskBoard = task.TrelloBoardName,
+                    TaskBoardId = task.TrelloBoardId,
                     Due = correctDate,
                     Name = task.TaskName,
                     Description = task.TaskDesc,
