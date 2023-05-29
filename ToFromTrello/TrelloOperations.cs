@@ -178,12 +178,12 @@ public class TrelloOperations
         HttpResponseMessage cardsResponse;
         using HttpClient httpClient = new HttpClient();
         {
-            string isOpenFilter = "is:open";
-            string cardLimit = "150";
+            string query = Uri.EscapeDataString("@me is:open has:members created:month sort:-edited");
+            string cardLimit = "50";
 
             string cardsUrl =
                 $"https://api.trello.com/1/search?" +
-                $"query={isOpenFilter}&" +
+                $"query={query}&" +
                 $"key={TrelloApiKey}&" +
                 $"token={user.TrelloToken}&" +
                 $"idBoards=mine&" +
@@ -211,16 +211,13 @@ public class TrelloOperations
         if (cards != null)
         {
             DateTime minDueDate = DateTime.UtcNow.AddDays(-7);
-            DateTime maxDueDate = DateTime.UtcNow.AddDays(9999);
             
             Dictionary<string, TrelloCard> filteredCards = cards.Where(card => card.Due != null &&
-                                                                                DateTime.Parse(card.Due) >= minDueDate &&
-                                                                                DateTime.Parse(card.Due) <= maxDueDate &&
-                                                                                card.SubscribeStatus && !card.Status).ToDictionary(c => c.Id);
+                                                                               DateTime.Parse(card.Due) >= minDueDate &&
+                                                                               card.SubscribeStatus && !card.Status).ToDictionary(c => c.Id);
             
             return filteredCards;
         }
-
         return null;
     }
 
