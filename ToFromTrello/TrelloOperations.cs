@@ -6,13 +6,20 @@ namespace TelegramToTrello.ToFromTrello;
 
 public class TrelloOperations
 {
-    private static readonly string? TrelloApiKey = Environment.GetEnvironmentVariable("Trello_API_Key");
+    public TrelloOperations()
+    {
+        var configuration = Configuration.CreateConfiguration();
+        
+        _trelloApiKey = configuration.GetSection("TrelloApi")["TrelloKey"];
+    }
+    
+    private readonly string? _trelloApiKey;
 
     public async Task<string?> GetTrelloUserId(string token)
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage responseMessage = (await httpClient.GetAsync(
-            $"https://api.trello.com/1/members/me?key={TrelloApiKey}&token={token}"));
+            $"https://api.trello.com/1/members/me?key={_trelloApiKey}&token={token}"));
 
         if (responseMessage.IsSuccessStatusCode)
         {
@@ -34,7 +41,7 @@ public class TrelloOperations
     {
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response = (await httpClient.GetAsync(
-            $"https://api.trello.com/1/members/{userName.TrelloId}/boards?key={TrelloApiKey}&token={userName.TrelloToken}"));
+            $"https://api.trello.com/1/members/{userName.TrelloId}/boards?key={_trelloApiKey}&token={userName.TrelloToken}"));
 
         if (response.IsSuccessStatusCode)
         {
@@ -49,7 +56,7 @@ public class TrelloOperations
     public async Task<List<TrelloBoardTable>?> GetBoardTables(string boardName, RegisteredUser trelloUser)
     {
         using HttpClient httpClient = new HttpClient();
-        HttpResponseMessage response = await httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
+        HttpResponseMessage response = await httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={_trelloApiKey}&token={trelloUser.TrelloToken}");
 
         if (response.IsSuccessStatusCode)
         {
@@ -65,7 +72,7 @@ public class TrelloOperations
         using HttpClient httpClient = new HttpClient();
         HttpResponseMessage response =
             await httpClient.GetAsync(
-                $"https://api.trello.com/1/boards/{boardId}/members?key={TrelloApiKey}&token={trelloUser.TrelloToken}");
+                $"https://api.trello.com/1/boards/{boardId}/members?key={_trelloApiKey}&token={trelloUser.TrelloToken}");
 
         if (!response.IsSuccessStatusCode) return null;
         
@@ -93,7 +100,7 @@ public class TrelloOperations
             string participants = $"{task.TaskPartId}{task.TrelloId}";
             string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             
-            var requestUri = $"{trelloApiUri}?key={TrelloApiKey}" +
+            var requestUri = $"{trelloApiUri}?key={_trelloApiKey}" +
                              $"&token={trelloUser?.TrelloToken}" +
                              $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
                              $"&idList={task.ListId}" +
@@ -153,7 +160,7 @@ public class TrelloOperations
     {
         using (HttpClient httpClient = new())
         {
-            string requestUrl = $"https://api.trello.com/1/cards/{taskId}?key={TrelloApiKey}" +
+            string requestUrl = $"https://api.trello.com/1/cards/{taskId}?key={_trelloApiKey}" +
                                 $"&token={user.TrelloToken}" +
                                 $"&dueComplete=true" +
                                 $"&subscribed=false";
@@ -182,7 +189,7 @@ public class TrelloOperations
             string cardsUrl =
                 $"https://api.trello.com/1/search?" +
                 $"query={query}&" +
-                $"key={TrelloApiKey}&" +
+                $"key={_trelloApiKey}&" +
                 $"token={user.TrelloToken}&" +
                 $"idBoards=mine&" +
                 $"cards_limit={cardLimit}";

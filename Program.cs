@@ -10,7 +10,7 @@ class Program
             await dbContext.Database.EnsureCreatedAsync();
         }
         
-        BotClient botClient = new BotClient();
+        var botClient = new BotClient();
         Task bot = botClient.BotOperations();
         
         WebServer server = new WebServer();

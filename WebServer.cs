@@ -6,10 +6,15 @@ namespace TelegramToTrello;
 
 public class WebServer
 {
+    private IConfiguration _configuration;
+    public WebServer()
+    {
+        _configuration = Configuration.CreateConfiguration();
+    }
     public async Task Run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("WebServer"));
+        builder.WebHost.UseUrls(_configuration.GetSection("WebServer")["WebServer"]);
         var app = builder.Build();
 
         app.UseStaticFiles();

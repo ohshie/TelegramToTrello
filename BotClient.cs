@@ -10,14 +10,22 @@ namespace TelegramToTrello;
 
 public class BotClient
 {
+    public BotClient()
+    {
+        var configuration = Configuration.CreateConfiguration();
+        
+        _botClient = new TelegramBotClient(configuration.GetSection("BotToken")["BotToken"]);
+        _tasksUpdateTimer = Convert.ToInt32(configuration.GetSection("Timers")["NotificationTimer"]);
+        _syncBoardsWithBot = Convert.ToInt32(configuration.GetSection("Timers")["SyncTimer"]);
+    }
+    
     private static Timer NotificationsTimer;
     private static Timer SyncTimer;
     
-    private static readonly string? TelegramBotToken = Environment.GetEnvironmentVariable("Telegram_Bot_Token");
-    private static readonly int TasksUpdateTimer = int.Parse(Environment.GetEnvironmentVariable("TaskUpdateTimer"));
-    private static readonly int SyncBoardsWithBot = int.Parse(Environment.GetEnvironmentVariable("SyncTimer"));
-
-    private TelegramBotClient _botClient = new(TelegramBotToken);
+    private static int _tasksUpdateTimer;
+    private static int _syncBoardsWithBot;
+        
+    private readonly TelegramBotClient _botClient;
 
     public async Task BotOperations()
     {
@@ -75,8 +83,8 @@ public class BotClient
 
     private async Task RunServices(ITelegramBotClient botClient)
     {
-        TimeSpan taskUpdateInterval = TimeSpan.FromMinutes(TasksUpdateTimer);
-        TimeSpan syncInterval = TimeSpan.FromMinutes(SyncBoardsWithBot);
+        TimeSpan taskUpdateInterval = TimeSpan.FromMinutes(_tasksUpdateTimer);
+        TimeSpan syncInterval = TimeSpan.FromMinutes(_syncBoardsWithBot);
         
         BotNotificationCentre botNotificationCentre = new(botClient);
         SyncService syncService = new();
