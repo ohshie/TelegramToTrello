@@ -24,7 +24,7 @@ public static class Configuration
         NotificationTimer = Convert.ToInt32(_configuration.GetSection("Timers")["NotificationTimer"]);
         SyncTimer = Convert.ToInt32(_configuration.GetSection("Timers")["SyncTimer"]);
         ServerUrl = _configuration.GetSection("WebServer")["WebServer"];
-        TrelloKey = _configuration.GetSection("TrelloApi")["TrelloApi"];
+        TrelloKey = _configuration.GetSection("TrelloApi")["TrelloKey"];
     }
 
     private static IConfiguration CreateConfiguration()
