@@ -4,18 +4,23 @@ namespace TelegramToTrello;
 
 public class BotDbContext : DbContext
 {
+    public BotDbContext()
+    {
+        _connectionString = Configuration.ConnectionString;
+    }
+
+    private readonly string _connectionString;
+    
     public DbSet<RegisteredUser> Users { get; set; }
     public DbSet<Board> Boards { get; set; }
     public DbSet<TTTTask> CreatingTasks { get; set; }
     public DbSet<Table> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
-
-    private IConfiguration _configuration = Configuration.CreateConfiguration();
-
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseNpgsql(_configuration.GetConnectionString("Postgres"));
+        optionsBuilder.UseNpgsql(_connectionString);
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

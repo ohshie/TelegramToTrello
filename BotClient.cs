@@ -12,11 +12,9 @@ public class BotClient
 {
     public BotClient()
     {
-        var configuration = Configuration.CreateConfiguration();
-        
-        _botClient = new TelegramBotClient(configuration.GetSection("BotToken")["BotToken"]);
-        _tasksUpdateTimer = Convert.ToInt32(configuration.GetSection("Timers")["NotificationTimer"]);
-        _syncBoardsWithBot = Convert.ToInt32(configuration.GetSection("Timers")["SyncTimer"]);
+        _botClient = new TelegramBotClient(Configuration.BotToken);
+        _tasksUpdateTimer = Configuration.NotificationTimer;
+        _syncBoardsWithBot = Configuration.SyncTimer;
     }
     
     private static Timer NotificationsTimer;
@@ -89,7 +87,7 @@ public class BotClient
         BotNotificationCentre botNotificationCentre = new(botClient);
         SyncService syncService = new();
         NotificationsTimer = new Timer(async _ => await botNotificationCentre.NotificationManager(), null, taskUpdateInterval, taskUpdateInterval);
-        NotificationsTimer = new Timer(async _ => await syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
+        SyncTimer = new Timer(async _ => await syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
     }
     
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

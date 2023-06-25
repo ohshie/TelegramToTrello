@@ -8,9 +8,7 @@ public class TrelloOperations
 {
     public TrelloOperations()
     {
-        var configuration = Configuration.CreateConfiguration();
-        
-        _trelloApiKey = configuration.GetSection("TrelloApi")["TrelloKey"];
+        _trelloApiKey = Configuration.TrelloKey;
     }
     
     private readonly string? _trelloApiKey;

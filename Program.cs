@@ -5,6 +5,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        Configuration.InitializeVariables();
+
         using BotDbContext dbContext = new BotDbContext();
         {
             await dbContext.Database.EnsureCreatedAsync();
