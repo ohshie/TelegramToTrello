@@ -1,46 +1,44 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.ToFromTrello;
-using TelegramToTrello.UserRegistration;
 
-namespace TelegramToTrello.BotActions;
+namespace TelegramToTrello.Notifications;
 
 public class BotNotificationCentre
 {
     private readonly NotificationsDbOperations _notificationsDbOperations = new();
-    private readonly UserDbOperations _dbOperations = new();
     private readonly TrelloOperations _trelloOperations = new();
-    private ITelegramBotClient BotClient { get; }
-    private Message? Message { get; }
+    private readonly ITelegramBotClient _botClient;
+    private readonly Message? _message;
 
     public BotNotificationCentre(Message message, ITelegramBotClient botClient)
     {
-        BotClient = botClient;
-        Message = message;
+        _botClient = botClient;
+        _message = message;
     }
 
     public BotNotificationCentre(ITelegramBotClient botClient)
     {
-        BotClient = botClient;
+        _botClient = botClient;
     }
 
     public async Task ToggleNotificationsForUser()
     {
-        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)Message.From.Id);
+        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)_message.From.Id);
         if (user == null) return;
      
         if (user.NotificationsEnabled)
         {
             await GetCardsForNotifications(user);
             
-            await BotClient.SendTextMessageAsync(text: $"Notifications turned on.\n" +
+            await _botClient.SendTextMessageAsync(text: $"Notifications turned on.\n" +
                                                        $"You will now receive messages with new tasks set on your name and when task due is less than 3 hours.\n" +
                                                        $"if you want to disable notifications press /notifications",
             chatId: user.TelegramId);
             return;
         }
         
-        await BotClient.SendTextMessageAsync(text: $"Notifications turned off.\n" +
+        await _botClient.SendTextMessageAsync(text: $"Notifications turned off.\n" +
                                                    $"To enable notifications press /notifications",
             chatId: user.TelegramId);
     }
@@ -73,7 +71,7 @@ public class BotNotificationCentre
            string newTaskMessage = await GetCardsForNotifications(trelloUser);
            if (!string.IsNullOrEmpty(newTaskMessage))
            {
-               await BotClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
+               await _botClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
                                                     $"{newTaskMessage}",
                    chatId: trelloUser.TelegramId);
            }
@@ -89,7 +87,7 @@ public class BotNotificationCentre
                if (timeDelta.TotalHours < 3 && timeDelta.TotalHours > 1)
                {
                    
-                   await BotClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
+                   await _botClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
                                                               $"{task.Name}\n" +
                                                               $"{DateTime.Parse(task.Due)}\n" +
                                                               $"{task.Url}",

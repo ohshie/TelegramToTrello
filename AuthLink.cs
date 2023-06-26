@@ -1,5 +1,3 @@
-using TelegramToTrello;
-
 class AuthLink
 {
     public static string CreateLink(long telegramId)

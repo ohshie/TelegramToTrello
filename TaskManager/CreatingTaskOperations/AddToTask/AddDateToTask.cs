@@ -1,8 +1,9 @@
 using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddDateToTask : TaskCreationBaseHandler
 {

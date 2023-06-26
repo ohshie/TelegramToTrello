@@ -1,7 +1,8 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddTagToTask : TaskCreationBaseHandler
 {
@@ -12,7 +13,7 @@ public class AddTagToTask : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        string tag =  CallbackQuery.Data.Substring("/tag".Length).Trim();
+        string tag = CallbackQuery.Data.Substring("/tag".Length).Trim();
         
         if (!(Enum.TryParse(typeof(ChanelTags), tag, true, out _)))
         {

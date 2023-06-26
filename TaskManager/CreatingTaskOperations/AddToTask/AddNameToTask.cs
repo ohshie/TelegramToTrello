@@ -1,13 +1,14 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
-public class AddDescriptionToTask : TaskCreationBaseHandler
+public class AddNameToTask : TaskCreationBaseHandler
 {
-    public AddDescriptionToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
+    public AddNameToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
     {
-        NextTask = new CreateKeyboardWithUsers(Message, BotClient);;
+        NextTask = new TaskDescriptionRequest(message, botClient);
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -16,14 +17,13 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         {
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
                 replyToMessageId: Message.MessageId,
-                text: $"Task description should not start with \"/\"\n" +
-                      $"Please type a new description for a task");
-            NextTask = null;
+                text: $"Task name should not start with \"/\"\n" +
+                      $"Please type a new name for a task");
             return;
         }
 
         CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.AddDescription(Message.Text);
+        await dbOperations.AddName(Message.Text);
         
         if (task.InEditMode)
         {

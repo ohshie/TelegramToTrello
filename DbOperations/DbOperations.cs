@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace TelegramToTrello;
 
 public class DbOperations
-{ 
+{
     public async Task<Board?> RetrieveBoard(int telegramId, string boardName)
     {
         await using (BotDbContext dbContext = new BotDbContext())

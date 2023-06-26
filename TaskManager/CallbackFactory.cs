@@ -1,8 +1,10 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 using TelegramToTrello.CurrentTaskOperations;
+using TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager;
 
 public class CallbackFactory
 {

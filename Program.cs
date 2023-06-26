@@ -1,26 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TelegramToTrello;
+﻿Configuration.InitializeVariables();
 
-class Program
+using BotDbContext dbContext = new BotDbContext();
 {
-    static async Task Main(string[] args)
-    {
-        Configuration.InitializeVariables();
-
-        using BotDbContext dbContext = new BotDbContext();
-        {
-            await dbContext.Database.EnsureCreatedAsync();
-        }
-        
-        var botClient = new BotClient();
-        Task bot = botClient.BotOperations();
-        
-        WebServer server = new WebServer();
-        Task webServer = server.Run(args);
-
-        await Task.WhenAll(bot, webServer);
-        
-        Console.ReadLine();
-        Environment.Exit(1);
-    }
+    await dbContext.Database.EnsureCreatedAsync();
 }
+
+var botClient = new BotClient();
+Task bot = botClient.BotOperations();
+
+var server = new WebServer();
+Task webServer = server.Run(args);
+
+await Task.WhenAll(webServer, bot);
+        
+Console.ReadLine();
+Environment.Exit(1);

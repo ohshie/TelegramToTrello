@@ -5,6 +5,8 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramToTrello.BotActions;
 using TelegramToTrello.CreatingTaskOperations;
+using TelegramToTrello.Notifications;
+using TelegramToTrello.TaskManager;
 
 namespace TelegramToTrello;
 

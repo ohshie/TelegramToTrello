@@ -26,7 +26,7 @@ public class NotificationsDbOperations
     
     public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, Dictionary<string, TrelloOperations.TrelloCard> cards)
     {
-        using BotDbContext dbContext = new BotDbContext();
+        using (BotDbContext dbContext = new BotDbContext())
         {
             await RemoveTasksThatAreNotInTrello(dbContext, user, cards);
             
@@ -39,7 +39,7 @@ public class NotificationsDbOperations
             {
                 foreach (var key in newNotificationsKeys)
                 {
-                    string correctDueDate = DateTime.Parse(cards[key].Due).AddHours(4).ToUniversalTime().ToString("o");
+                    string correctDueDate = DateTime.Parse(cards[key].Due).AddHours(4).ToString("MM.dd.yyyy HH:mm");
                     Board? board = await dbContext.Boards.FirstOrDefaultAsync(b => b.TrelloBoardId == cards[key].BoardId);
                     Table? table = await dbContext.BoardTables.FirstOrDefaultAsync(t => t.TableId == cards[key].ListId);
 
