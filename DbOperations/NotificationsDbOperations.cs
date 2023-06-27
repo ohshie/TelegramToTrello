@@ -97,4 +97,17 @@ public class NotificationsDbOperations
             return registeredUsers;
         }
     }
+
+    public async Task ToggleSentStatus(TaskNotification taskNotification)
+    {
+        using (BotDbContext dbContext = new BotDbContext())
+        {
+            var task = dbContext.TaskNotifications.FirstOrDefault(tn => tn.TaskId == taskNotification.TaskId);
+            if (task != null)
+            {
+                task.NotificationSent = true;
+                await dbContext.SaveChangesAsync();
+            }
+        }
+    }
 }

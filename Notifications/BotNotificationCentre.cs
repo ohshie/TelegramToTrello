@@ -56,7 +56,7 @@ public class BotNotificationCentre
         {
             newTaskMessage = $"{newTaskMessage}\n" +
                              $"Name: {task.Name}\n" +
-                             $"Due: {DateTime.Parse(task.Due)}\n" +
+                             $"Due: {task.Due}\n" +
                              $"Link: {task.Url}\n";
         }
         return newTaskMessage;
@@ -76,22 +76,23 @@ public class BotNotificationCentre
                    chatId: trelloUser.TelegramId);
            }
 
-           List<TaskNotification> currentTask = await _notificationsDbOperations.GetUserCardsFromDb(trelloUser);
-
-           foreach (var task in currentTask)
+           List<TaskNotification> currentTasks = await _notificationsDbOperations.GetUserCardsFromDb(trelloUser);
+           
+           foreach (var task in currentTasks)
            {
                DateTime now = DateTime.Now;
                DateTime dueDate = DateTime.Parse(task.Due);
                TimeSpan timeDelta = dueDate - now;
-               
-               if (timeDelta.TotalHours < 3 && timeDelta.TotalHours > 1)
+
+               if (timeDelta.TotalHours < 3 && !task.NotificationSent)
                {
-                   
                    await _botClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
-                                                              $"{task.Name}\n" +
-                                                              $"{DateTime.Parse(task.Due)}\n" +
-                                                              $"{task.Url}",
+                                                               $"{task.Name}\n" +
+                                                               $"{task.Due}\n" +
+                                                               $"{task.Url}",
                        chatId: trelloUser.TelegramId);
+
+                   await _notificationsDbOperations.ToggleSentStatus(task);
                }
            }
        }

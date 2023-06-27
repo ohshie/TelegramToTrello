@@ -83,5 +83,6 @@ public class TaskNotification
     public string[]? Participants { get; set; }
     public int User { get; set; }
     public bool EditMode { get; set; }
+    public bool NotificationSent { get; set; }
 }
 
