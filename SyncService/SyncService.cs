@@ -16,7 +16,7 @@ public class SyncService
         foreach (var user in allUsersList)
         {
             await SyncStateToTrello(user);
-            Console.WriteLine("synced");
+            Console.WriteLine($"{user.TrelloName} synced");
         }
     }
     

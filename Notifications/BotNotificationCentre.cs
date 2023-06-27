@@ -47,7 +47,7 @@ public class BotNotificationCentre
     {
         var cards = await _trelloOperations.GetSubscribedTasks(trelloUser);
 
-        Console.WriteLine("done");
+        Console.WriteLine($"{trelloUser.TelegramName} updated notifications");
         
         List<TaskNotification> newTasks = await _notificationsDbOperations.UpdateAndAddCards(trelloUser, cards);
 
