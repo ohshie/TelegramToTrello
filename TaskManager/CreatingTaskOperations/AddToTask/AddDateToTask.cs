@@ -33,7 +33,7 @@ public class AddDateToTask : TaskCreationBaseHandler
         CreatingTaskDbOperations dbOperations = new(user, task);
         
         await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, task.LastBotMessage);
-        await dbOperations.AddDate(possibleDate, Message.MessageId);
+        await dbOperations.AddDate(possibleDate);
         
         if (task.InEditMode) await SetNextTaskIfEditMode(task);
     }

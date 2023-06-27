@@ -1,3 +1,4 @@
+using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.ToFromTrello;
@@ -81,7 +82,7 @@ public class BotNotificationCentre
            foreach (var task in currentTasks)
            {
                DateTime now = DateTime.Now;
-               DateTime dueDate = DateTime.Parse(task.Due);
+               DateTime.TryParse(task.Due, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dueDate);
                TimeSpan timeDelta = dueDate - now;
 
                if (timeDelta.TotalHours < 3 && !task.NotificationSent)

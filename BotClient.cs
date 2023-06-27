@@ -4,7 +4,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramToTrello.BotActions;
-using TelegramToTrello.CreatingTaskOperations;
 using TelegramToTrello.Notifications;
 using TelegramToTrello.TaskManager;
 
@@ -64,21 +63,21 @@ public class BotClient
         }
 
         if (update.Message is not { } message) return;
+        
         if (message.Chat.Id != message.From.Id) return;
+        
         if (message.Text is not { } messageText) return;
         
         var chatId = message.Chat.Id;
         var userUsername = message.From?.Username;
 
         Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
-        
+
         ActionsFactory actionsFactory = new();
         await actionsFactory.BotActionFactory(message, botClient);
-        
+
         TaskPlaceholderOperator taskPlaceholderOperator = new();
-        {
-            await taskPlaceholderOperator.SortMessage(message, botClient);
-        }
+        await taskPlaceholderOperator.SortMessage(message, botClient);
     }
 
     private async Task RunServices(ITelegramBotClient botClient)

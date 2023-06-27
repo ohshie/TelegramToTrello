@@ -10,7 +10,6 @@ public class TaskPlaceholderOperator
     private readonly TaskDbOperations _taskDbOperations = new();
     private readonly UserDbOperations _userDbOperations = new();
     
-    
     public async Task SortMessage(Message message, ITelegramBotClient botClient)
     {
         TTTTask? task = await GetTrelloUserAndTask(message);

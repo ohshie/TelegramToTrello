@@ -23,7 +23,7 @@ public class DbOperations
         return null;
     }
 
-    internal async Task<Board?> CheckIfBoardExist(string boardId)
+    public async Task<Board?> CheckIfBoardExist(string boardId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -38,7 +38,7 @@ public class DbOperations
         }
     }
 
-    internal async Task<string> TableNameToId(string tableName, int telegramId)
+    public async Task<string> TableNameToId(string tableName, int telegramId)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
@@ -55,7 +55,7 @@ public class DbOperations
         return null;
     }
 
-    internal async Task<string> UserNameToId(string boardName, string userName)
+    public async Task<string> UserNameToId(string boardName, string userName)
     {
         await using (BotDbContext dbContext = new BotDbContext())
         {
