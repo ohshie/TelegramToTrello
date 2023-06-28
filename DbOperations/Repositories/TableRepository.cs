@@ -1,67 +1,53 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace TelegramToTrello;
+namespace TelegramToTrello.Repositories;
 
 public class TableRepository : ITableRepository
 {
-    public async Task<Table> Get(int id)
+    private readonly BotDbContext _dbContext;
+
+    public TableRepository(BotDbContext dbContext)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.BoardTables.FindAsync(id);
-        }
+        _dbContext = dbContext;
+    }
+
+    public async Task<Table> Get(int id)
+    { 
+        return await _dbContext.BoardTables.FindAsync(id);
     }
     
     public async Task<Table> Get(string id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.BoardTables.FirstOrDefaultAsync(b => b.TableId == id);
-        }
+        return await _dbContext.BoardTables.FirstOrDefaultAsync(b => b.TableId == id);
     }
 
     public async Task<IEnumerable<Table>> GetAll()
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.BoardTables.ToListAsync();
-        }
+        return await _dbContext.BoardTables.ToListAsync();
     }
 
     public async Task Add(Table entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.BoardTables.Add(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _dbContext.BoardTables.Add(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task Update(Table entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.BoardTables.Update(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _dbContext.BoardTables.Update(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task Delete(Table entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.BoardTables.Remove(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _dbContext.BoardTables.Remove(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task<Table> GetByNameAndBoardId(string tableName, string trelloBoardId)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.BoardTables.
+        return await _dbContext.BoardTables.
                 FirstOrDefaultAsync(table => table.Name == tableName
                 && table.TrelloUserBoard.TrelloBoardId == trelloBoardId);
-        }
     }
 }

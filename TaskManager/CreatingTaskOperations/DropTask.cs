@@ -1,18 +1,16 @@
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class DropTask : TaskCreationBaseHandler
 {
-    public DropTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
-    
-    public DropTask(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
+    public DropTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) {}
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        TaskDbOperations dbOperations = new();
-        await dbOperations.RemoveEntry(task);
+        await TaskDbOperations.RemoveEntry(task);
         
         await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, Message.MessageId);
         await BotClient.SendTextMessageAsync(chatId: Message.Chat.Id,

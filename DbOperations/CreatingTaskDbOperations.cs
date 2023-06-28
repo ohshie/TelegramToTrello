@@ -1,49 +1,52 @@
+using TelegramToTrello.Repositories;
+
 namespace TelegramToTrello;
 
-public class CreatingTaskDbOperations : DbOperations
+public class CreatingTaskDbOperations
 {
-    private RegisteredUser? User { get; }
-    private TTTTask UserTask { get; }
-    
-    private readonly TTTTaskRepository _taskRepository = new();
-    
-    public CreatingTaskDbOperations(RegisteredUser user, TTTTask userTask)
+    private readonly IRepository<TTTTask> _taskRepository;
+    private readonly ITrelloUsersRepository _trelloUsersRepository;
+    private readonly ITableRepository _tableRepository;
+    private readonly IRepository<Board> _boardRepository;
+
+    public CreatingTaskDbOperations(IRepository<TTTTask> taskRepository, 
+        ITrelloUsersRepository trelloUsersRepository,
+        ITableRepository tableRepository,
+        IRepository<Board> boardRepository)
     {
-        User = user;
-        UserTask = userTask;
+        _taskRepository = taskRepository;
+        _trelloUsersRepository = trelloUsersRepository;
+        _tableRepository = tableRepository;
+        _boardRepository = boardRepository;
     }
-    
-    public async Task CreateTask()
+
+    public async Task CreateTask(RegisteredUser user)
     {
-        if (UserTask == null)
-        {
             TTTTask newTask = new TTTTask()
             {
-                Id = User.TelegramId,
-                TrelloId = User.TrelloId,
+                Id = user.TelegramId,
+                TrelloId = user.TrelloId,
             };
 
             await _taskRepository.Add(newTask);
-        }
     }
      
-    public async Task AddTag(string tag)
+    public async Task AddTag(TTTTask userTask ,string tag)
     {
-        UserTask.Tag = tag;
-        await _taskRepository.Update(UserTask);
+        userTask.Tag = tag;
+        await _taskRepository.Update(userTask);
     } 
     
-    public async Task<string?> AddBoard(string boardId)
+    public async Task<string?> AddBoard(TTTTask userTask, string boardId)
     {
-        BoardRepository boardRepository = new BoardRepository();
-        Board? board = await boardRepository.Get(boardId);
+        Board? board = await _boardRepository.Get(boardId);
 
         if (board != null)
         {
-            UserTask.TrelloBoardId = board.TrelloBoardId;
-            UserTask.TrelloBoardName = board.BoardName;
+            userTask.TrelloBoardId = board.TrelloBoardId;
+            userTask.TrelloBoardName = board.BoardName;
 
-            await _taskRepository.Update(UserTask);
+            await _taskRepository.Update(userTask);
 
             return board.BoardName;
         }
@@ -51,16 +54,15 @@ public class CreatingTaskDbOperations : DbOperations
         return null;
     }
 
-    public async Task<bool> AddTable(string tableName)
+    public async Task<bool> AddTable(TTTTask userTask, string tableName)
     {
-        TableRepository tableRepository = new TableRepository();
-        var table = await tableRepository.GetByNameAndBoardId(tableName: tableName, 
-            trelloBoardId: UserTask.TrelloBoardId);
+        var table = await _tableRepository.GetByNameAndBoardId(tableName: tableName, 
+            trelloBoardId: userTask.TrelloBoardId);
 
         if (table != null)
         {
-            UserTask.ListId = table.TableId;
-            await _taskRepository.Update(UserTask);
+            userTask.ListId = table.TableId;
+            await _taskRepository.Update(userTask);
 
             return true;
         }
@@ -70,72 +72,57 @@ public class CreatingTaskDbOperations : DbOperations
     
     
     
-    public async Task AddPlaceholderName()
+    public async Task AddPlaceholderName(TTTTask userTask)
     {
-        UserTask.TaskName = "###tempname###";
-        await _taskRepository.Update(UserTask);
+        userTask.TaskName = "###tempname###";
+        await _taskRepository.Update(userTask);
     }
     
-    public async Task AddPlaceholderDescription()
+    public async Task AddPlaceholderDescription(TTTTask userTask)
     {
-        UserTask.TaskDesc = "###tempdesc###";
-        await _taskRepository.Update(UserTask);
+        userTask.TaskDesc = "###tempdesc###";
+        await _taskRepository.Update(userTask);
     }
 
-    public async Task AddPlaceholderDate()
+    public async Task AddPlaceholderDate(TTTTask userTask)
     {
-        UserTask.Date = "###tempdate###";
-        await _taskRepository.Update(UserTask);
+        userTask.Date = "###tempdate###";
+        await _taskRepository.Update(userTask);
     }
     
-    public async Task AddName(string taskName)
+    public async Task AddName(TTTTask userTask,string taskName)
     {
-        UserTask.TaskName = taskName;
-        await _taskRepository.Update(UserTask);
+        userTask.TaskName = taskName;
+        await _taskRepository.Update(userTask);
     }
     
-    public async Task AddDescription(string description)
+    public async Task AddDescription(TTTTask userTask, string description)
     {
-        UserTask.TaskDesc = description;
-        await _taskRepository.Update(UserTask);
+        userTask.TaskDesc = description;
+        await _taskRepository.Update(userTask);
     }
 
-    public async Task<bool> AddParticipant(string participantName)
+    public async Task<bool> AddParticipant(TTTTask userTask, string participantName)
     {
-        TrelloUsersRepository usersRepository = new TrelloUsersRepository();
-        var participant = await usersRepository.GetByNameAndBoardId(participantName, UserTask.TrelloBoardId);
+        var participant = await _trelloUsersRepository.GetByNameAndBoardId(participantName, userTask.TrelloBoardId);
         if (participant == null) return false;
         
-        UserTask.TaskPartId = UserTask.TaskPartId+participant.TrelloUserId+",";
-        UserTask.TaskPartName = UserTask.TaskPartName + participantName + ",";
-
-        TTTTaskRepository taskRepository = new();
-        await taskRepository.Update(UserTask);
-        return true;
+        userTask.TaskPartId = userTask.TaskPartId+participant.TrelloUserId+",";
+        userTask.TaskPartName = userTask.TaskPartName + participantName + ",";
         
-        // string trelloIdOfParticipant = await UserNameToId(UserTask.TrelloBoardId, participantName);
-        // if (trelloIdOfParticipant == null) return false;
-        //
-        // await using (BotDbContext dbContext = new BotDbContext())
-        // {
-        //     UserTask.TaskPartId = UserTask.TaskPartId+trelloIdOfParticipant+",";
-        //     UserTask.TaskPartName = UserTask.TaskPartName + participantName + ",";
-        //     dbContext.CreatingTasks.Update(UserTask);
-        //     await dbContext.SaveChangesAsync();
-        // }
-        //
-        // return true;
+        await _taskRepository.Update(userTask);
+        return true;
     }
 
-    public async Task AddDate(string date)
+    public async Task AddDate(TTTTask userTask, string date)
     {
-        UserTask.Date = date;
-        await _taskRepository.Update(UserTask);
+        userTask.Date = date;
+        await _taskRepository.Update(userTask);
     }
     
-    public async Task MarkMessageForDeletion(int messageId)
+    public async Task MarkMessageForDeletion(TTTTask userTask, int messageId)
     {
-        UserTask.LastBotMessage = messageId;
-        await _taskRepository.Update(UserTask);
+        userTask.LastBotMessage = messageId;
+        await _taskRepository.Update(userTask);
     }
 }

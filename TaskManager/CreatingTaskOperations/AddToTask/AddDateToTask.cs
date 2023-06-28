@@ -7,16 +7,18 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddDateToTask : TaskCreationBaseHandler
 {
-    public AddDateToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
+
+    public AddDateToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, DisplayCurrentTaskInfo displayCurrentTaskInfo,
+        CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        NextTask = new DisplayCurrentTaskInfo(message, botClient);
+        _displayCurrentTaskInfo = displayCurrentTaskInfo;
+        _creatingTaskDbOperations = creatingTaskDbOperations;
+        NextTask = displayCurrentTaskInfo;
     }
     
-    public AddDateToTask(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(callbackQuery, botClient)
-    {
-        NextTask = new DisplayCurrentTaskInfo(Message, botClient);
-    }
-
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         var possibleDate = GetPossibleDate();
@@ -29,27 +31,24 @@ public class AddDateToTask : TaskCreationBaseHandler
                 chatId: Message.Chat.Id);
             return;
         }
-
-        CreatingTaskDbOperations dbOperations = new(user, task);
         
         await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, task.LastBotMessage);
-        await dbOperations.AddDate(possibleDate);
+        await _creatingTaskDbOperations.AddDate(task, possibleDate);
         
         if (task.InEditMode) await SetNextTaskIfEditMode(task);
     }
 
     private async Task SetNextTaskIfEditMode(TTTTask task)
     {
-        TaskDbOperations taskDbOperations = new();
-        await taskDbOperations.ToggleEditModeForTask(task);
+        await TaskDbOperations.ToggleEditModeForTask(task);
         
         if (CallbackQuery != null)
         {
-            NextTask = new DisplayCurrentTaskInfo(CallbackQuery, BotClient);
+            NextTask = _displayCurrentTaskInfo;
             return;
         }
 
-        NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
+        NextTask = _displayCurrentTaskInfo;
     }
 
     private string? GetPossibleDate()

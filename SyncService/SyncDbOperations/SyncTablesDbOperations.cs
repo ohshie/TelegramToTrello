@@ -3,7 +3,7 @@ using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.SyncDbOperations;
 
-internal class SyncTablesDbOperations
+public class SyncTablesDbOperations
 {
     internal async Task Execute(RegisteredUser trelloUser)
     {

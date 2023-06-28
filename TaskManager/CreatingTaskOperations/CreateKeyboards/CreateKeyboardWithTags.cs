@@ -1,13 +1,14 @@
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class CreateKeyboardWithTags : TaskCreationBaseHandler
 {
-    public CreateKeyboardWithTags(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
-
+    public CreateKeyboardWithTags(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) {}
+    
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         InlineKeyboardMarkup replyKeyboardMarkup = KeyboardTagChoice();

@@ -1,21 +1,21 @@
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 
 public class TaskNameRequest : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
-    
-    public TaskNameRequest(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback, botClient)
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+
+    public TaskNameRequest(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        IsEdit = isEdit;
+        _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        CreatingTaskDbOperations dbOperations = new(user, task); 
-        await dbOperations.AddPlaceholderName();
+        await _creatingTaskDbOperations.AddPlaceholderName(task);
         
         await SendRequestToUser(task);
     }
@@ -24,8 +24,7 @@ public class TaskNameRequest : TaskCreationBaseHandler
     {
         if (IsEdit)
         {
-            TaskDbOperations taskDbOperations = new();
-            await taskDbOperations.ToggleEditModeForTask(task);
+            await TaskDbOperations.ToggleEditModeForTask(task);
         }
         
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,

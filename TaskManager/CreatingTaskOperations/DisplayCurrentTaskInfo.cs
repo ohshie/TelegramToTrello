@@ -1,16 +1,15 @@
 using System.Globalization;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
-    public DisplayCurrentTaskInfo(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
+    public DisplayCurrentTaskInfo(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) {}
 
-    public DisplayCurrentTaskInfo(CallbackQuery callbackQuery, ITelegramBotClient botClient) : base(
-        callbackQuery, botClient) {}
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {

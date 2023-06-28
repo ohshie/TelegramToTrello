@@ -5,21 +5,18 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class TaskDescriptionRequest : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
 
-    public TaskDescriptionRequest(Message message, ITelegramBotClient botClient) : base(message,
-        botClient) {}
-    
-    public TaskDescriptionRequest(CallbackQuery callbackQuery, ITelegramBotClient botClient, bool isEdit = false) : base(callbackQuery,
-        botClient)
+    public TaskDescriptionRequest(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        IsEdit = isEdit;
+        _creatingTaskDbOperations = creatingTaskDbOperations;
     }
+    
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.AddPlaceholderDescription();
+        await _creatingTaskDbOperations.AddPlaceholderDescription(task);
 
         if (IsEdit)
         {
@@ -35,8 +32,7 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
     
     private async Task SendRequestToUser(TTTTask task)
     {
-        TaskDbOperations taskDbOperations = new();
-        await taskDbOperations.ToggleEditModeForTask(task);
+        await TaskDbOperations.ToggleEditModeForTask(task);
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId);
         await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",

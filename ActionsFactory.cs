@@ -1,35 +1,58 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using TelegramToTrello.BotActions;
 using TelegramToTrello.CreatingTaskOperations;
-using TelegramToTrello.CurrentTaskOperations;
 using TelegramToTrello.Notifications;
+using TelegramToTrello.TaskManager.CreatingTaskOperations;
+using TelegramToTrello.TaskManager.CurrentTaskOperations;
 using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello;
 
 public class ActionsFactory
 {
-    private Dictionary<string, Func<Message, ITelegramBotClient, Task>> BotTaskFactory =
-        new()
-        {
-            { "/start", (message, botClient) => new UserRegistrationHandler(message, botClient).Authenticate() },
-            { "/register", (message, botClient) => new UserRegistrationHandler(message, botClient).Authenticate() },
-            { "/SyncBoards", (message, botClient) => new UserRegistrationHandler(message, botClient).SyncBoards() },
-            { "🟰Sync changes", (message, botClient) => new UserRegistrationHandler(message, botClient).SyncBoards() },
-            { "/newtask", (message, botClient) => new StartTaskCreation(message, botClient).CreateTask() },
-            { "➕New Task", (message, botClient) => new StartTaskCreation(message, botClient).CreateTask() },
-            { "/notifications", (message, botClient) => new BotNotificationCentre(message,botClient).ToggleNotificationsForUser()},
-            { "/drop", (message, botClient) => new DropTask(message,botClient).Execute()},
-            { "➖Cancel action", (message, botClient) => new DropTask(message,botClient).Execute()},
-            { "♾️Show my tasks", (message, botClient) => new CurrentTasksDisplay(message, botClient).Execute()}
-        };
+    private readonly StartTaskCreation _startTaskCreation;
+    private readonly DropTask _dropTask;
+    private readonly UserRegistrationHandler _userRegistrationHandler;
+    private readonly BotNotificationCentre _botNotificationCentre;
+    private readonly CurrentTasksDisplay _currentTasksDisplay;
+    private readonly ITelegramBotClient _botClient;
 
-    public async Task BotActionFactory(Message message, ITelegramBotClient botClient)
+    public ActionsFactory(StartTaskCreation startTaskCreation, 
+        DropTask dropTask,
+        UserRegistrationHandler userRegistrationHandler,
+        BotNotificationCentre botNotificationCentre,
+        CurrentTasksDisplay currentTasksDisplay,
+        ITelegramBotClient botClient)
     {
-        if (BotTaskFactory.ContainsKey(message.Text))
+        _startTaskCreation = startTaskCreation;
+        _dropTask = dropTask;
+        _userRegistrationHandler = userRegistrationHandler;
+        _botNotificationCentre = botNotificationCentre;
+        _currentTasksDisplay = currentTasksDisplay;
+        _botClient = botClient;
+
+        _botTaskFactory = new Dictionary<string, Func<Message, Task>>
         {
-            await BotTaskFactory[message.Text](message, botClient);
+            { "/start", (message) => _userRegistrationHandler.Authenticate(message) },
+            { "/register", (message) => _userRegistrationHandler.Authenticate(message) },
+            { "/SyncBoards", (message) => _userRegistrationHandler.SyncBoards(message) },
+            { "🟰Sync changes", (message) => _userRegistrationHandler.SyncBoards(message) },
+            { "/newtask", (message) => _startTaskCreation.CreateTask(message) },
+            { "➕New Task", (message) => _startTaskCreation.CreateTask(message) },
+            { "/notifications", (message) => _botNotificationCentre.ToggleNotificationsForUser(message)},
+            { "/drop", (message) =>  _dropTask.Execute(message)},
+            { "➖Cancel action", (message) => _dropTask.Execute(message)},
+            { "♾️Show my tasks", (message) => _currentTasksDisplay.Execute(message)}
+        };
+    }
+
+    private readonly Dictionary<string, Func<Message, Task>> _botTaskFactory;
+    
+    public async Task BotActionFactory(Message message)
+    {
+        if (_botTaskFactory.ContainsKey(message.Text))
+        {
+            await _botTaskFactory[message.Text](message);
         }
     }
 }

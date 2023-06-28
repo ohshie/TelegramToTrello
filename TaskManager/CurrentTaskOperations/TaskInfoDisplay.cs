@@ -2,31 +2,30 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace TelegramToTrello.CurrentTaskOperations;
+namespace TelegramToTrello.TaskManager.CurrentTaskOperations;
 
 public class TaskInfoDisplay
 {
-    private CallbackQuery? CallbackQuery { get; set; }
-    private ITelegramBotClient BotClient { get; set; }
-    
-    public TaskInfoDisplay(CallbackQuery callbackQuery, ITelegramBotClient botClient)
+    private readonly ITelegramBotClient _botClient;
+    private readonly TaskDbOperations _taskDbOperations;
+
+    public TaskInfoDisplay(ITelegramBotClient botClient, TaskDbOperations taskDbOperations)
     {
-        CallbackQuery = callbackQuery;
-        BotClient = botClient;
+        _botClient = botClient;
+        _taskDbOperations = taskDbOperations;
     }
 
-    public async Task Execute()
+    public async Task Execute(CallbackQuery callbackQuery)
     {
-        string? taskId = CallbackQuery.Data.Substring("/edittask".Length).Trim();
-
-        TaskDbOperations taskDbOperations = new();
-        TaskNotification? task = await taskDbOperations.RetrieveAssignedTask(taskId);
+        string? taskId = callbackQuery.Data.Substring("/edittask".Length).Trim();
+        
+        TaskNotification? task = await _taskDbOperations.RetrieveAssignedTask(taskId);
 
         var botMessage = BotMessage(task);
 
-        await BotClient.EditMessageTextAsync(text: botMessage,
-            messageId: CallbackQuery.Message.MessageId, 
-            chatId: CallbackQuery.Message.Chat.Id,
+        await _botClient.EditMessageTextAsync(text: botMessage,
+            messageId: callbackQuery.Message.MessageId, 
+            chatId: callbackQuery.Message.Chat.Id,
             replyMarkup: CreateKeyboard(task));
     }
 

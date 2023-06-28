@@ -1,10 +1,17 @@
 using Microsoft.EntityFrameworkCore;
+using TelegramToTrello.Repositories;
 
 namespace TelegramToTrello;
 
 public class TaskDbOperations
 {
-    private TTTTaskRepository _tttTaskRepository = new();
+    private readonly IRepository<TTTTask> _tttTaskRepository;
+
+    public TaskDbOperations(IRepository<TTTTask> tttTaskRepository)
+    {
+        _tttTaskRepository = tttTaskRepository;
+    }
+    
     public async Task<TTTTask> RetrieveUserTask(int telegramId)
     {
         var task = await _tttTaskRepository.Get(telegramId);
@@ -14,57 +21,24 @@ public class TaskDbOperations
             return task;
         }
         return null;
-        
-        // await using (BotDbContext dbContext = new BotDbContext())
-        // {
-        //     TTTTask userCreatedTask = await dbContext.CreatingTasks.FindAsync(telegramId);
-        //
-        //     if (userCreatedTask != null)
-        //     {
-        //         return userCreatedTask;
-        //     }
-        // }
-        // return null;
     }
     
     public async Task RemoveEntry(TTTTask userTask)
     {
         await _tttTaskRepository.Delete(userTask);
-        
-        // using (BotDbContext dbContext = new BotDbContext())
-        // {
-        //     dbContext.RemoveRange(userTask);
-        //     await dbContext.SaveChangesAsync();
-        // }
     }
 
     public async Task ToggleEditModeForTask(TTTTask userTask)
     {
         userTask.InEditMode = !userTask.InEditMode;
         await _tttTaskRepository.Update(userTask);
-        
-        // using (BotDbContext dbContext = new())
-        // {
-        //     userTask.InEditMode = !userTask.InEditMode;
-        //     dbContext.CreatingTasks.Update(userTask);
-        //     await dbContext.SaveChangesAsync();
-        // }
     }
 
     public async Task ResetParticipants(TTTTask userTask)
     {
         userTask.TaskPartId = null;
         userTask.TaskPartName = null;
-        await _tttTaskRepository.Update(userTask);
-        
-        // using (BotDbContext dbContext = new())
-        // {
-        //     userTask.TaskPartId = null;
-        //     userTask.TaskPartName = null;
-        //
-        //     dbContext.CreatingTasks.Update(userTask);
-        //     await dbContext.SaveChangesAsync();
-        // }
+        await _tttTaskRepository.Update(userTask); 
     }
 
     public async Task<TaskNotification?> RetrieveAssignedTask(string taskId)

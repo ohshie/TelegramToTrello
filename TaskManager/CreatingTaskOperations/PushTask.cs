@@ -6,13 +6,17 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class PushTask : TaskCreationBaseHandler
 {
-    public PushTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient) {}
+    private readonly TrelloOperations _trelloOperations;
+
+    public PushTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, TrelloOperations trelloOperations) : base(botClient, userDbOperations, taskDbOperations)
+    {
+        _trelloOperations = trelloOperations;
+    }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        TrelloOperations trelloOperations = new();
-        
-        bool success = await trelloOperations.PushTaskToTrello(task);
+        bool success = await _trelloOperations.PushTaskToTrello(task);
         if (success)
         {
             await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
@@ -25,7 +29,6 @@ public class PushTask : TaskCreationBaseHandler
 
     private async Task RemoveTaskFromDb(TTTTask task)
     {
-        TaskDbOperations dbOperations = new();
-        await dbOperations.RemoveEntry(task);
+        await TaskDbOperations.RemoveEntry(task);
     }
 }

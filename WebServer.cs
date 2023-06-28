@@ -4,15 +4,20 @@ namespace TelegramToTrello;
 
 public class WebServer
 {
-    private readonly string _serverUrl;
-    public WebServer()
+    private readonly TrelloOperations _trelloOperations;
+    private readonly UserDbOperations _userDbOperations;
+    private SyncService _syncService;
+
+    public WebServer(TrelloOperations trelloOperations, UserDbOperations userDbOperations, SyncService syncService)
     {
-        _serverUrl = Configuration.ServerUrl;
+        _trelloOperations = trelloOperations;
+        _userDbOperations = userDbOperations;
+        _syncService = syncService;
     }
     public async Task Run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls(_serverUrl);
+        builder.WebHost.UseUrls(Configuration.ServerUrl);
         var app = builder.Build();
 
         app.UseStaticFiles();
@@ -49,20 +54,17 @@ public class WebServer
     
     private async Task<string> ConvertTokenToTrelloId(string? token)
     {
-        TrelloOperations trelloOperations = new();
-        string? trelloId = await trelloOperations.GetTrelloUserId(token);
+        string? trelloId = await _trelloOperations.GetTrelloUserId(token);
 
         return trelloId;
     }
 
     private async Task UpdateDbWithNewUserInfo(string token, string trelloId, int telegramId)
     {
-        UserDbOperations dbOperations = new();
-        RegisteredUser? user = await dbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
+        RegisteredUser? user = await _userDbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
         if (user != null)
         {
-            SyncService syncService = new();
-            await syncService.SyncStateToTrello(user);
+            await _syncService.SyncStateToTrello(user);
         }
         
     }

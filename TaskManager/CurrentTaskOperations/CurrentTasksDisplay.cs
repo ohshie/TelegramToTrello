@@ -3,36 +3,38 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramToTrello.ToFromTrello;
 
-namespace TelegramToTrello.CurrentTaskOperations;
+namespace TelegramToTrello.TaskManager.CurrentTaskOperations;
 
 public class CurrentTasksDisplay
 {
-    public CurrentTasksDisplay(Message message, ITelegramBotClient botClient)
+    public CurrentTasksDisplay(ITelegramBotClient botClient, 
+        TrelloOperations trelloOperations, 
+        UserDbOperations userDbOperations)
     {
-        Message = message;
         BotClient = botClient;
+        _trelloOperations = trelloOperations;
+        _userDbOperations = userDbOperations;
     }
-
-    private Message Message { get; }
-    private ITelegramBotClient BotClient { get; }
-    private readonly UserDbOperations _userDbOperations = new();
-    private readonly TrelloOperations _trelloOperations = new();
     
-    public async Task Execute()
+    private ITelegramBotClient BotClient { get; }
+    private readonly UserDbOperations _userDbOperations;
+    private readonly TrelloOperations _trelloOperations;
+    
+    public async Task Execute(Message message)
     {
-        RegisteredUser user = await _userDbOperations.RetrieveTrelloUser((int)Message.From.Id);
+        RegisteredUser user = await _userDbOperations.RetrieveTrelloUser((int)message.From.Id);
         if (user != null)
         {
             var cards = await _trelloOperations.GetSubscribedTasks(user);
             
-            BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, messageId: Message.MessageId);
+            BotClient.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId);
             
             InlineKeyboardMarkup keyboardMarkup = CreateKeyboard(cards);
 
             var botMessageText = CreateBotMessageText(cards);
 
             await BotClient.SendTextMessageAsync(text: botMessageText,
-                chatId: Message.Chat.Id, 
+                chatId: message.Chat.Id, 
                 replyMarkup: keyboardMarkup);
         }
     }

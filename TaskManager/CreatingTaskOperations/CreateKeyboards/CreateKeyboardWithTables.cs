@@ -1,17 +1,17 @@
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class CreateKeyboardWithTables : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; }
+    private readonly DbOperations _dbOperations;
 
-    public CreateKeyboardWithTables(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(
-        callback, botClient)
+    public CreateKeyboardWithTables(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, DbOperations dbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        IsEdit = isEdit;
+        _dbOperations = dbOperations;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -26,8 +26,7 @@ public class CreateKeyboardWithTables : TaskCreationBaseHandler
     
     private async Task<InlineKeyboardMarkup> KeyboardTableChoice(RegisteredUser user, TTTTask task)
     {
-        DbOperations dbOperations = new DbOperations();
-        Board selectedBoard = await dbOperations.RetrieveBoard(user.TelegramId, task.TrelloBoardId);
+        Board selectedBoard = await _dbOperations.RetrieveBoard(user.TelegramId, task.TrelloBoardId);
 
         if (IsEdit)
         {

@@ -6,52 +6,53 @@ namespace TelegramToTrello.UserRegistration;
 
 public class UserRegistrationHandler
 {
-    public UserRegistrationHandler(Message message, ITelegramBotClient botClient)
+    public UserRegistrationHandler( 
+        ITelegramBotClient botClient, 
+        SyncService syncService, 
+        UserDbOperations userDbOperations)
     {
-        Message = message;
-        BotClient = botClient;
-        SyncService = new();
-        UserDbOperations = new();
+        _botClient = botClient;
+        _syncService = syncService;
+        _userDbOperations = userDbOperations;
     }
-
-    private Message Message { get; }
-    private ITelegramBotClient BotClient { get; }
-    private SyncService SyncService { get; }
-    private UserDbOperations UserDbOperations { get; set; }
     
-    public async Task Authenticate()
+    private readonly ITelegramBotClient _botClient;
+    private readonly SyncService _syncService;
+    private readonly UserDbOperations _userDbOperations;
+    
+    public async Task Authenticate(Message message)
     {
-        string oauthLink = AuthLink.CreateLink(Message.From!.Id);
+        string oauthLink = AuthLink.CreateLink(message.From!.Id);
         
-        bool registerSuccess = await UserDbOperations.RegisterNewUser(Message);
+        bool registerSuccess = await _userDbOperations.RegisterNewUser(message);
         if (!registerSuccess)
         {
-            await BotClient.SendTextMessageAsync(Message.Chat.Id,
-                replyToMessageId: Message.MessageId,
+            await _botClient.SendTextMessageAsync(message.Chat.Id,
+                replyToMessageId: message.MessageId,
                 text: "User already registered.",
                 replyMarkup: CreateKeyboard());
             return;
         }
         
-        await BotClient.SendTextMessageAsync(Message.Chat.Id,
-            replyToMessageId: Message.MessageId,
+        await _botClient.SendTextMessageAsync(message.Chat.Id,
+            replyToMessageId: message.MessageId,
             text: "Please click on this link authenticate in trello:\n\n" +
                   $"{oauthLink}\n\n",
             replyMarkup:CreateKeyboard());
     }
     
-    public async Task SyncBoards()
+    public async Task SyncBoards(Message message)
     {
-        RegisteredUser? user = await UserDbOperations.RetrieveTrelloUser((int)Message.From!.Id);
-        bool success = await SyncService.SyncStateToTrello(user);
+        RegisteredUser? user = await _userDbOperations.RetrieveTrelloUser((int)message.From!.Id);
+        bool success = await _syncService.SyncStateToTrello(user);
         if (success)
         {
-            await BotClient.SendTextMessageAsync(Message.Chat.Id,text: "All set, you can now create tasks with /newtask");
+            await _botClient.SendTextMessageAsync(message.Chat.Id,text: "All set, you can now create tasks with /newtask");
             return;
         }
 
-        await BotClient.SendTextMessageAsync(Message.Chat.Id, 
-            replyToMessageId: Message.MessageId,
+        await _botClient.SendTextMessageAsync(message.Chat.Id, 
+            replyToMessageId: message.MessageId,
             text: "Looks like you haven't completed authentication via trello.\n" + 
                   "Click /register and finish authorization via trello website.");
     }

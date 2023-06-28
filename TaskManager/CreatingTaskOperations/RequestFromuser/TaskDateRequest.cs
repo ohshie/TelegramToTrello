@@ -7,23 +7,23 @@ namespace TelegramToTrello.CreatingTaskOperations;
 
 public class TaskDateRequest : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
 
-    public TaskDateRequest(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback,
-        botClient)
+    public TaskDateRequest(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        IsEdit = isEdit;
+        _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         CreateKeyboard();
-        CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.AddPlaceholderDate();
+
+        await _creatingTaskDbOperations.AddPlaceholderDate(task);
         
         if (IsEdit)
         {
-            await ToggleEditModeRequestDate(task, dbOperations);
+            await ToggleEditModeRequestDate(task);
             return;
         }
         
@@ -32,13 +32,13 @@ public class TaskDateRequest : TaskCreationBaseHandler
                                                    "Due date must be in the future.", 
             chatId: Message.Chat.Id,
             replyMarkup: CreateKeyboard());
-        await dbOperations.MarkMessageForDeletion(newMessage.MessageId);
+        
+        await _creatingTaskDbOperations.MarkMessageForDeletion(task, newMessage.MessageId);
     }
 
-    private async Task ToggleEditModeRequestDate(TTTTask task, CreatingTaskDbOperations creatingTaskDbOperations)
+    private async Task ToggleEditModeRequestDate(TTTTask task)
     {
-        TaskDbOperations taskDbOperations = new();
-        await taskDbOperations.ToggleEditModeForTask(task);
+        await TaskDbOperations.ToggleEditModeForTask(task);
         
         await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId);
@@ -49,7 +49,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
             chatId: Message.Chat.Id,
             replyMarkup: CreateKeyboard());
         
-        await creatingTaskDbOperations.MarkMessageForDeletion(newMessage.MessageId);
+        await _creatingTaskDbOperations.MarkMessageForDeletion(task,newMessage.MessageId);
     }
 
     private InlineKeyboardMarkup CreateKeyboard()

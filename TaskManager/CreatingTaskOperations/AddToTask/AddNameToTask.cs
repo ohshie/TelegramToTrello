@@ -6,9 +6,17 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddNameToTask : TaskCreationBaseHandler
 {
-    public AddNameToTask(Message message, ITelegramBotClient botClient) : base(message, botClient)
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
+
+    public AddNameToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, TaskDescriptionRequest taskDescriptionRequest,
+        CreatingTaskDbOperations creatingTaskDbOperations,
+        DisplayCurrentTaskInfo displayCurrentTaskInfo) : base(botClient, userDbOperations, taskDbOperations)
     {
-        NextTask = new TaskDescriptionRequest(message, botClient);
+        _creatingTaskDbOperations = creatingTaskDbOperations;
+        _displayCurrentTaskInfo = displayCurrentTaskInfo;
+        NextTask = taskDescriptionRequest;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -21,15 +29,13 @@ public class AddNameToTask : TaskCreationBaseHandler
                       $"Please type a new name for a task");
             return;
         }
-
-        CreatingTaskDbOperations dbOperations = new(user, task);
-        await dbOperations.AddName(Message.Text);
+        
+        await _creatingTaskDbOperations.AddName(task, Message.Text);
         
         if (task.InEditMode)
         {
-            TaskDbOperations taskDbOperations = new();
-            await taskDbOperations.ToggleEditModeForTask(task);
-            NextTask = new DisplayCurrentTaskInfo(Message, BotClient);
+            await TaskDbOperations.ToggleEditModeForTask(task);
+            NextTask = _displayCurrentTaskInfo;
         }
     }
 }

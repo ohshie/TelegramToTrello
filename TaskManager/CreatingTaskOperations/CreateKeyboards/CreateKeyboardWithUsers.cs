@@ -1,26 +1,24 @@
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.CreatingTaskOperations;
 
-namespace TelegramToTrello.CreatingTaskOperations;
+namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class CreateKeyboardWithUsers : TaskCreationBaseHandler
 {
-    public bool IsEdit { get; set; }
-    public CreateKeyboardWithUsers(Message message, ITelegramBotClient botClient) : base(message, botClient) {}
+    private readonly DbOperations _dbOperations;
 
-    public CreateKeyboardWithUsers(CallbackQuery callbackQuery, ITelegramBotClient botClient, bool isEdit = false) : base(callbackQuery,
-        botClient)
+    public CreateKeyboardWithUsers(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, DbOperations dbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        IsEdit = isEdit;
+        _dbOperations = dbOperations;
     }
-    
+
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         if (IsEdit)
         {
-            TaskDbOperations taskDbOperations = new();
-            await taskDbOperations.ResetParticipants(task);
+            await TaskDbOperations.ResetParticipants(task);
         }
         
         InlineKeyboardMarkup? replyKeyboardMarkup = await KeyboardParticipants(task);
@@ -41,8 +39,7 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
     
     private async Task<InlineKeyboardMarkup?> KeyboardParticipants(TTTTask task)
     {
-        DbOperations dbOperations = new DbOperations();
-        Board taskBoard = await dbOperations.RetrieveBoard(task.Id, task.TrelloBoardId!);
+        Board taskBoard = await _dbOperations.RetrieveBoard(task.Id, task.TrelloBoardId!);
 
         if (taskBoard != null!)
         {

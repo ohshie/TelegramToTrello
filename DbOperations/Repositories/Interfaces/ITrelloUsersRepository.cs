@@ -1,6 +1,6 @@
 namespace TelegramToTrello;
 
-public interface ITrelloUsersRepository
+public interface ITrelloUsersRepository : IRepository<UsersOnBoard>
 {
     Task<UsersOnBoard> GetByNameAndBoardId(string name, string boardId);
 }

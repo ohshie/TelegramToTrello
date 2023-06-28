@@ -1,15 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace TelegramToTrello;
+namespace TelegramToTrello.Repositories;
 
 public class TTTTaskRepository : IRepository<TTTTask>
 {
+    private readonly BotDbContext _dbContext;
+
+    public TTTTaskRepository(BotDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     public async Task<TTTTask> Get(int id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.CreatingTasks.FindAsync(id);
-        }
+        return await _dbContext.CreatingTasks.FindAsync(id);
     }
 
     /// <summary>
@@ -19,46 +23,31 @@ public class TTTTaskRepository : IRepository<TTTTask>
     /// <returns></returns>
     public async Task<TTTTask> Get(string name)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.CreatingTasks
+        return await _dbContext.CreatingTasks
                 .FirstOrDefaultAsync(t => t.TaskName == name);
-        }
     }
     
 
     public async Task<IEnumerable<TTTTask>> GetAll()
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.CreatingTasks.ToListAsync();
-        }
+        return await _dbContext.CreatingTasks.ToListAsync();
     }
 
     public async Task Add(TTTTask entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            await dbContext.CreatingTasks.AddAsync(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        await _dbContext.CreatingTasks.AddAsync(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task Update(TTTTask entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.CreatingTasks.Update(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _dbContext.CreatingTasks.Update(entity);
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task Delete(TTTTask entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.CreatingTasks.Remove(entity);
-            await dbContext.SaveChangesAsync();   
-        }
+        _dbContext.CreatingTasks.Remove(entity);
+        await _dbContext.SaveChangesAsync();
     }
 }

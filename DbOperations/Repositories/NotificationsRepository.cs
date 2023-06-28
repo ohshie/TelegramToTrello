@@ -4,81 +4,62 @@ namespace TelegramToTrello;
 
 public class NotificationsRepository : INotificationsRepository
 {
+    private readonly BotDbContext _botDbContext;
+
+    public NotificationsRepository(BotDbContext botDbContext)
+    {
+        _botDbContext = botDbContext;
+    }
+
     public async Task<TaskNotification> Get(int id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.TaskNotifications.FindAsync(id);
-        }
+        return await _botDbContext.TaskNotifications.FindAsync(id);
     }
 
     public async Task<TaskNotification> Get(string id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.TaskNotifications.FirstOrDefaultAsync(tn => tn.TaskId == id);
-        }
+        return await _botDbContext.TaskNotifications.FirstOrDefaultAsync(tn => tn.TaskId == id);
     }
 
     public async Task<IEnumerable<TaskNotification>> GetAll()
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.TaskNotifications.ToListAsync();
-        }
+        return await _botDbContext.TaskNotifications.ToListAsync();
     }
 
     public async Task Add(TaskNotification entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.TaskNotifications.Add(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.TaskNotifications.Add(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task Update(TaskNotification entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.TaskNotifications.Update(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.TaskNotifications.Update(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task Delete(TaskNotification entity)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.TaskNotifications.Remove(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.TaskNotifications.Remove(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task DeleteRange(List<TaskNotification> taskNotifications)
     {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.TaskNotifications.RemoveRange(taskNotifications);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.TaskNotifications.RemoveRange(taskNotifications);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public List<TaskNotification> GetAllPendingNotificationsByUserId(int id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return dbContext.TaskNotifications
+        
+        return _botDbContext.TaskNotifications
                     .Where(tn => tn.User == id).ToList();
-        }
     }
 
     public async Task AddRange(List<TaskNotification> taskNotifications)
     {
-        using (BotDbContext dbContext = new())
-        {
-            await dbContext.AddRangeAsync(taskNotifications);
-            await dbContext.SaveChangesAsync();
-        }
+        await _botDbContext.AddRangeAsync(taskNotifications);
+        await _botDbContext.SaveChangesAsync();
     }
 }

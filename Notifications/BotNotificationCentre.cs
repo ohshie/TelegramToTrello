@@ -7,25 +7,22 @@ namespace TelegramToTrello.Notifications;
 
 public class BotNotificationCentre
 {
-    private readonly NotificationsDbOperations _notificationsDbOperations = new();
-    private readonly TrelloOperations _trelloOperations = new();
+    private readonly NotificationsDbOperations _notificationsDbOperations;
+    private readonly TrelloOperations _trelloOperations;
     private readonly ITelegramBotClient _botClient;
-    private readonly Message? _message;
 
-    public BotNotificationCentre(Message message, ITelegramBotClient botClient)
+    public BotNotificationCentre(ITelegramBotClient botClient, 
+        TrelloOperations trelloOperations, 
+        NotificationsDbOperations notificationsDbOperations)
     {
         _botClient = botClient;
-        _message = message;
+        _trelloOperations = trelloOperations;
+        _notificationsDbOperations = notificationsDbOperations;
     }
 
-    public BotNotificationCentre(ITelegramBotClient botClient)
+    public async Task ToggleNotificationsForUser(Message message)
     {
-        _botClient = botClient;
-    }
-
-    public async Task ToggleNotificationsForUser()
-    {
-        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)_message.From.Id);
+        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)message.From.Id);
         if (user == null) return;
      
         if (user.NotificationsEnabled)

@@ -4,10 +4,21 @@ namespace TelegramToTrello;
 
 public class SyncService
 {
-    private readonly UserDbOperations _dbOperations = new();
-    private readonly SyncBoardDbOperations _boardDbOperations = new();
-    private readonly SyncTablesDbOperations _tablesDbOperations = new();
-    private readonly SyncUsersDbOperations _userDbOperations = new();
+    public SyncService(UserDbOperations dbOperations, 
+        SyncBoardDbOperations boardDbOperations, 
+        SyncTablesDbOperations tablesDbOperations, 
+        SyncUsersDbOperations userDbOperations)
+    {
+        _dbOperations = dbOperations;
+        _boardDbOperations = boardDbOperations;
+        _tablesDbOperations = tablesDbOperations;
+        _userDbOperations = userDbOperations;
+    }
+
+    private readonly UserDbOperations _dbOperations;
+    private readonly SyncBoardDbOperations _boardDbOperations;
+    private readonly SyncTablesDbOperations _tablesDbOperations;
+    private readonly SyncUsersDbOperations _userDbOperations;
 
     public async Task SynchronizeDataToTrello()
     {

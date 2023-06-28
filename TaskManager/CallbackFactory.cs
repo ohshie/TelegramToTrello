@@ -1,41 +1,91 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.CreatingTaskOperations;
-using TelegramToTrello.CurrentTaskOperations;
+using TelegramToTrello.TaskManager.CreatingTaskOperations;
 using TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
+using TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
+using TelegramToTrello.TaskManager.CurrentTaskOperations;
 
 namespace TelegramToTrello.TaskManager;
 
 public class CallbackFactory
 {
-    private readonly Dictionary<string, Func<CallbackQuery, ITelegramBotClient, Task>> BotTaskFactory = 
-        new(){
-            { "/board", (callbackQuery, botClient) => new AddBoardToTask(callbackQuery, botClient).Execute() },
-            { "/list", (callbackQuery, botClient) => new AddTableToTask(callbackQuery, botClient).Execute() },
-            { "/tag", (callbackQuery, botClient) => new AddTagToTask(callbackQuery, botClient).Execute() },
-            { "/name", (callbackQuery, botClient) => new AddParticipantToTask(callbackQuery, botClient).Execute() },
-            { "/push", (callbackQuery, botClient) => new PushTask(callbackQuery, botClient).Execute() },
-            { "/edittaskboardandtable", (callbackQuery, botClient) => new CreateKeyboardWithBoards(callbackQuery, botClient, isEdit: true).Execute() },
-            { "/editboard", (callbackQuery, botClient) => new AddBoardToTask(callbackQuery, botClient, isEdit:true).Execute() },
-            { "/editlist", (callbackQuery, botClient) => new AddTableToTask(callbackQuery, botClient, isEdit:true).Execute() },
-            { "/editdate", (callbackQuery, botClient) => new TaskDateRequest(callbackQuery, botClient, isEdit:true).Execute() },
-            { "/editname", (callbackQuery, botClient) => new TaskNameRequest(callbackQuery, botClient, isEdit:true).Execute() },
-            { "/editdesc", (callbackQuery, botClient) => new TaskDescriptionRequest(callbackQuery, botClient, isEdit:true).Execute() },
-            { "/drop", (callbackQuery, botClient) => new DropTask(callbackQuery, botClient).Execute() },
-            { "/autodate", (callbackQuery, botClient) => new AddDateToTask(callbackQuery, botClient).Execute() },
-            { "/edittask", (callbackQuery, botClient) => new TaskInfoDisplay(callbackQuery, botClient).Execute() },
-            { "/taskComplete", (callbackQuery, botClient) => new MarkTaskAsCompleted(callbackQuery, botClient).Execute() },
-            { "/taskMove", (callbackQuery, botClient) => new TaskInfoDisplay(callbackQuery, botClient).Execute() }
+    private readonly ITelegramBotClient _botClient;
+    private readonly CreateKeyboardWithBoards _createKeyboardWithBoards;
+    private readonly AddBoardToTask _addBoardToTask;
+    private readonly AddTableToTask _addTableToTask;
+    private readonly AddTagToTask _addTagToTask;
+    private readonly AddDateToTask _addDateToTask;
+    private readonly AddParticipantToTask _addParticipantToTask;
+    private readonly PushTask _pushTask;
+    private readonly TaskDateRequest _taskDateRequest;
+    private readonly TaskNameRequest _taskNameRequest;
+    private readonly TaskDescriptionRequest _taskDescriptionRequest;
+    private readonly DropTask _dropTask;
+    private readonly TaskInfoDisplay _taskInfoDisplay;
+    private readonly MarkTaskAsCompleted _markTaskAsCompleted;
+
+    public CallbackFactory(ITelegramBotClient botClient, 
+        CreateKeyboardWithBoards createKeyboardWithBoards,
+        AddBoardToTask addBoardToTask,
+        AddTableToTask addTableToTask,
+        AddTagToTask addTagToTask,
+        AddDateToTask addDateToTask,
+        AddParticipantToTask addParticipantToTask,
+        PushTask pushTask,
+        TaskDateRequest taskDateRequest,
+        TaskNameRequest taskNameRequest,
+        TaskDescriptionRequest taskDescriptionRequest,
+        DropTask dropTask,
+        TaskInfoDisplay taskInfoDisplay,
+        MarkTaskAsCompleted markTaskAsCompleted
+    )
+    {
+        _botClient = botClient;
+        _createKeyboardWithBoards = createKeyboardWithBoards;
+        _addBoardToTask = addBoardToTask;
+        _addTableToTask = addTableToTask;
+        _addTagToTask = addTagToTask;
+        _addDateToTask = addDateToTask;
+        _addParticipantToTask = addParticipantToTask;
+        _pushTask = pushTask;
+        _taskDateRequest = taskDateRequest;
+        _taskNameRequest = taskNameRequest;
+        _taskDescriptionRequest = taskDescriptionRequest;
+        _dropTask = dropTask;
+        _taskInfoDisplay = taskInfoDisplay;
+        _markTaskAsCompleted = markTaskAsCompleted;
+
+        _botTaskFactory = new()
+        {
+            { "/board", (callbackQuery) =>  _addBoardToTask.Execute(callbackQuery) },
+            { "/list", (callbackQuery) =>  _addTableToTask.Execute(callbackQuery) },
+            { "/tag", (callbackQuery) =>  _addTagToTask.Execute(callbackQuery) },
+            { "/name", (callbackQuery) =>  _addParticipantToTask.Execute(callbackQuery) },
+            { "/push", (callbackQuery) =>  _pushTask.Execute(callbackQuery) },
+            { "/edittaskboardandtable", (callbackQuery) =>  _createKeyboardWithBoards.Execute(callbackQuery, isEdit: true) },
+            { "/editboard", (callbackQuery) => _addBoardToTask.Execute(callbackQuery,isEdit:true) },
+            { "/editlist", (callbackQuery) => _addTableToTask.Execute(callbackQuery, isEdit: true) },
+            { "/editdate", (callbackQuery) => _taskDateRequest.Execute(callbackQuery, isEdit: true) },
+            { "/editname", (callbackQuery) =>  _taskNameRequest.Execute(callbackQuery,isEdit: true) },
+            { "/editdesc", (callbackQuery) =>  _taskDescriptionRequest.Execute(callbackQuery, isEdit: true) },
+            { "/drop", (callbackQuery) =>  _dropTask.Execute(callbackQuery) },
+            { "/autodate", (callbackQuery) =>  _addDateToTask.Execute(callbackQuery) },
+            { "/edittask", (callbackQuery) => _taskInfoDisplay.Execute(callbackQuery) },
+            { "/taskComplete", (callbackQuery) =>  _markTaskAsCompleted.Execute(callbackQuery) },
+            { "/taskMove", (callbackQuery) => _taskInfoDisplay.Execute(callbackQuery) }
         };
-    
-    
-    public async Task CallBackDataManager(CallbackQuery callbackQuery, ITelegramBotClient botClient)
+    }
+
+    private readonly Dictionary<string, Func<CallbackQuery, Task>> _botTaskFactory;
+
+    public async Task CallBackDataManager(CallbackQuery callbackQuery)
     {
         string key = callbackQuery.Data.Split(" ")[0];
         
-        if (callbackQuery.Data != null && BotTaskFactory.ContainsKey(key))
+        if (callbackQuery.Data != null && _botTaskFactory.ContainsKey(key))
         {
-            await BotTaskFactory[key](callbackQuery,botClient);
+            await _botTaskFactory[key](callbackQuery);
         }
     }
 }

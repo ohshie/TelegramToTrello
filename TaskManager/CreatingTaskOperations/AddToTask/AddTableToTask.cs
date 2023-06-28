@@ -6,12 +6,16 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddTableToTask : TaskCreationBaseHandler
 {
-    private bool IsEdit { get; set; }
-    
-    public AddTableToTask(CallbackQuery callback, ITelegramBotClient botClient, bool isEdit = false) : base(callback, botClient)
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly CreateKeyboardWithUsers _createKeyboardWithUsers;
+
+    public AddTableToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, CreateKeyboardWithTags createKeyboardWithTags,
+        CreatingTaskDbOperations creatingTaskDbOperations, CreateKeyboardWithUsers createKeyboardWithUsers) : base(botClient, userDbOperations, taskDbOperations)
     {
-        NextTask = new CreateKeyboardWithTags(callback,botClient);
-        IsEdit = isEdit;
+        _creatingTaskDbOperations = creatingTaskDbOperations;
+        _createKeyboardWithUsers = createKeyboardWithUsers;
+        NextTask = createKeyboardWithTags;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -26,9 +30,8 @@ public class AddTableToTask : TaskCreationBaseHandler
             listName = CallbackQuery.Data.Substring("/list".Length).Trim();
         }
         
-
-        CreatingTaskDbOperations dbOperations = new(user, task);
-        bool listExist = await dbOperations.AddTable(listName);
+        
+        bool listExist = await _creatingTaskDbOperations.AddTable(task, listName);
         if (!listExist)
         {
             await BotClient.SendTextMessageAsync(text: "Please choose list name from keyboard menu.",
@@ -39,9 +42,9 @@ public class AddTableToTask : TaskCreationBaseHandler
 
         if (IsEdit)
         {
-            TaskDbOperations taskDbOperations = new();
-            await taskDbOperations.ToggleEditModeForTask(task);
-            NextTask = new CreateKeyboardWithUsers(CallbackQuery,BotClient, isEdit: true);
+            await TaskDbOperations.ToggleEditModeForTask(task);
+            NextTask = _createKeyboardWithUsers;
+            NextTask.IsEdit = true;
         }
     }
 }

@@ -1,70 +1,55 @@
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot.Types;
 
-namespace TelegramToTrello;
+namespace TelegramToTrello.Repositories;
 
 public class UsersRepository : IUsersRepository
 {
+    private readonly BotDbContext _botDbContext;
+
+    public UsersRepository(BotDbContext botDbContext)
+    {
+        _botDbContext = botDbContext;
+    }
+
     public async Task<RegisteredUser> Get(int id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.Users.FindAsync(id);
-        }
+        return await _botDbContext.Users.FindAsync(id);
     }
 
     public async Task<RegisteredUser> Get(string id)
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.Users.FirstOrDefaultAsync(u => u.TrelloId == id);
-        }
+        return await _botDbContext.Users.FirstOrDefaultAsync(u => u.TrelloId == id);
     }
 
     public async Task<IEnumerable<RegisteredUser>> GetAll()
     {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.Users
+        return await _botDbContext.Users
                 .Include(u => u.Boards)
                 .ToListAsync();
-        }
     }
 
     public async Task Add(RegisteredUser entity)
     {
-        using (BotDbContext dbContext = new())
-        { 
-            dbContext.Users.Add(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.Users.Add(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task Update(RegisteredUser entity)
     {
-        using (BotDbContext dbContext = new())
-        { 
-            dbContext.Users.Update(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.Users.Update(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task Delete(RegisteredUser entity)
     {
-        using (BotDbContext dbContext = new())
-        { 
-            dbContext.Users.Remove(entity);
-            await dbContext.SaveChangesAsync();
-        }
+        _botDbContext.Users.Remove(entity);
+        await _botDbContext.SaveChangesAsync();
     }
 
     public async Task<RegisteredUser> GetUserWithBoards(int id)
-    {
-        using (BotDbContext dbContext = new())
-        {
-            return await dbContext.Users
+    { 
+        return await _botDbContext.Users
                 .Include(ru => ru.Boards)
                 .FirstOrDefaultAsync(um => um.TelegramId == id);
-        }
     }
 }

@@ -1,14 +1,21 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.CreatingTaskOperations;
+using TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddTagToTask : TaskCreationBaseHandler
 {
-    public AddTagToTask(CallbackQuery callback, ITelegramBotClient botClient) : base(callback, botClient)
+    private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+
+    public AddTagToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
+        TaskDbOperations taskDbOperations, 
+        TaskNameRequest taskNameRequest, 
+        CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
-        NextTask = new TaskNameRequest(callback, botClient);
+        _creatingTaskDbOperations = creatingTaskDbOperations;
+        NextTask = taskNameRequest;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -23,8 +30,7 @@ public class AddTagToTask : TaskCreationBaseHandler
             NextTask = null;
             return;
         }
-
-        CreatingTaskDbOperations dbOperations = new(user, task); 
-        await dbOperations.AddTag(tag);
+        
+        await _creatingTaskDbOperations.AddTag(task,tag);
     }
 }
