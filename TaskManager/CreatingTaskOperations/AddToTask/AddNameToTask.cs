@@ -1,6 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.CreatingTaskOperations;
+using TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
@@ -36,6 +37,7 @@ public class AddNameToTask : TaskCreationBaseHandler
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
             NextTask = _displayCurrentTaskInfo;
+            NextTask.IsEdit = true;
         }
     }
 }

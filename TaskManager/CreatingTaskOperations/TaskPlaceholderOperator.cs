@@ -36,16 +36,19 @@ public class TaskPlaceholderOperator
         if (task.TaskName == "###tempname###")
         {
             await _addNameToTask.Execute(message);
+            return;
         }
         
         if (task.TaskDesc == "###tempdesc###")
         {
             await _addDescriptionToTask.Execute(message);
+            return;
         }
         
         if (task.Date == "###tempdate###")
         {
             await _addDateToTask.Execute(message);
+            return;
         }
     }
     
