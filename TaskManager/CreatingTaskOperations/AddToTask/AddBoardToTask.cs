@@ -6,8 +6,8 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddBoardToTask : TaskCreationBaseHandler
 {
-    private readonly CreateKeyboardWithTables _createKeyboardWithTables;
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private CreateKeyboardWithTables _createKeyboardWithTables;
 
     public AddBoardToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations,
@@ -16,7 +16,6 @@ public class AddBoardToTask : TaskCreationBaseHandler
     {
         _createKeyboardWithTables = createKeyboardWithTables;
         _creatingTaskDbOperations = creatingTaskDbOperations;
-        NextTask = createKeyboardWithTables;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -33,9 +32,10 @@ public class AddBoardToTask : TaskCreationBaseHandler
             return;
         }
 
+        NextTask = _createKeyboardWithTables;
+        
         if (IsEdit)
         {
-            NextTask = _createKeyboardWithTables;
             NextTask.IsEdit = true;
         }
     }

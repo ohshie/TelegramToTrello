@@ -18,6 +18,7 @@ namespace TelegramToTrello;
 public class Program
 {
     public static IContainer? Container { get; private set; }
+    
     public static async Task Main(string[] args)
     {
         Configuration.InitializeVariables();
@@ -60,6 +61,8 @@ public class Program
             return optionsBuilder.Options;
         }).AsSelf().InstancePerLifetimeScope();
         builder.RegisterType<BotDbContext>().AsSelf().InstancePerLifetimeScope();
+
+        builder.RegisterType<HttpClient>().AsSelf();
 
         builder.RegisterType<BotClient>().AsSelf();
         builder.RegisterType<WebServer>().AsSelf();

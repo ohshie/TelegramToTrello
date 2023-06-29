@@ -49,7 +49,6 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         if (task.InEditMode)
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
-            
             NextTask = _displayCurrentTaskInfo;
         }
         else

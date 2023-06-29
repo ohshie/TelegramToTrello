@@ -64,7 +64,7 @@ public class CallbackFactory
             { "/name", (callbackQuery) =>  _addParticipantToTask.Execute(callbackQuery) },
             { "/push", (callbackQuery) =>  _pushTask.Execute(callbackQuery) },
             { "/edittaskboardandtable", (callbackQuery) =>  _createKeyboardWithBoards.Execute(callbackQuery, isEdit: true) },
-            { "/editboard", (callbackQuery) => _addBoardToTask.Execute(callbackQuery,isEdit:true) },
+            { "/editboard", (callbackQuery) => _addBoardToTask.Execute(callbackQuery, isEdit: true) },
             { "/editlist", (callbackQuery) => _addTableToTask.Execute(callbackQuery, isEdit: true) },
             { "/editdate", (callbackQuery) => _taskDateRequest.Execute(callbackQuery, isEdit: true) },
             { "/editname", (callbackQuery) =>  _taskNameRequest.Execute(callbackQuery,isEdit: true) },

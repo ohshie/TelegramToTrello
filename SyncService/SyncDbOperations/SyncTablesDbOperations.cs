@@ -5,6 +5,15 @@ namespace TelegramToTrello.SyncDbOperations;
 
 public class SyncTablesDbOperations
 {
+    private readonly TrelloOperations _trelloOperations;
+    private readonly BotDbContext _botDbContext;
+
+    public SyncTablesDbOperations(TrelloOperations trelloOperations, BotDbContext botDbContext)
+    {
+        _trelloOperations = trelloOperations;
+        _botDbContext = botDbContext;
+    }
+    
     internal async Task Execute(RegisteredUser trelloUser)
     {
         var (currentBoards, currentTables) = GetCurrentBoardsAndTablesFromDb(trelloUser);
@@ -16,13 +25,11 @@ public class SyncTablesDbOperations
     private async Task<Dictionary<string, TrelloOperations.TrelloBoardTable>> GetTablesFromTrello(
         Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
     {
-        TrelloOperations trelloOperation = new TrelloOperations();
-        
         List<Task<List<TrelloOperations.TrelloBoardTable>>> fetchFreshTablesTask = new();
             
         foreach (var board in currentBoards.Values)
         {
-            fetchFreshTablesTask.Add(trelloOperation.GetBoardTables(board.TrelloBoardId,trelloUser));
+            fetchFreshTablesTask.Add(_trelloOperations.GetBoardTables(board.TrelloBoardId,trelloUser));
         }
 
         var freshTableLists = await Task.WhenAll(fetchFreshTablesTask);
@@ -33,21 +40,18 @@ public class SyncTablesDbOperations
 
     private (Dictionary<string, Board>, Dictionary<string, Table>) GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
     {
-        using (BotDbContext dbContext = new())
-        {
-            var currentBoards = dbContext.Boards
+        var currentBoards = _botDbContext.Boards
                 .Include(b => b.Tables)
                 .Include(b => b.Users)
                 .Where(b => b.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(b => b.TrelloBoardId, b=> b);
 
-            var currentTables = dbContext.BoardTables
+            var currentTables = _botDbContext.BoardTables
                 .Include(bt => bt.TrelloUserBoard)
                 .Where(bt => bt.TrelloUserBoard.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(t => t.TableId);
 
             return (currentBoards, currentTables);
-        }
     }
 
     private async Task AddNewTablesToDb(Dictionary<string, TrelloOperations.TrelloBoardTable> freshTableLists,
@@ -56,9 +60,7 @@ public class SyncTablesDbOperations
         string[] newTablesArray = freshTableLists.Keys.Except(currentTables.Keys).ToArray();
         if (newTablesArray.Any())
         {
-            using (BotDbContext dbContext = new())
-            {
-                List<Table> newTablesList = new();
+            List<Table> newTablesList = new();
                 foreach (var key in newTablesArray)
                 {
                     Board? board = currentBoards.Values
@@ -72,9 +74,8 @@ public class SyncTablesDbOperations
                     };
                     newTablesList.Add(newTable);
                 }
-                dbContext.BoardTables.AddRange(newTablesList);
-                await dbContext.SaveChangesAsync();
-            }
+                _botDbContext.BoardTables.AddRange(newTablesList);
+                await _botDbContext.SaveChangesAsync();
         }
     }
 
@@ -85,15 +86,13 @@ public class SyncTablesDbOperations
         if (tablesToRemoveArray.Any())
         {
             List<Table> tablesToRemoveList = new();
-            using (BotDbContext dbContext = new())
+            foreach (var key in tablesToRemoveArray)
             {
-                foreach (var key in tablesToRemoveArray)
-                {
-                    tablesToRemoveList.Add(currentTables[key]);
-                }
-                dbContext.BoardTables.RemoveRange(tablesToRemoveList);
-                await dbContext.SaveChangesAsync();
+                tablesToRemoveList.Add(currentTables[key]);
             }
+            
+            _botDbContext.BoardTables.RemoveRange(tablesToRemoveList);
+            await _botDbContext.SaveChangesAsync();
         }
     }
 }

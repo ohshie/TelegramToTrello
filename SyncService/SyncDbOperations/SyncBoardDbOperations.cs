@@ -5,11 +5,19 @@ namespace TelegramToTrello.SyncDbOperations;
 
 public class SyncBoardDbOperations
 {
+    private readonly TrelloOperations _trelloOperations;
+    private readonly BotDbContext _botDbContext;
+
+    public SyncBoardDbOperations(TrelloOperations trelloOperations, BotDbContext botDbContext)
+    {
+        _trelloOperations = trelloOperations;
+        _botDbContext = botDbContext;
+    }
+    
     internal async Task Execute(RegisteredUser user)
     {
-        TrelloOperations trelloOperation = new TrelloOperations();
         var boardsFoundInTrello =
-            await trelloOperation.GetTrelloBoards(user);
+            await _trelloOperations.GetTrelloBoards(user);
 
         if (boardsFoundInTrello != null)
         {
@@ -20,18 +28,15 @@ public class SyncBoardDbOperations
     
     private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
-        using (BotDbContext dbContext = new())
-        {
-            var (user, currentBoardsInDb) = GetUserAndUserBoards(trelloUser, dbContext);
+        var (user, currentBoardsInDb) = GetUserAndUserBoards(trelloUser);
             
             foreach (var keyBoardPair in boardsFoundInTrello)
             {
-                var board = HandleBoard(currentBoardsInDb, keyBoardPair, dbContext);
+                var board = HandleBoard(currentBoardsInDb, keyBoardPair);
                 CreateBoardUserRelations(user, board);
             }
             
-            await dbContext.SaveChangesAsync();
-        }
+            await _botDbContext.SaveChangesAsync();
     }
 
     private void CreateBoardUserRelations(RegisteredUser user, Board board)
@@ -44,8 +49,7 @@ public class SyncBoardDbOperations
     }
 
     private Board HandleBoard(Dictionary<string, Board> currentBoardsInDb, 
-        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair, 
-        BotDbContext dbContext)
+        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair)
     {
         if (currentBoardsInDb.TryGetValue(keyBoardPair.Key, out var existingBoard)) return existingBoard;
       
@@ -55,19 +59,18 @@ public class SyncBoardDbOperations
                 BoardName = keyBoardPair.Value.Name, 
         };
         
-        dbContext.Boards.Add(board);
+        _botDbContext.Boards.Add(board);
 
         return board;
     }
 
-    private (RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb) GetUserAndUserBoards(RegisteredUser trelloUser,
-        BotDbContext dbContext)
+    private (RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb) GetUserAndUserBoards(RegisteredUser trelloUser)
     {
-        RegisteredUser trackedUser = dbContext.Users
+        RegisteredUser trackedUser = _botDbContext.Users
             .Include(u => u.Boards)
             .Single(u => u.TelegramId == trelloUser.TelegramId);
 
-        Dictionary<string,Board> currentBoardsInDb = dbContext.Boards
+        Dictionary<string,Board> currentBoardsInDb = _botDbContext.Boards
             .Include(b => b.Users)
             .ToDictionary(b => b.TrelloBoardId!);
         
@@ -77,8 +80,7 @@ public class SyncBoardDbOperations
     private async Task RemoveBoardThatWereNotInTrello(
         Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
-        await using BotDbContext dbContext = new BotDbContext();
-        var currentBoardsInDb = dbContext.Boards
+        var currentBoardsInDb = _botDbContext.Boards
             .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))
             .ToDictionary(b => b.TrelloBoardId!);
 
@@ -92,8 +94,8 @@ public class SyncBoardDbOperations
                 Board? boardToRemove = currentBoardsInDb.GetValueOrDefault(key);
                 boardToRemoveList.Add(boardToRemove);
             }
-            dbContext.Boards.RemoveRange(boardToRemoveList);
-            await dbContext.SaveChangesAsync();
+            _botDbContext.Boards.RemoveRange(boardToRemoveList);
+            await _botDbContext.SaveChangesAsync();
         }
     }
 }

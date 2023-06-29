@@ -8,15 +8,18 @@ public class MarkTaskAsCompleted
 {
     private readonly ITelegramBotClient _botClient;
     private readonly TaskDbOperations _taskDbOperations;
-    private readonly UserDbOperations _userDbOperations ;
-    
+    private readonly UserDbOperations _userDbOperations;
+    private readonly TrelloOperations _trelloOperations;
+
     public MarkTaskAsCompleted(ITelegramBotClient botClient, 
         TaskDbOperations taskDbOperations, 
-        UserDbOperations userDbOperations)
+        UserDbOperations userDbOperations,
+        TrelloOperations trelloOperations)
     {
         _botClient = botClient;
         _taskDbOperations = taskDbOperations;
         _userDbOperations = userDbOperations;
+        _trelloOperations = trelloOperations;
     }
 
     public async Task Execute(CallbackQuery callbackQuery)
@@ -27,9 +30,8 @@ public class MarkTaskAsCompleted
         if (task != null)
         {
             RegisteredUser? user = await _userDbOperations.RetrieveTrelloUser(task.User);
-
-            TrelloOperations trelloOperations = new();
-            bool success = await trelloOperations.MarkTaskAsComplete(taskId, user);
+            
+            bool success = await _trelloOperations.MarkTaskAsComplete(taskId, user);
             if (success)
             {
                 await _botClient.EditMessageTextAsync(text: $"Task: {task.Name} marked as complete",

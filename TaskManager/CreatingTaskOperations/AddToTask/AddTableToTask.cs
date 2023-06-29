@@ -6,6 +6,7 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 public class AddTableToTask : TaskCreationBaseHandler
 {
+    private readonly CreateKeyboardWithTags _createKeyboardWithTags;
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private readonly CreateKeyboardWithUsers _createKeyboardWithUsers;
 
@@ -13,14 +14,15 @@ public class AddTableToTask : TaskCreationBaseHandler
         TaskDbOperations taskDbOperations, CreateKeyboardWithTags createKeyboardWithTags,
         CreatingTaskDbOperations creatingTaskDbOperations, CreateKeyboardWithUsers createKeyboardWithUsers) : base(botClient, userDbOperations, taskDbOperations)
     {
+        _createKeyboardWithTags = createKeyboardWithTags;
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _createKeyboardWithUsers = createKeyboardWithUsers;
-        NextTask = createKeyboardWithTags;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        string listName = string.Empty;
+        string listName;
+        
         if (IsEdit)
         {
             listName = CallbackQuery.Data.Substring("/editlist".Length).Trim(); 
@@ -29,7 +31,6 @@ public class AddTableToTask : TaskCreationBaseHandler
         {
             listName = CallbackQuery.Data.Substring("/list".Length).Trim();
         }
-        
         
         bool listExist = await _creatingTaskDbOperations.AddTable(task, listName);
         if (!listExist)
@@ -45,6 +46,10 @@ public class AddTableToTask : TaskCreationBaseHandler
             await TaskDbOperations.ToggleEditModeForTask(task);
             NextTask = _createKeyboardWithUsers;
             NextTask.IsEdit = true;
+        }
+        else
+        {
+            NextTask = _createKeyboardWithTags; 
         }
     }
 }

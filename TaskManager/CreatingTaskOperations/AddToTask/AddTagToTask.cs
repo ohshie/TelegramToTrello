@@ -8,14 +8,15 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 public class AddTagToTask : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly TaskNameRequest _taskNameRequest;
 
     public AddTagToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations, 
         TaskNameRequest taskNameRequest, 
         CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
     {
+        _taskNameRequest = taskNameRequest;
         _creatingTaskDbOperations = creatingTaskDbOperations;
-        NextTask = taskNameRequest;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -32,5 +33,7 @@ public class AddTagToTask : TaskCreationBaseHandler
         }
         
         await _creatingTaskDbOperations.AddTag(task,tag);
+        
+        NextTask = _taskNameRequest;
     }
 }

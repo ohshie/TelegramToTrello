@@ -1,6 +1,5 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
@@ -16,7 +15,6 @@ public abstract class TaskCreationBaseHandler
     protected internal bool IsEdit;
 
     protected TaskCreationBaseHandler? NextTask { get; set; }
-    protected TaskCreationBaseHandler? SubTask { get; set; }
 
     protected TaskCreationBaseHandler(ITelegramBotClient botClient, 
         UserDbOperations dbOperations,
@@ -39,16 +37,27 @@ public abstract class TaskCreationBaseHandler
         if (!await TaskExist(task)) return;
 
         await HandleTask(user, task);
-        
-        if (NextTask != null) await NextTask.Execute(message);
+
+        if (NextTask != null)
+        {
+            if (IsEdit)
+            {
+                await NextTask.Execute(message, isEdit: true);
+            }
+            await NextTask.Execute(message);
+        }
     }
     
     public async Task Execute(CallbackQuery callback, bool isEdit = false)
     {
+        if (!IsEdit)
+        {
+            IsEdit = isEdit;
+        }
+        
         CallbackQuery = callback;
-        Message = CallbackQuery.Message;
-        IsEdit = isEdit;
-
+        Message = callback.Message;
+        
         RegisteredUser user = await GetUser();
         TTTTask task = await GetTask();
 
@@ -57,7 +66,16 @@ public abstract class TaskCreationBaseHandler
 
         await HandleTask(user, task);
         
-        if (NextTask != null) await NextTask.Execute(callback);
+        if (NextTask != null)
+        {
+            if (isEdit)
+            {
+                await NextTask.Execute(callback, isEdit: true);
+                return;
+            }
+            
+            await NextTask.Execute(callback);
+        }
     }
 
     private async Task<RegisteredUser> GetUser()
