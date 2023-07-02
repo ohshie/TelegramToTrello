@@ -45,6 +45,10 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
             },
             new[]
             {
+                InlineKeyboardButton.WithCallbackData(text: "Add attachment (image or file)", callbackData:"/addattachment") 
+            },
+            new[]
+            {
                 InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/drop") 
             }
         });

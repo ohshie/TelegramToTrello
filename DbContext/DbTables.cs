@@ -64,6 +64,8 @@ public class TTTTask
     public string? TaskPartId { get; set; }
     public string? TaskPartName { get; set; }
     public string? Date { get; set; }
+    public string? Attachments { get; set; }
+    public bool WaitingForAttachment { get; set; }
     public bool InEditMode { get; set; }
     public int LastBotMessage { get; set; }
 }

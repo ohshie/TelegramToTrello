@@ -24,6 +24,8 @@ public class CallbackFactory
     private readonly DropTask _dropTask;
     private readonly TaskInfoDisplay _taskInfoDisplay;
     private readonly MarkTaskAsCompleted _markTaskAsCompleted;
+    private readonly AddAttachmentToTask _addAttachmentToTask;
+    private readonly AttachmentRequest _attachmentRequest;
 
     public CallbackFactory(ITelegramBotClient botClient, 
         CreateKeyboardWithBoards createKeyboardWithBoards,
@@ -38,7 +40,9 @@ public class CallbackFactory
         TaskDescriptionRequest taskDescriptionRequest,
         DropTask dropTask,
         TaskInfoDisplay taskInfoDisplay,
-        MarkTaskAsCompleted markTaskAsCompleted
+        MarkTaskAsCompleted markTaskAsCompleted,
+        AddAttachmentToTask addAttachmentToTask,
+        AttachmentRequest attachmentRequest
     )
     {
         _botClient = botClient;
@@ -55,6 +59,8 @@ public class CallbackFactory
         _dropTask = dropTask;
         _taskInfoDisplay = taskInfoDisplay;
         _markTaskAsCompleted = markTaskAsCompleted;
+        _addAttachmentToTask = addAttachmentToTask;
+        _attachmentRequest = attachmentRequest;
 
         _botTaskFactory = new()
         {
@@ -73,7 +79,9 @@ public class CallbackFactory
             { "/autodate", (callbackQuery) =>  _addDateToTask.Execute(callbackQuery) },
             { "/edittask", (callbackQuery) => _taskInfoDisplay.Execute(callbackQuery) },
             { "/taskComplete", (callbackQuery) =>  _markTaskAsCompleted.Execute(callbackQuery) },
-            { "/taskMove", (callbackQuery) => _taskInfoDisplay.Execute(callbackQuery) }
+            { "/taskMove", (callbackQuery) => _taskInfoDisplay.Execute(callbackQuery) },
+            {"press_this_when_done", callbackQuery => _addAttachmentToTask.Execute(callbackQuery)},
+            {"/addattachment", callbackQuery => _attachmentRequest.Execute(callbackQuery)}
         };
     }
 

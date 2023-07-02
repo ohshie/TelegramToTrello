@@ -18,8 +18,9 @@ public class WebServer
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.WebHost.UseUrls(Configuration.ServerUrl);
+        
         var app = builder.Build();
-
+        
         app.UseStaticFiles();
         app.MapGet("/", () => "Nothing to see here.");
         app.MapPost("/trello/authcallback", AuthCallback);

@@ -17,8 +17,6 @@ public class TaskDateRequest : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        CreateKeyboard();
-
         await _creatingTaskDbOperations.AddPlaceholderDate(task);
         
         if (IsEdit)
@@ -33,7 +31,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
             chatId: Message.Chat.Id,
             replyMarkup: CreateKeyboard());
         
-        await _creatingTaskDbOperations.MarkMessageForDeletion(task, newMessage.MessageId);
+        await _creatingTaskDbOperations.MarkMessage(task, newMessage.MessageId);
     }
 
     private async Task ToggleEditModeRequestDate(TTTTask task)
@@ -49,7 +47,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
             chatId: Message.Chat.Id,
             replyMarkup: CreateKeyboard());
         
-        await _creatingTaskDbOperations.MarkMessageForDeletion(task,newMessage.MessageId);
+        await _creatingTaskDbOperations.MarkMessage(task,newMessage.MessageId);
     }
 
     private InlineKeyboardMarkup CreateKeyboard()

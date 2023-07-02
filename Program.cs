@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using TelegramToTrello.CreatingTaskOperations;
@@ -17,110 +18,111 @@ namespace TelegramToTrello;
 
 public class Program
 {
-    public static IContainer? Container { get; private set; }
-    
+    public static IServiceProvider Provider { get; private set; }
+
     public static async Task Main(string[] args)
     {
         Configuration.InitializeVariables();
 
-        var builder = BuildContainer();
-        Container = builder.Build();
+        ConfigureServices();
+        
+        GlobalConfiguration.Configuration.UsePostgreSqlStorage(Configuration.ConnectionString);
 
-        using (var scope = Container.BeginLifetimeScope())
+        using (var scope = Provider.CreateScope())
         {
-            var dbContext = scope.Resolve<BotDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<BotDbContext>();
             await dbContext.Database.EnsureCreatedAsync();
         }
+
+        var botClient = Provider.GetRequiredService<BotClient>();
+        Task bot = botClient.BotOperations();
         
-        var botClinet = Container.Resolve<BotClient>();
-        Task bot = botClinet.BotOperations();
-
-        var webServer = Container.Resolve<WebServer>();
+        var webServer = Provider.GetRequiredService<WebServer>();
         Task server = webServer.Run(args);
-
+        
         await Task.WhenAll(server, bot);
-
+        
         Console.ReadLine();
         Environment.Exit(1);
     }
-
-    private static ContainerBuilder BuildContainer()
+    
+    private static void ConfigureServices()
     {
-        var builder = new ContainerBuilder();
+        IServiceCollection collection = new ServiceCollection();
         
-        builder.Register(bot =>
+        collection.AddSingleton<ITelegramBotClient>(sp =>
         {
             var token = Configuration.BotToken;
             return new TelegramBotClient(token);
-        }).As<ITelegramBotClient>();
-        
-        builder.Register(x =>
+        });
+
+        collection.AddDbContext<BotDbContext>(sp =>
         {
-            var optionsBuilder = new DbContextOptionsBuilder<BotDbContext>()
-                .UseNpgsql((Configuration.ConnectionString));
-            return optionsBuilder.Options;
-        }).AsSelf().InstancePerLifetimeScope();
-        builder.RegisterType<BotDbContext>().AsSelf().InstancePerLifetimeScope();
+            sp.UseNpgsql(Configuration.ConnectionString);
+        });
 
-        builder.RegisterType<HttpClient>().AsSelf();
+        collection.AddHttpClient();
+        collection.AddLogging();
 
-        builder.RegisterType<BotClient>().AsSelf();
-        builder.RegisterType<WebServer>().AsSelf();
-        builder.RegisterType<TrelloOperations>().AsSelf();
+        collection.AddTransient<BotClient>();
+        collection.AddTransient<WebServer>();
+        collection.AddTransient<TrelloOperations>();
         
-        builder.RegisterType<ActionsFactory>().AsSelf();
-        builder.RegisterType<CallbackFactory>().AsSelf();
+        collection.AddTransient<ActionsFactory>();
+        collection.AddTransient<CallbackFactory>();
         
-        builder.RegisterType<UserRegistrationHandler>().AsSelf();
+        collection.AddTransient<UserRegistrationHandler>();
         
-        builder.RegisterType<BotNotificationCentre>().AsSelf();
-        builder.RegisterType<SyncService>().AsSelf();
+        collection.AddTransient<BotNotificationCentre>();
+        collection.AddTransient<SyncService>();
         
-        builder.RegisterType<SyncBoardDbOperations>().AsSelf();
-        builder.RegisterType<SyncTablesDbOperations>().AsSelf();
-        builder.RegisterType<SyncUsersDbOperations>().AsSelf();
+        collection.AddTransient<SyncBoardDbOperations>();
+        collection.AddTransient<SyncTablesDbOperations>();
+        collection.AddTransient<SyncUsersDbOperations>();
         
-        builder.RegisterType<StartTaskCreation>().AsSelf();
-        builder.RegisterType<TaskPlaceholderOperator>().AsSelf();
+        collection.AddTransient<StartTaskCreation>();
+        collection.AddTransient<TaskPlaceholderOperator>();
 
-        builder.RegisterType<DbOperations>().AsSelf();
-        builder.RegisterType<TaskDbOperations>().AsSelf();
-        builder.RegisterType<CreatingTaskDbOperations>().AsSelf();
-        builder.RegisterType<UserDbOperations>().AsSelf();
-        builder.RegisterType<NotificationsDbOperations>().AsSelf();
+        collection.AddTransient<DbOperations>();
+        collection.AddTransient<TaskDbOperations>();
+        collection.AddTransient<CreatingTaskDbOperations>();
+        collection.AddTransient<UserDbOperations>();
+        collection.AddTransient<NotificationsDbOperations>();
 
-        builder.RegisterType<CurrentTasksDisplay>().AsSelf();
-        builder.RegisterType<TaskInfoDisplay>().AsSelf();
-        builder.RegisterType<CreateKeyboardWithBoards>().AsSelf();
-        builder.RegisterType<MarkTaskAsCompleted>().AsSelf();
-        builder.RegisterType<DropTask>();
-        builder.RegisterType<DisplayCurrentTaskInfo>().AsSelf();
+        collection.AddTransient<CurrentTasksDisplay>();
+        collection.AddTransient<TaskInfoDisplay>();
+        collection.AddTransient<CreateKeyboardWithBoards>();
+        collection.AddTransient<MarkTaskAsCompleted>();
+        collection.AddTransient<DropTask>();
+        collection.AddTransient<DisplayCurrentTaskInfo>();
 
-        builder.RegisterType<AddNameToTask>().AsSelf();
-        builder.RegisterType<AddTagToTask>().AsSelf();
-        builder.RegisterType<AddDescriptionToTask>().AsSelf();
-        builder.RegisterType<AddBoardToTask>().AsSelf();
-        builder.RegisterType<AddTableToTask>().AsSelf();
-        builder.RegisterType<AddDateToTask>().AsSelf();
-        builder.RegisterType<AddParticipantToTask>().AsSelf();
-        builder.RegisterType<PushTask>().AsSelf();
+        collection.AddTransient<AddNameToTask>();
+        collection.AddTransient<AddTagToTask>();
+        collection.AddTransient<AddDescriptionToTask>();
+        collection.AddTransient<AddBoardToTask>();
+        collection.AddTransient<AddTableToTask>();
+        collection.AddTransient<AddDateToTask>();
+        collection.AddTransient<AddParticipantToTask>();
+        collection.AddTransient<AddAttachmentToTask>();
+        collection.AddTransient<PushTask>();
 
-        builder.RegisterType<TaskDateRequest>().AsSelf();
-        builder.RegisterType<TaskNameRequest>().AsSelf();
-        builder.RegisterType<TaskDescriptionRequest>().AsSelf();
+        collection.AddTransient<TaskDateRequest>();
+        collection.AddTransient<TaskNameRequest>();
+        collection.AddTransient<TaskDescriptionRequest>();
+        collection.AddTransient<AttachmentRequest>();
 
-        builder.RegisterType<CreateKeyboardWithBoards>().AsSelf();
-        builder.RegisterType<CreateKeyboardWithTables>().AsSelf();
-        builder.RegisterType<CreateKeyboardWithUsers>().AsSelf();
-        builder.RegisterType<CreateKeyboardWithTags>().AsSelf();
+        collection.AddTransient<CreateKeyboardWithBoards>();
+        collection.AddTransient<CreateKeyboardWithTables>();
+        collection.AddTransient<CreateKeyboardWithUsers>();
+        collection.AddTransient<CreateKeyboardWithTags>();
 
-        builder.RegisterType<TTTTaskRepository>().As<IRepository<TTTTask>>();
-        builder.RegisterType<UsersRepository>().As<IUsersRepository>();
-        builder.RegisterType<BoardRepository>().As<IRepository<Board>>();
-        builder.RegisterType<TableRepository>().As<ITableRepository>();
-        builder.RegisterType<TrelloUsersRepository>().As<ITrelloUsersRepository>();
-        builder.RegisterType<NotificationsRepository>().As<INotificationsRepository>();
-
-        return builder;
+        collection.AddTransient<IRepository<TTTTask>, TTTTaskRepository>();
+        collection.AddTransient<IUsersRepository, UsersRepository>();
+        collection.AddTransient<IRepository<Board>, BoardRepository>();
+        collection.AddTransient<ITableRepository, TableRepository>();
+        collection.AddTransient<ITrelloUsersRepository, TrelloUsersRepository>();
+        collection.AddTransient<INotificationsRepository, NotificationsRepository>();
+        
+        Provider = collection.BuildServiceProvider();
     }
 }

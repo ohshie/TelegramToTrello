@@ -50,6 +50,8 @@ public class ActionsFactory
     
     public async Task BotActionFactory(Message message)
     {
+        if (message.Text is null) return;
+
         if (_botTaskFactory.ContainsKey(message.Text))
         {
             await _botTaskFactory[message.Text](message);

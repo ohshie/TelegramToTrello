@@ -1,3 +1,5 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -6,6 +8,7 @@ using Telegram.Bot.Types.Enums;
 using TelegramToTrello.Notifications;
 using TelegramToTrello.TaskManager;
 using TelegramToTrello.TaskManager.CreatingTaskOperations;
+using TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 namespace TelegramToTrello;
 
@@ -16,7 +19,8 @@ public class BotClient
         CallbackFactory callbackFactory, 
         TaskPlaceholderOperator taskPlaceholderOperator, 
         BotNotificationCentre botNotificationCentre, 
-        SyncService syncService)
+        SyncService syncService,
+        AddAttachmentToTask addAttachmentToTask)
     {
         _botClient = botClient;
         _actionsFactory = actionsFactory;
@@ -24,13 +28,14 @@ public class BotClient
         _taskPlaceholderOperator = taskPlaceholderOperator;
         _botNotificationCentre = botNotificationCentre;
         _syncService = syncService;
+        _addAttachmentToTask = addAttachmentToTask;
 
         _tasksUpdateTimer = Configuration.NotificationTimer;
         _syncBoardsWithBot = Configuration.SyncTimer;
     }
     
-    private static Timer NotificationsTimer;
-    private static Timer SyncTimer;
+    private static Timer? _notificationsTimer;
+    private static Timer? _syncTimer;
     
     private static int _tasksUpdateTimer;
     private static int _syncBoardsWithBot;
@@ -41,6 +46,7 @@ public class BotClient
     private readonly TaskPlaceholderOperator _taskPlaceholderOperator;
     private readonly BotNotificationCentre _botNotificationCentre;
     private readonly SyncService _syncService;
+    private readonly AddAttachmentToTask _addAttachmentToTask;
 
     public async Task BotOperations()
     {
@@ -51,7 +57,7 @@ public class BotClient
             AllowedUpdates = Array.Empty<UpdateType>()
         };
         
-        RunServices(_botClient);
+        RunServices();
 
         _botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
@@ -63,17 +69,17 @@ public class BotClient
         Console.WriteLine(_botClient.Timeout);
         Console.WriteLine($"Listening for @{me.Username}");
         Console.ReadLine();
-
+        
         cts.Cancel();
     }
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        using (var scope = Program.Container.BeginLifetimeScope())
+        botClient.GetUpdatesAsync();
+        
+        using (var scope = Program.Provider.CreateScope())
         {
             #pragma warning disable
-            botClient.GetUpdatesAsync();
-
             if (update.CallbackQuery is { } callbackQuery)
             {
                 await _callbackFactory.CallBackDataManager(callbackQuery);
@@ -81,25 +87,24 @@ public class BotClient
             }
             
             if (update.Message is not { } message) return;
-            if (message.Text is not { } messageText) return;
-            
+
             var chatId = message.Chat.Id;
             var userUsername = message.From?.Username;
-        
-            Console.WriteLine($"Received a '{messageText}' message in chat {chatId} from {userUsername}.");
+            
+            Console.WriteLine($"Received a '{message}' message in chat {chatId} from {userUsername}.");
             
             await _actionsFactory.BotActionFactory(message);
             await _taskPlaceholderOperator.SortMessage(message);
         }
     }
 
-    private async Task RunServices(ITelegramBotClient botClient)
+    private async Task RunServices()
     {
         TimeSpan taskUpdateInterval = TimeSpan.FromMinutes(_tasksUpdateTimer);
         TimeSpan syncInterval = TimeSpan.FromMinutes(_syncBoardsWithBot);
         
-        NotificationsTimer = new Timer(async _ => await _botNotificationCentre.NotificationManager(), null, taskUpdateInterval, taskUpdateInterval);
-        SyncTimer = new Timer(async _ => await _syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
+        _notificationsTimer = new Timer(async _ => await _botNotificationCentre.NotificationManager(), null, taskUpdateInterval, taskUpdateInterval);
+        _syncTimer = new Timer(async _ => await _syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
     }
     
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

@@ -7,25 +7,25 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 public class TaskPlaceholderOperator
 {
     private readonly TaskDbOperations _taskDbOperations;
-    private readonly ITelegramBotClient _botClient;
     private readonly AddNameToTask _addNameToTask;
     private readonly AddDescriptionToTask _addDescriptionToTask;
     private readonly AddDateToTask _addDateToTask;
+    private readonly AddAttachmentToTask _addAttachmentToTask;
     private readonly UserDbOperations _userDbOperations;
 
     public TaskPlaceholderOperator(UserDbOperations userDbOperations, 
-        TaskDbOperations taskDbOperations, 
-        ITelegramBotClient botClient,
+        TaskDbOperations taskDbOperations,
         AddNameToTask addNameToTask,
         AddDescriptionToTask addDescriptionToTask,
-        AddDateToTask addDateToTask)
+        AddDateToTask addDateToTask,
+        AddAttachmentToTask addAttachmentToTask)
     {
         _userDbOperations = userDbOperations;
         _taskDbOperations = taskDbOperations;
-        _botClient = botClient;
         _addNameToTask = addNameToTask;
         _addDescriptionToTask = addDescriptionToTask;
         _addDateToTask = addDateToTask;
+        _addAttachmentToTask = addAttachmentToTask;
     }
 
     public async Task SortMessage(Message message)
@@ -49,6 +49,15 @@ public class TaskPlaceholderOperator
         {
             await _addDateToTask.Execute(message);
             return;
+        }
+
+        if (task.WaitingForAttachment)
+        {
+            if (message.Photo is not null || message.Document is not null)
+            {
+                await _addAttachmentToTask.Execute(message);
+                return;
+            }
         }
     }
     

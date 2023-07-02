@@ -89,6 +89,12 @@ public class CreatingTaskDbOperations
         userTask.Date = "###tempdate###";
         await _taskRepository.Update(userTask);
     }
+
+    public async Task WaitingForAttachmentToggle(TTTTask userTask)
+    {
+        userTask.WaitingForAttachment = !userTask.WaitingForAttachment;
+        await _taskRepository.Update(userTask);
+    }
     
     public async Task AddName(TTTTask userTask,string taskName)
     {
@@ -120,9 +126,15 @@ public class CreatingTaskDbOperations
         await _taskRepository.Update(userTask);
     }
     
-    public async Task MarkMessageForDeletion(TTTTask userTask, int messageId)
+    public async Task MarkMessage(TTTTask userTask, int messageId)
     {
         userTask.LastBotMessage = messageId;
+        await _taskRepository.Update(userTask);
+    }
+
+    public async Task AddFilePath(TTTTask userTask, string filePath)
+    {
+        userTask.Attachments += filePath + ", ";
         await _taskRepository.Update(userTask);
     }
 }

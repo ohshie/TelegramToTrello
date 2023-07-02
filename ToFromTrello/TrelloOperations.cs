@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 
 namespace TelegramToTrello.ToFromTrello;
 
@@ -87,32 +89,69 @@ public class TrelloOperations
         return newUsers;
     }
     
-    public async Task<bool> PushTaskToTrello(TTTTask task)
+    public async Task<(bool, string)> PushTaskToTrello(TTTTask task, RegisteredUser user)
     {
-        RegisteredUser? trelloUser = await _botDbContext.Users.FindAsync(task.Id);
-            string trelloApiUri = $"https://api.trello.com/1/cards";
+        string trelloApiUri = $"https://api.trello.com/1/cards";
 
-            string correctDate = DateTime.Parse(task.Date!).AddHours(-4).ToString("o");
-            string participants = $"{task.TaskPartId}{task.TrelloId}";
-            string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
+        string correctDate = DateTime.Parse(task.Date!).AddHours(-4).ToString("o"); 
+        string participants = $"{task.TaskPartId}{task.TrelloId}";
+        string combinedTaskNameAndTag = $"[{task.Tag}] {task.TaskName}";
             
-            var requestUri = $"{trelloApiUri}?key={_trelloApiKey}" +
-                             $"&token={trelloUser?.TrelloToken}" +
+        var requestUri = $"{trelloApiUri}?key={_trelloApiKey}" +
+                             $"&token={user.TrelloToken}" +
                              $"&name={Uri.EscapeDataString(combinedTaskNameAndTag)}" +
                              $"&idList={task.ListId}" +
                              $"&idMembers={Uri.EscapeDataString(participants)}" +
                              $"&due={Uri.EscapeDataString(correctDate)}" +
                              $"&desc={Uri.EscapeDataString(task.TaskDesc!)}";
 
-            HttpResponseMessage response = await _httpClient.PostAsync(requestUri, null);
+        HttpResponseMessage response = await _httpClient.PostAsync(requestUri, null);
 
-            if (await AddTaskToNotifications(task, response, correctDate, trelloUser)) return true;
+        (bool success, string taskId) = await AddTaskToNotifications(task, response, correctDate, user);
+            
+            if (success) return (true, taskId);
 
             Console.WriteLine($"failed {response}");
-            return false;
+            return (false, string.Empty);
     }
 
-    private async Task<bool> AddTaskToNotifications(TTTTask task, HttpResponseMessage response,
+    public async Task<bool> AddAttachmentsToTask(TTTTask task, RegisteredUser user,string createdTaskId)
+    {
+        var allAttachments = task.Attachments
+            .Substring(0, task.Attachments.Length-2)
+            .Split(", ");
+
+        foreach (var attachment in allAttachments)
+        {
+            var fileBytes = await File.ReadAllBytesAsync(attachment);
+            var fileContent = new ByteArrayContent(fileBytes);
+
+            var fileName = Path.GetFileName(attachment);
+            var mimeType = MimeTypes.GetMimeType(fileName);
+
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+            using (var formData = new MultipartFormDataContent())
+            {
+                var url = $"https://api.trello.com/1/cards/{createdTaskId}/attachments" +
+                          $"?key={_trelloApiKey}" +
+                          $"&token={user.TrelloToken}";
+                
+                formData.Add(fileContent, "file", fileName);
+                
+                HttpResponseMessage response = await _httpClient.PostAsync(url, formData);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("attachment added");
+                }
+            }
+
+            return true;
+        }
+        return true;
+    }
+
+    private async Task<(bool, string)> AddTaskToNotifications(TTTTask task, HttpResponseMessage response,
         string correctDate, RegisteredUser? trelloUser)
     {
         if (response.IsSuccessStatusCode)
@@ -145,10 +184,10 @@ public class TrelloOperations
                 await _botDbContext.SaveChangesAsync();
             }
 
-            return true;
+            return (true, taskId);
         }
 
-        return false;
+        return (false, string.Empty);
     }
 
     public async Task<bool> MarkTaskAsComplete(string taskId, RegisteredUser user)
