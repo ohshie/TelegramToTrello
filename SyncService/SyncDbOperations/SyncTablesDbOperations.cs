@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Open.Linq.AsyncExtensions;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.SyncDbOperations;
@@ -6,17 +7,19 @@ namespace TelegramToTrello.SyncDbOperations;
 public class SyncTablesDbOperations
 {
     private readonly TrelloOperations _trelloOperations;
-    private readonly BotDbContext _botDbContext;
+    private readonly IBoardRepository _boardRepository;
+    private readonly ITableRepository _tableRepository;
 
-    public SyncTablesDbOperations(TrelloOperations trelloOperations, BotDbContext botDbContext)
+    public SyncTablesDbOperations(TrelloOperations trelloOperations, IBoardRepository boardRepository, ITableRepository tableRepository)
     {
         _trelloOperations = trelloOperations;
-        _botDbContext = botDbContext;
+        _boardRepository = boardRepository;
+        _tableRepository = tableRepository;
     }
     
     internal async Task Execute(RegisteredUser trelloUser)
     {
-        var (currentBoards, currentTables) = GetCurrentBoardsAndTablesFromDb(trelloUser);
+        var (currentBoards, currentTables) = await GetCurrentBoardsAndTablesFromDb(trelloUser);
         var freshTableLists = await GetTablesFromTrello(currentBoards, trelloUser);
         await AddNewTablesToDb(freshTableLists, currentTables, currentBoards);
         await RemoveTablesNotInTrello(freshTableLists, currentTables);
@@ -38,16 +41,13 @@ public class SyncTablesDbOperations
         return freshTablesMap;
     }
 
-    private (Dictionary<string, Board>, Dictionary<string, Table>) GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
+    private async Task<(Dictionary<string, Board>, Dictionary<string, Table>)> GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
     {
-        var currentBoards = _botDbContext.Boards
-                .Include(b => b.Tables)
-                .Include(b => b.Users)
+        var currentBoards = await _boardRepository.GetAll()
                 .Where(b => b.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(b => b.TrelloBoardId, b=> b);
 
-            var currentTables = _botDbContext.BoardTables
-                .Include(bt => bt.TrelloUserBoard)
+        var currentTables = await _tableRepository.GetAll()
                 .Where(bt => bt.TrelloUserBoard.Users.Any(u => u.TelegramId == trelloUser.TelegramId))
                 .ToDictionary(t => t.TableId);
 
@@ -74,8 +74,7 @@ public class SyncTablesDbOperations
                     };
                     newTablesList.Add(newTable);
                 }
-                _botDbContext.BoardTables.AddRange(newTablesList);
-                await _botDbContext.SaveChangesAsync();
+                await _tableRepository.AddRange(newTablesList);
         }
     }
 
@@ -90,9 +89,8 @@ public class SyncTablesDbOperations
             {
                 tablesToRemoveList.Add(currentTables[key]);
             }
-            
-            _botDbContext.BoardTables.RemoveRange(tablesToRemoveList);
-            await _botDbContext.SaveChangesAsync();
+
+            await _tableRepository.RemoveRange(tablesToRemoveList);
         }
     }
 }

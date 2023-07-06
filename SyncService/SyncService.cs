@@ -1,18 +1,24 @@
+using Elsa.Activities.Temporal;
+using Elsa.Builders;
+using NodaTime;
 using TelegramToTrello.SyncDbOperations;
 
 namespace TelegramToTrello;
 
-public class SyncService
+public class SyncService : IWorkflow
 {
+    private readonly IClock _clock;
+
     public SyncService(UserDbOperations dbOperations, 
         SyncBoardDbOperations boardDbOperations, 
         SyncTablesDbOperations tablesDbOperations, 
-        SyncUsersDbOperations userDbOperations)
+        SyncUsersDbOperations userDbOperations, IClock clock)
     {
         _dbOperations = dbOperations;
         _boardDbOperations = boardDbOperations;
         _tablesDbOperations = tablesDbOperations;
         _userDbOperations = userDbOperations;
+        _clock = clock;
     }
 
     private readonly UserDbOperations _dbOperations;
@@ -20,7 +26,7 @@ public class SyncService
     private readonly SyncTablesDbOperations _tablesDbOperations;
     private readonly SyncUsersDbOperations _userDbOperations;
 
-    public async Task SynchronizeDataToTrello()
+    private async Task SynchronizeDataToTrello()
     {
         var allUsersList = await _dbOperations.FetchAllUsers();
         
@@ -48,4 +54,10 @@ public class SyncService
         await _tablesDbOperations.Execute(user);
         await _userDbOperations.Execute(user);
     }
+
+    public void Build(IWorkflowBuilder builder) =>
+        builder
+            .AsSingleton()
+            .Timer(Duration.FromMinutes(Configuration.SyncTimer).Plus(Duration.FromSeconds(30)))
+            .Then(SynchronizeDataToTrello);
 }

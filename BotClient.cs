@@ -1,14 +1,10 @@
-using Hangfire;
-using Hangfire.PostgreSql;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TelegramToTrello.Notifications;
 using TelegramToTrello.TaskManager;
 using TelegramToTrello.TaskManager.CreatingTaskOperations;
-using TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 
 namespace TelegramToTrello;
 
@@ -17,36 +13,21 @@ public class BotClient
     public BotClient(ITelegramBotClient botClient, 
         ActionsFactory actionsFactory, 
         CallbackFactory callbackFactory, 
-        TaskPlaceholderOperator taskPlaceholderOperator, 
-        BotNotificationCentre botNotificationCentre, 
-        SyncService syncService,
-        AddAttachmentToTask addAttachmentToTask)
+        TaskPlaceholderOperator taskPlaceholderOperator,
+        IHost host)
     {
         _botClient = botClient;
         _actionsFactory = actionsFactory;
         _callbackFactory = callbackFactory;
         _taskPlaceholderOperator = taskPlaceholderOperator;
-        _botNotificationCentre = botNotificationCentre;
-        _syncService = syncService;
-        _addAttachmentToTask = addAttachmentToTask;
-
-        _tasksUpdateTimer = Configuration.NotificationTimer;
-        _syncBoardsWithBot = Configuration.SyncTimer;
+        _host = host;
     }
-    
-    private static Timer? _notificationsTimer;
-    private static Timer? _syncTimer;
-    
-    private static int _tasksUpdateTimer;
-    private static int _syncBoardsWithBot;
-        
+
     private readonly ITelegramBotClient _botClient;
     private readonly ActionsFactory _actionsFactory;
     private readonly CallbackFactory _callbackFactory;
     private readonly TaskPlaceholderOperator _taskPlaceholderOperator;
-    private readonly BotNotificationCentre _botNotificationCentre;
-    private readonly SyncService _syncService;
-    private readonly AddAttachmentToTask _addAttachmentToTask;
+    private readonly IHost _host;
 
     public async Task BotOperations()
     {
@@ -56,8 +37,6 @@ public class BotClient
         {
             AllowedUpdates = Array.Empty<UpdateType>()
         };
-        
-        RunServices();
 
         _botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
@@ -77,7 +56,7 @@ public class BotClient
     {
         botClient.GetUpdatesAsync();
         
-        using (var scope = Program.Provider.CreateScope())
+        using (var scope = _host.Services.CreateScope())
         {
             #pragma warning disable
             if (update.CallbackQuery is { } callbackQuery)
@@ -98,15 +77,6 @@ public class BotClient
         }
     }
 
-    private async Task RunServices()
-    {
-        TimeSpan taskUpdateInterval = TimeSpan.FromMinutes(_tasksUpdateTimer);
-        TimeSpan syncInterval = TimeSpan.FromMinutes(_syncBoardsWithBot);
-        
-        _notificationsTimer = new Timer(async _ => await _botNotificationCentre.NotificationManager(), null, taskUpdateInterval, taskUpdateInterval);
-        _syncTimer = new Timer(async _ => await _syncService.SynchronizeDataToTrello(), null, syncInterval, syncInterval);
-    }
-    
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         var errorMessage = exception switch

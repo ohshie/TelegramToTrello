@@ -144,6 +144,9 @@ public class TrelloOperations
                 {
                     Console.WriteLine("attachment added");
                 }
+
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Failed to add attachment: {response.StatusCode} {response.ReasonPhrase}. Content: {error}");
             }
 
             return true;

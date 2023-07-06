@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Open.Linq.AsyncExtensions;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.SyncDbOperations;
@@ -6,12 +7,16 @@ namespace TelegramToTrello.SyncDbOperations;
 public class SyncBoardDbOperations
 {
     private readonly TrelloOperations _trelloOperations;
-    private readonly BotDbContext _botDbContext;
+    private readonly IBoardRepository _boardRepository;
+    private readonly IUsersRepository _usersRepository;
 
-    public SyncBoardDbOperations(TrelloOperations trelloOperations, BotDbContext botDbContext)
+    public SyncBoardDbOperations(TrelloOperations trelloOperations, 
+        IBoardRepository boardRepository,
+        IUsersRepository usersRepository)
     {
         _trelloOperations = trelloOperations;
-        _botDbContext = botDbContext;
+        _boardRepository = boardRepository;
+        _usersRepository = usersRepository;
     }
     
     internal async Task Execute(RegisteredUser user)
@@ -28,15 +33,15 @@ public class SyncBoardDbOperations
     
     private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
-        var (user, currentBoardsInDb) = GetUserAndUserBoards(trelloUser);
+        var (user, currentBoardsInDb) = await GetUserAndUserBoards(trelloUser);
             
             foreach (var keyBoardPair in boardsFoundInTrello)
             {
-                var board = HandleBoard(currentBoardsInDb, keyBoardPair);
-                CreateBoardUserRelations(user, board);
+                if(currentBoardsInDb.ContainsKey(keyBoardPair.Key)) continue;
+                
+                var board = HandleBoard(keyBoardPair, user);
+                await _boardRepository.Add(board);
             }
-            
-            await _botDbContext.SaveChangesAsync();
     }
 
     private void CreateBoardUserRelations(RegisteredUser user, Board board)
@@ -48,30 +53,25 @@ public class SyncBoardDbOperations
         }
     }
 
-    private Board HandleBoard(Dictionary<string, Board> currentBoardsInDb, 
-        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair)
+    private Board HandleBoard( 
+        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair, RegisteredUser user)
     {
-        if (currentBoardsInDb.TryGetValue(keyBoardPair.Key, out var existingBoard)) return existingBoard;
-      
         Board board = new Board
         {
                 TrelloBoardId = keyBoardPair.Value.Id,
                 BoardName = keyBoardPair.Value.Name, 
         };
         
-        _botDbContext.Boards.Add(board);
+        CreateBoardUserRelations(user, board);
 
         return board;
     }
 
-    private (RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb) GetUserAndUserBoards(RegisteredUser trelloUser)
+    private async Task<(RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb)> GetUserAndUserBoards(RegisteredUser trelloUser)
     {
-        RegisteredUser trackedUser = _botDbContext.Users
-            .Include(u => u.Boards)
-            .Single(u => u.TelegramId == trelloUser.TelegramId);
+        RegisteredUser trackedUser = await _usersRepository.GetUserWithBoards(trelloUser.TelegramId);
 
-        Dictionary<string,Board> currentBoardsInDb = _botDbContext.Boards
-            .Include(b => b.Users)
+        Dictionary<string,Board> currentBoardsInDb = await _boardRepository.GetAll()
             .ToDictionary(b => b.TrelloBoardId!);
         
         return (trackedUser, currentBoardsInDb);
@@ -80,7 +80,7 @@ public class SyncBoardDbOperations
     private async Task RemoveBoardThatWereNotInTrello(
         Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
     {
-        var currentBoardsInDb = _botDbContext.Boards
+        var currentBoardsInDb = await _boardRepository.GetAll()
             .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))
             .ToDictionary(b => b.TrelloBoardId!);
 
@@ -94,8 +94,8 @@ public class SyncBoardDbOperations
                 Board? boardToRemove = currentBoardsInDb.GetValueOrDefault(key);
                 boardToRemoveList.Add(boardToRemove);
             }
-            _botDbContext.Boards.RemoveRange(boardToRemoveList);
-            await _botDbContext.SaveChangesAsync();
+
+            await _boardRepository.DeleteRange(boardToRemoveList);
         }
     }
 }

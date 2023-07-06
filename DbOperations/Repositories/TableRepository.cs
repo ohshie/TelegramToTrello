@@ -23,7 +23,9 @@ public class TableRepository : ITableRepository
 
     public async Task<IEnumerable<Table>> GetAll()
     {
-        return await _dbContext.BoardTables.ToListAsync();
+        return await _dbContext.BoardTables
+            .Include(t => t.TrelloUserBoard)
+            .ToListAsync();
     }
 
     public async Task Add(Table entity)
@@ -49,5 +51,17 @@ public class TableRepository : ITableRepository
         return await _dbContext.BoardTables.
                 FirstOrDefaultAsync(table => table.Name == tableName
                 && table.TrelloUserBoard.TrelloBoardId == trelloBoardId);
+    }
+
+    public async Task AddRange(IEnumerable<Table> entity)
+    {
+        _dbContext.BoardTables.AddRange(entity);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task RemoveRange(IEnumerable<Table> entity)
+    {
+        _dbContext.BoardTables.RemoveRange(entity);
+        await _dbContext.SaveChangesAsync();
     }
 }

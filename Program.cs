@@ -1,6 +1,6 @@
-﻿using Hangfire;
-using Hangfire.PostgreSql;
+﻿using Elsa;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using Telegram.Bot;
 using TelegramToTrello.CreatingTaskOperations;
 using TelegramToTrello.Notifications;
@@ -18,38 +18,37 @@ namespace TelegramToTrello;
 
 public class Program
 {
-    public static IServiceProvider Provider { get; private set; }
-
     public static async Task Main(string[] args)
     {
         Configuration.InitializeVariables();
-
-        ConfigureServices();
         
-        GlobalConfiguration.Configuration.UsePostgreSqlStorage(Configuration.ConnectionString);
+        var host = new HostBuilder()
+            .ConfigureServices(ConfigureServices)
+            .UseConsoleLifetime()
+            .UseSerilog()
+            .Build();
 
-        using (var scope = Provider.CreateScope())
+        using (host)
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<BotDbContext>();
-            await dbContext.Database.EnsureCreatedAsync();
-        }
+            await host.StartAsync();
 
-        var botClient = Provider.GetRequiredService<BotClient>();
-        Task bot = botClient.BotOperations();
+            var dbContext = host.Services.GetRequiredService<BotDbContext>();
+            await dbContext.Database.EnsureCreatedAsync();
+
+            var botClient = host.Services.GetRequiredService<BotClient>();
+            Task bot = botClient.BotOperations();
         
-        var webServer = Provider.GetRequiredService<WebServer>();
-        Task server = webServer.Run(args);
+            var webServer = host.Services.GetRequiredService<WebServer>();
+            Task server = webServer.Run(args);
         
-        await Task.WhenAll(server, bot);
-        
-        Console.ReadLine();
-        Environment.Exit(1);
+            await Task.WhenAll(server, bot);
+
+            await host.WaitForShutdownAsync();
+        }
     }
     
-    private static void ConfigureServices()
+    private static void ConfigureServices(IServiceCollection collection)
     {
-        IServiceCollection collection = new ServiceCollection();
-        
         collection.AddSingleton<ITelegramBotClient>(sp =>
         {
             var token = Configuration.BotToken;
@@ -122,7 +121,13 @@ public class Program
         collection.AddTransient<ITableRepository, TableRepository>();
         collection.AddTransient<ITrelloUsersRepository, TrelloUsersRepository>();
         collection.AddTransient<INotificationsRepository, NotificationsRepository>();
-        
-        Provider = collection.BuildServiceProvider();
+        collection.AddTransient<IBoardRepository, BoardRepository>();
+
+        collection.AddElsa(builder =>
+        {
+            builder.AddQuartzTemporalActivities().
+                AddWorkflow<SyncService>().
+                AddWorkflow<BotNotificationCentre>();
+        });
     }
 }

@@ -13,7 +13,9 @@ public class TrelloUsersRepository : ITrelloUsersRepository
 
     public async Task<UsersOnBoard> Get(int id)
     {
-            return await _botDbContext.UsersOnBoards.FindAsync(id);
+            return await _botDbContext.UsersOnBoards.
+                    Include(uob => uob.TrelloBoard)
+                    .FirstOrDefaultAsync(uob => uob.Id == id);
     }
 
     public async Task<UsersOnBoard> Get(string id)
@@ -52,5 +54,23 @@ public class TrelloUsersRepository : ITrelloUsersRepository
                 .Include(b => b.TrelloBoard)
                 .FirstOrDefaultAsync(u => u.Name == name 
                                           && u.TrelloBoard.TrelloBoardId == boardId);
+    }
+
+    public async Task AddRange(IEnumerable<UsersOnBoard> entity)
+    {
+            _botDbContext.UsersOnBoards.AddRange(entity);
+            await _botDbContext.SaveChangesAsync();
+    }
+
+    public async Task RemoveRange(IEnumerable<UsersOnBoard> entity)
+    {
+            _botDbContext.UsersOnBoards.RemoveRange(entity);
+            await _botDbContext.SaveChangesAsync();
+    }
+
+    public async Task<UsersOnBoard> GetByTrelloIdAndBoardId(string id, string boardId)
+    {
+            return await _botDbContext.UsersOnBoards.FirstOrDefaultAsync(uob =>
+                    uob.TrelloUserId == id && uob.TrelloBoard.TrelloBoardId == boardId);
     }
 }

@@ -13,7 +13,7 @@ public class UsersRepository : IUsersRepository
 
     public async Task<RegisteredUser> Get(int id)
     {
-        return await _botDbContext.Users.FindAsync(id);
+        return await _botDbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == id);
     }
 
     public async Task<RegisteredUser> Get(string id)

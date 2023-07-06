@@ -1,23 +1,28 @@
 using System.Globalization;
+using Elsa.Activities.Temporal;
+using Elsa.Builders;
+using NodaTime;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.Notifications;
 
-public class BotNotificationCentre
+public class BotNotificationCentre : IWorkflow
 {
     private readonly NotificationsDbOperations _notificationsDbOperations;
     private readonly TrelloOperations _trelloOperations;
     private readonly ITelegramBotClient _botClient;
+    private IClock _notifyClock;
 
     public BotNotificationCentre(ITelegramBotClient botClient, 
         TrelloOperations trelloOperations, 
-        NotificationsDbOperations notificationsDbOperations)
+        NotificationsDbOperations notificationsDbOperations, IClock clock)
     {
         _botClient = botClient;
         _trelloOperations = trelloOperations;
         _notificationsDbOperations = notificationsDbOperations;
+        _notifyClock = clock;
     }
 
     public async Task ToggleNotificationsForUser(Message message)
@@ -62,37 +67,43 @@ public class BotNotificationCentre
 
     public async Task NotificationManager()
     {
-       List<RegisteredUser> usersWithNotifications = await _notificationsDbOperations.GetUsersWithNotificationsEnabled();
-
-       foreach (var trelloUser in usersWithNotifications)
-       {
-           string newTaskMessage = await GetCardsForNotifications(trelloUser);
-           if (!string.IsNullOrEmpty(newTaskMessage))
-           {
-               await _botClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
-                                                    $"{newTaskMessage}",
-                   chatId: trelloUser.TelegramId);
-           }
-
-           List<TaskNotification> currentTasks = await _notificationsDbOperations.GetUserCardsFromDb(trelloUser);
+        List<RegisteredUser> usersWithNotifications = await _notificationsDbOperations.GetUsersWithNotificationsEnabled();
+            
+            foreach (var trelloUser in usersWithNotifications) 
+            {
+                string newTaskMessage = await GetCardsForNotifications(trelloUser);
+                if (!string.IsNullOrEmpty(newTaskMessage))
+                {
+                    await _botClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
+                                                                $"{newTaskMessage}",
+                        chatId: trelloUser.TelegramId);
+                }
+                
+                List<TaskNotification> currentTasks = await _notificationsDbOperations.GetUserCardsFromDb(trelloUser);
            
-           foreach (var task in currentTasks)
-           {
-               DateTime now = DateTime.Now;
-               DateTime.TryParse(task.Due, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dueDate);
-               TimeSpan timeDelta = dueDate - now;
+                foreach (var task in currentTasks)
+                {
+                    DateTime now = DateTime.Now;
+                    DateTime.TryParse(task.Due, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dueDate);
+                    TimeSpan timeDelta = dueDate - now;
 
-               if (timeDelta.TotalHours < 3 && !task.NotificationSent)
-               {
-                   await _botClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
-                                                               $"{task.Name}\n" +
-                                                               $"{task.Due}\n" +
-                                                               $"{task.Url}",
-                       chatId: trelloUser.TelegramId);
+                    if (timeDelta.TotalHours < 3 && !task.NotificationSent)
+                    {
+                        await _botClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
+                                                                    $"{task.Name}\n" +
+                                                                    $"{task.Due}\n" +
+                                                                    $"{task.Url}",
+                            chatId: trelloUser.TelegramId);
 
-                   await _notificationsDbOperations.ToggleSentStatus(task);
-               }
-           }
-       }
+                        await _notificationsDbOperations.ToggleSentStatus(task);
+                    }
+                }
+        }
     }
+
+    public void Build(IWorkflowBuilder builder) =>
+        builder
+            .AsSingleton()
+            .Timer(Duration.FromMinutes(Configuration.NotificationTimer))
+            .Then(NotificationManager);
 }

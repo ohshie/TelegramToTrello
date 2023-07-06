@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TelegramToTrello;
 
-public class BoardRepository : IRepository<Board>
+public class BoardRepository : IBoardRepository
 {
     private readonly BotDbContext _dbContext;
 
@@ -12,17 +12,26 @@ public class BoardRepository : IRepository<Board>
     }
     public async Task<Board> Get(int id)
     {
-        return await _dbContext.Boards.FindAsync(id);
+        return await _dbContext.Boards
+            .Include(b => b.Users)
+            .Include(b => b.Tables)
+            .FirstOrDefaultAsync(b => b.Id == id);
     }
 
     public async Task<Board> Get(string id)
     {
-        return await _dbContext.Boards.FirstOrDefaultAsync(b => b.TrelloBoardId == id);
+        return await _dbContext.Boards
+            .Include(b => b.Users)
+            .Include(b => b.Tables)
+            .FirstOrDefaultAsync(b => b.TrelloBoardId == id);
     }
 
     public async Task<IEnumerable<Board>> GetAll()
     {
-        return await _dbContext.Boards.ToListAsync();
+        return await _dbContext.Boards
+            .Include(b=> b.Users)
+            .Include(b=> b.Tables)
+            .ToListAsync();
     }
 
     public async Task Add(Board entity)
@@ -40,6 +49,12 @@ public class BoardRepository : IRepository<Board>
     public async Task Delete(Board entity)
     {
         _dbContext.Boards.Remove(entity);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteRange(IEnumerable<Board> entity)
+    {
+        _dbContext.Boards.RemoveRange(entity);
         await _dbContext.SaveChangesAsync();
     }
 }

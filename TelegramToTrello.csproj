@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Elsa" Version="2.12.0" />
+      <PackageReference Include="Elsa.Activities.Temporal.Common" Version="2.12.0" />
+      <PackageReference Include="Elsa.Activities.Temporal.Quartz" Version="2.12.0" />
+      <PackageReference Include="Elsa.Core" Version="2.12.0" />
       <PackageReference Include="Hangfire.Core" Version="1.8.3" />
       <PackageReference Include="Hangfire.PostgreSql" Version="1.19.12" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.8">
@@ -21,8 +25,11 @@
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="8.0.0-preview.3.23174.8" />
       <PackageReference Include="MimeKit" Version="4.1.0" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
-      <PackageReference Include="Serilog.Extensions.Autofac.DependencyInjection" Version="5.0.0" />
+      <PackageReference Include="Serilog" Version="3.0.1" />
+      <PackageReference Include="Serilog.Extensions.Hosting" Version="7.0.0" />
       <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
+      <PackageReference Include="Serilog.Settings.Configuration" Version="7.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
       <PackageReference Include="Telegram.Bot" Version="19.0.0" />
       <PackageReference Include="Telegram.Bot.Extensions" Version="1.0.0" />
     </ItemGroup>
