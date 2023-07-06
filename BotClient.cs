@@ -58,7 +58,7 @@ public class BotClient
         
         using (var scope = _host.Services.CreateScope())
         {
-            #pragma warning disable
+#pragma warning disable
             if (update.CallbackQuery is { } callbackQuery)
             {
                 await _callbackFactory.CallBackDataManager(callbackQuery);
@@ -66,7 +66,7 @@ public class BotClient
             }
             
             if (update.Message is not { } message) return;
-
+            
             var chatId = message.Chat.Id;
             var userUsername = message.From?.Username;
             

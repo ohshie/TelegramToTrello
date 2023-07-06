@@ -7,26 +7,26 @@ namespace TelegramToTrello.TaskManager.CurrentTaskOperations;
 public class MarkTaskAsCompleted
 {
     private readonly ITelegramBotClient _botClient;
-    private readonly TaskDbOperations _taskDbOperations;
     private readonly UserDbOperations _userDbOperations;
     private readonly TrelloOperations _trelloOperations;
+    private readonly NotificationsDbOperations _notificationsDbOperations;
 
-    public MarkTaskAsCompleted(ITelegramBotClient botClient, 
-        TaskDbOperations taskDbOperations, 
+    public MarkTaskAsCompleted(ITelegramBotClient botClient,
         UserDbOperations userDbOperations,
-        TrelloOperations trelloOperations)
+        TrelloOperations trelloOperations,
+        NotificationsDbOperations notificationsDbOperations)
     {
         _botClient = botClient;
-        _taskDbOperations = taskDbOperations;
         _userDbOperations = userDbOperations;
         _trelloOperations = trelloOperations;
+        _notificationsDbOperations = notificationsDbOperations;
     }
 
     public async Task Execute(CallbackQuery callbackQuery)
     {
         string? taskId = callbackQuery.Data.Substring("/taskComplete".Length).Trim();
         
-        TaskNotification? task = await _taskDbOperations.RetrieveAssignedTask(taskId);
+        TaskNotification? task = await _notificationsDbOperations.RetrieveAssignedTask(taskId);
         if (task != null)
         {
             RegisteredUser? user = await _userDbOperations.RetrieveTrelloUser(task.User);
@@ -36,7 +36,7 @@ public class MarkTaskAsCompleted
             {
                 await _botClient.EditMessageTextAsync(text: $"Task: {task.Name} marked as complete",
                     messageId: callbackQuery.Message.MessageId, chatId: callbackQuery.Message.Chat.Id);
-                await _taskDbOperations.RemoveAssignedTask(task);
+                await _notificationsDbOperations.RemoveAssignedTask(task);
                 return;
             }
             

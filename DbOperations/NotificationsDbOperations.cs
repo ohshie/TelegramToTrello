@@ -1,3 +1,4 @@
+using Open.Linq.AsyncExtensions;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello;
@@ -40,8 +41,7 @@ public class NotificationsDbOperations
         
         await RemoveTasksThatAreNotInTrello(user, cards);
 
-        var currentNotifications = await _notificationsRepository.GetAll();
-        var currentNotificationsMap = currentNotifications
+        var currentNotificationsMap = await _notificationsRepository.GetAll()
             .ToDictionary(tn => tn.TaskId);
 
         var newNotificationsKeys = cards.Keys.Except(currentNotificationsMap.Keys);
@@ -104,5 +104,22 @@ public class NotificationsDbOperations
     {
         taskNotification.NotificationSent = true;
         await _notificationsRepository.Update(taskNotification);
+    }
+
+    public async Task RemoveAssignedTask(TaskNotification task)
+    {
+        await _notificationsRepository.Delete(task);
+    }
+    
+    public async Task<TaskNotification?> RetrieveAssignedTask(string taskId)
+    {
+        var task = await _notificationsRepository.Get(taskId);
+
+        if (task != null)
+        {
+            return task;
+        }
+            
+        return null;
     }
 }

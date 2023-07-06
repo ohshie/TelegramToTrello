@@ -40,27 +40,4 @@ public class TaskDbOperations
         userTask.TaskPartName = null;
         await _tttTaskRepository.Update(userTask); 
     }
-
-    public async Task<TaskNotification?> RetrieveAssignedTask(string taskId)
-    {
-        using (BotDbContext dbContext = new())
-        {
-            TaskNotification? task = await dbContext.TaskNotifications.FirstOrDefaultAsync(tn => tn.TaskId == taskId);
-
-            if (task != null)
-            {
-                return task;
-            }
-        }
-        return null;
-    }
-
-    public async Task RemoveAssignedTask(TaskNotification task)
-    {
-        using (BotDbContext dbContext = new())
-        {
-            dbContext.TaskNotifications.Remove(task);
-            await dbContext.SaveChangesAsync();
-        }
-    }
 }

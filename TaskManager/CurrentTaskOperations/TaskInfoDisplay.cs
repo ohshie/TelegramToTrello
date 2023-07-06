@@ -7,19 +7,19 @@ namespace TelegramToTrello.TaskManager.CurrentTaskOperations;
 public class TaskInfoDisplay
 {
     private readonly ITelegramBotClient _botClient;
-    private readonly TaskDbOperations _taskDbOperations;
+    private readonly NotificationsDbOperations _notificationsDbOperations;
 
-    public TaskInfoDisplay(ITelegramBotClient botClient, TaskDbOperations taskDbOperations)
+    public TaskInfoDisplay(ITelegramBotClient botClient, NotificationsDbOperations notificationsDbOperations)
     {
         _botClient = botClient;
-        _taskDbOperations = taskDbOperations;
+        _notificationsDbOperations = notificationsDbOperations;
     }
 
     public async Task Execute(CallbackQuery callbackQuery)
     {
         string? taskId = callbackQuery.Data.Substring("/edittask".Length).Trim();
         
-        TaskNotification? task = await _taskDbOperations.RetrieveAssignedTask(taskId);
+        TaskNotification? task = await _notificationsDbOperations.RetrieveAssignedTask(taskId);
 
         var botMessage = BotMessage(task);
 

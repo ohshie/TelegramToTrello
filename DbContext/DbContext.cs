@@ -4,9 +4,6 @@ namespace TelegramToTrello;
 
 public class BotDbContext : DbContext
 {
-    public BotDbContext()
-    {}
-    
     public BotDbContext(DbContextOptions<BotDbContext> options) : base(options) { }
     
     public DbSet<RegisteredUser> Users { get; set; }

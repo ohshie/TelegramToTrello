@@ -14,6 +14,6 @@ public class DropTask : TaskCreationBaseHandler
         
         await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, Message.MessageId);
         await BotClient.SendTextMessageAsync(chatId: Message.Chat.Id,
-            text: "Task removed. You can start new one with /newtask");
+            text: "Task removed. You can now create a new one");
     }
 }

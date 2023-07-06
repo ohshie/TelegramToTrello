@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using TelegramToTrello.CreatingTaskOperations;
 using TelegramToTrello.Notifications;
 using TelegramToTrello.Repositories;
@@ -64,6 +65,7 @@ public class Program
         collection.AddLogging();
 
         collection.AddTransient<BotClient>();
+        collection.AddScoped<Message>();
         collection.AddTransient<WebServer>();
         collection.AddTransient<TrelloOperations>();
         

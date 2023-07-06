@@ -70,8 +70,6 @@ public class CreatingTaskDbOperations
         return false;
     }
     
-    
-    
     public async Task AddPlaceholderName(TTTTask userTask)
     {
         userTask.TaskName = "###tempname###";
