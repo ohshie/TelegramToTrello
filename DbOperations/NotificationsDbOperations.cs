@@ -45,15 +45,16 @@ public class NotificationsDbOperations
             .ToDictionary(tn => tn.TaskId);
 
         var newNotificationsKeys = cards.Keys.Except(currentNotificationsMap.Keys);
-
+        var boards = await _boardRepository.GetAll();
+        
         if (newNotificationsKeys.Any())
         {
             foreach (var key in newNotificationsKeys)
             {
                 string correctDueDate = DateTime.Parse(cards[key].Due).AddHours(4).ToString("MM.dd.yyyy HH:mm");
-                Board? board = await _boardRepository.Get(cards[key].BoardId);
-                Table? table = await _tableRepository.Get(cards[key].ListId);
-                
+                var board = boards.FirstOrDefault(b => b.TrelloBoardId == cards[key].BoardId);
+                var table = board.Tables.FirstOrDefault(t => t.TableId == cards[key].ListId);
+
                 TaskNotification newNotification = new()
                 {
                     TaskId = cards[key].Id,
