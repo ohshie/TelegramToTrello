@@ -22,6 +22,12 @@ public class Program
     public static async Task Main(string[] args)
     {
         Configuration.InitializeVariables();
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
         
         var host = new HostBuilder()
             .ConfigureServices(ConfigureServices)
@@ -33,6 +39,8 @@ public class Program
         {
             await host.StartAsync();
 
+            Log.Logger.Information("app starting");
+            
             var dbContext = host.Services.GetRequiredService<BotDbContext>();
             await dbContext.Database.EnsureCreatedAsync();
 

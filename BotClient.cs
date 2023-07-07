@@ -1,3 +1,4 @@
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -45,8 +46,9 @@ public class BotClient
             cancellationToken: cts.Token);
 
         var me = await _botClient.GetMeAsync(cancellationToken: cts.Token);
-        Console.WriteLine(_botClient.Timeout);
-        Console.WriteLine($"Listening for @{me.Username}");
+        
+        Log.Logger.Information("bot started @{Me}", me);
+        
         Console.ReadLine();
         
         cts.Cancel();
@@ -58,7 +60,7 @@ public class BotClient
         
         using (var scope = _host.Services.CreateScope())
         {
-#pragma warning disable
+            #pragma warning disable
             if (update.CallbackQuery is { } callbackQuery)
             {
                 await _callbackFactory.CallBackDataManager(callbackQuery);
@@ -70,7 +72,8 @@ public class BotClient
             var chatId = message.Chat.Id;
             var userUsername = message.From?.Username;
             
-            Console.WriteLine($"Received a '{message}' message in chat {chatId} from {userUsername}.");
+            Log.Logger.Information("Recieved a {message} in chat {chatId} from {userUsername}", 
+                message, chatId, userUsername);
             
             await _actionsFactory.BotActionFactory(message);
             await _taskPlaceholderOperator.SortMessage(message);
