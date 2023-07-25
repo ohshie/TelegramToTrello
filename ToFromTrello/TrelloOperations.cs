@@ -115,10 +115,10 @@ public class TrelloOperations
             return (false, string.Empty);
     }
 
-    public async Task<bool> AddAttachmentsToTask(TTTTask task, RegisteredUser user,string createdTaskId)
+    public async Task AddAttachmentsToTask(TTTTask task, RegisteredUser user, string createdTaskId)
     {
         var allAttachments = task.Attachments
-            .Substring(0, task.Attachments.Length-2)
+            .Substring(0, task.Attachments.Length - 2)
             .Split(", ");
 
         foreach (var attachment in allAttachments)
@@ -135,23 +135,21 @@ public class TrelloOperations
                 var url = $"https://api.trello.com/1/cards/{createdTaskId}/attachments" +
                           $"?key={_trelloApiKey}" +
                           $"&token={user.TrelloToken}";
-                
+
                 formData.Add(fileContent, "file", fileName);
-                
+
                 HttpResponseMessage response = await _httpClient.PostAsync(url, formData);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     Console.WriteLine("attachment added");
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Failed to add attachment: {response.StatusCode} {response.ReasonPhrase}. Content: {error}");
+                Console.WriteLine(
+                    $"Failed to add attachment: {response.StatusCode} {response.ReasonPhrase}. Content: {error}");
             }
-
-            return true;
         }
-        return true;
     }
 
     private async Task<(bool, string)> AddTaskToNotifications(TTTTask task, HttpResponseMessage response,
