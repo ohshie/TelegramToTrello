@@ -53,7 +53,7 @@ public class TaskPlaceholderOperator
 
         if (task.WaitingForAttachment)
         {
-            if (message.Photo is not null || message.Document is not null)
+            if (message.Photo is not null || message.Document is not null || message.Video is not null)
             {
                 await _addAttachmentToTask.Execute(message);
                 return;

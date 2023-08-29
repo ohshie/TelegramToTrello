@@ -1,6 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 
 namespace TelegramToTrello.UserRegistration;
 
@@ -9,16 +10,18 @@ public class UserRegistrationHandler
     public UserRegistrationHandler( 
         ITelegramBotClient botClient, 
         SyncService syncService, 
-        UserDbOperations userDbOperations)
+        UserDbOperations userDbOperations, BotKeyboards botKeyboards)
     {
         _botClient = botClient;
         _syncService = syncService;
         _userDbOperations = userDbOperations;
+        _botKeyboards = botKeyboards;
     }
     
     private readonly ITelegramBotClient _botClient;
     private readonly SyncService _syncService;
     private readonly UserDbOperations _userDbOperations;
+    private readonly BotKeyboards _botKeyboards;
     
     public async Task Authenticate(Message message)
     {
@@ -30,7 +33,7 @@ public class UserRegistrationHandler
             await _botClient.SendTextMessageAsync(message.Chat.Id,
                 replyToMessageId: message.MessageId,
                 text: "User already registered.",
-                replyMarkup: CreateKeyboard());
+                replyMarkup: _botKeyboards.MainKeyboard());
             return;
         }
         
@@ -38,7 +41,7 @@ public class UserRegistrationHandler
             replyToMessageId: message.MessageId,
             text: "Please click on this link authenticate in trello:\n\n" +
                   $"{oauthLink}\n\n",
-            replyMarkup:CreateKeyboard());
+            replyMarkup: _botKeyboards.MainKeyboard());
     }
     
     public async Task SyncBoards(Message message)
@@ -55,20 +58,5 @@ public class UserRegistrationHandler
             replyToMessageId: message.MessageId,
             text: "Looks like you haven't completed authentication via trello.\n" + 
                   "Click /register and finish authorization via trello website.");
-    }
-
-    private ReplyKeyboardMarkup CreateKeyboard()
-    {
-        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(new[]
-        {
-            new KeyboardButton[] {"➕New Task", "➖Cancel action"},
-            new KeyboardButton[] {"♾️Show my tasks", "🟰Sync changes"}
-        })
-        {
-            ResizeKeyboard = true,
-            OneTimeKeyboard = false,
-            IsPersistent = true
-        };
-        return keyboard;
     }
 }

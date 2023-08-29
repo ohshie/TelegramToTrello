@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 using TelegramToTrello.Notifications;
 using TelegramToTrello.Repositories;
@@ -12,6 +13,7 @@ using TelegramToTrello.TaskManager.CreatingTaskOperations;
 using TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 using TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 using TelegramToTrello.TaskManager.CurrentTaskOperations;
+using TelegramToTrello.TemplateManager;
 using TelegramToTrello.ToFromTrello;
 using TelegramToTrello.UserRegistration;
 
@@ -24,7 +26,7 @@ public class Program
         Configuration.InitializeVariables();
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();
@@ -73,6 +75,7 @@ public class Program
         collection.AddLogging();
 
         collection.AddTransient<BotClient>();
+        collection.AddTransient<BotKeyboards>();
         collection.AddScoped<Message>();
         collection.AddTransient<WebServer>();
         collection.AddTransient<TrelloOperations>();
@@ -80,7 +83,10 @@ public class Program
         collection.AddTransient<ActionsFactory>();
         collection.AddTransient<CallbackFactory>();
         
+        collection.AddTransient<BotSettingsMenu>();
+        
         collection.AddTransient<UserRegistrationHandler>();
+        collection.AddTransient<TemplateHandler>();
         
         collection.AddTransient<BotNotificationCentre>();
         collection.AddTransient<SyncService>();

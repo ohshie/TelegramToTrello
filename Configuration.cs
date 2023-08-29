@@ -32,12 +32,14 @@ public static class Configuration
         var enviroment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         
         var builder = new ConfigurationBuilder();
-        builder.SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-        if (enviroment=="debug")
+        if (enviroment=="Development")
         {
             builder.AddJsonFile($"appsettings.Development.json", optional: true);
+        }
+        else
+        {
+            builder.SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         }
         
         IConfiguration configuration = builder.Build();

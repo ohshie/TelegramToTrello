@@ -84,24 +84,24 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
             fileId = message.Photo.Last().FileId;
             fileInfo = await _botClient.GetFileAsync(fileId);
             telegramFilePath = fileInfo.FilePath;
-
-            int lastDot = telegramFilePath.LastIndexOf(".");
-            if (lastDot != -1)
-            {
-                savedFilePath = $"./{message.From.Id}/" + telegramFilePath.Substring(lastDot - 1);
-            }
+        }
+        else if (message.Video is not null)
+        {
+            fileId = message.Video.FileId;
+            fileInfo = await _botClient.GetFileAsync(fileId);
+            telegramFilePath = fileInfo.FilePath;
         }
         else
         {
             fileId = message.Document.FileId;
             fileInfo = await _botClient.GetFileAsync(fileId);
             telegramFilePath = fileInfo.FilePath;
-            
-            int lastDot = telegramFilePath.LastIndexOf(".");
-            if (lastDot != -1)
-            {
-                savedFilePath = $"./{message.From.Id}/" + telegramFilePath.Substring(lastDot - 1);
-            }
+        }
+        
+        int lastDot = telegramFilePath.LastIndexOf(".");
+        if (lastDot != -1)
+        {
+            savedFilePath = $"./{message.From.Id}/" + telegramFilePath.Substring(lastDot - 1);
         }
         
         return (telegramFilePath, savedFilePath);
