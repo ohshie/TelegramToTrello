@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
@@ -11,7 +12,7 @@ public class AttachmentRequest : TaskCreationBaseHandler
     public AttachmentRequest(ITelegramBotClient botClient, 
         UserDbOperations dbOperations, 
         TaskDbOperations taskDbOperations,
-        CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, dbOperations, taskDbOperations)
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier) : base(botClient, dbOperations, taskDbOperations, verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
     }

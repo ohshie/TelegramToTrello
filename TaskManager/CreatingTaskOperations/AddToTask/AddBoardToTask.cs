@@ -1,4 +1,5 @@
 using Telegram.Bot;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
@@ -6,12 +7,12 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 public class AddBoardToTask : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
-    private CreateKeyboardWithTables _createKeyboardWithTables;
+    private readonly CreateKeyboardWithTables _createKeyboardWithTables;
 
     public AddBoardToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations,
         CreateKeyboardWithTables createKeyboardWithTables,
-        CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _createKeyboardWithTables = createKeyboardWithTables;
         _creatingTaskDbOperations = creatingTaskDbOperations;

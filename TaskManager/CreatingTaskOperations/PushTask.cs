@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.ToFromTrello;
 using File = System.IO.File;
 
@@ -8,11 +9,15 @@ namespace TelegramToTrello.CreatingTaskOperations;
 public class PushTask : TaskCreationBaseHandler
 {
     private readonly TrelloOperations _trelloOperations;
+    private readonly MessageRemover _messageRemover;
 
     public PushTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, TrelloOperations trelloOperations) : base(botClient, userDbOperations, taskDbOperations)
+        TaskDbOperations taskDbOperations, TrelloOperations trelloOperations,
+        Verifier verifier,
+        MessageRemover messageRemover) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _trelloOperations = trelloOperations;
+        _messageRemover = messageRemover;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -25,11 +30,13 @@ public class PushTask : TaskCreationBaseHandler
         
         if (creatingTaskSuccess)
         {
-            await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
-                messageId: CallbackQuery.Message.MessageId);
+            await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+            
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
                 text: "Task successfully created");
+            
             await RemoveTaskFromDb(task);
+            
             RemoveFiles(task);
         }
     }

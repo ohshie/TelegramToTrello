@@ -1,5 +1,6 @@
 using System.Globalization;
 using Telegram.Bot;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
@@ -8,13 +9,15 @@ public class AddDateToTask : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
+    private readonly MessageRemover _messageRemover;
 
     public AddDateToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations, DisplayCurrentTaskInfo displayCurrentTaskInfo,
-        CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, MessageRemover messageRemover) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
         _creatingTaskDbOperations = creatingTaskDbOperations;
+        _messageRemover = messageRemover;
         NextTask = displayCurrentTaskInfo;
     }
     
@@ -31,7 +34,7 @@ public class AddDateToTask : TaskCreationBaseHandler
             return;
         }
         
-        await BotClient.DeleteMessageAsync(chatId: Message.Chat.Id, task.LastBotMessage);
+        await _messageRemover.Remove(Message.Chat.Id, task.LastBotMessage);
         await _creatingTaskDbOperations.AddDate(task, possibleDate);
         
         if (task.InEditMode) await SetNextTaskIfEditMode(task);

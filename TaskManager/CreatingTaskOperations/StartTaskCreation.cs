@@ -1,30 +1,30 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
 public class StartTaskCreation
 {
-    private readonly UserDbOperations _userDbOperations;
-    private readonly TaskDbOperations _taskDbOperations;
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private Message? _message;
-    private CreateKeyboardWithBoards _createKeyboardWithBoards;
+    private readonly CreateKeyboardWithBoards _createKeyboardWithBoards;
+    private readonly MessageRemover _messageRemover;
+    private readonly Verifier _verifier;
 
     private ITelegramBotClient BotClient { get; }
-
-
+    
     public StartTaskCreation(ITelegramBotClient botClient, 
-        UserDbOperations userDbOperations, 
-        TaskDbOperations taskDbOperations,
         CreatingTaskDbOperations creatingTaskDbOperations, 
-        CreateKeyboardWithBoards createKeyboardWithBoards)
+        CreateKeyboardWithBoards createKeyboardWithBoards,
+        MessageRemover messageRemover,
+        Verifier verifier)
     {
-        _userDbOperations = userDbOperations;
-        _taskDbOperations = taskDbOperations;
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _createKeyboardWithBoards = createKeyboardWithBoards;
+        _messageRemover = messageRemover;
+        _verifier = verifier;
         BotClient = botClient;
     }
     
@@ -32,52 +32,27 @@ public class StartTaskCreation
     {
         _message = message;
         
-        var user = await GetUser();
-        
-        if (!await UserIsRegisteredUser(user)) return;
-        if (await UserIsCreatingATask(user)) return;
+        var user = await _verifier.GetUser(message);
+        if (user is null)
+        {
+            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
+            return;
+        }
+
+        TTTTask task = await _verifier.GetTask(message);
+        if (task is not null)
+        {
+            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
+            await BotClient.SendTextMessageAsync(chatId: _message.From.Id,
+                text: "Looks like you are already in the process of creating a task.\n" +
+                      "Please finish it first or drop it by pressing cancel task");
+            return;
+        }
         
         await _creatingTaskDbOperations.CreateTask(user);
 
-        await BotClient.DeleteMessageAsync(chatId: _message.Chat.Id, _message.MessageId);
+        await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
         
         await _createKeyboardWithBoards.Execute(_message);
-    }
-    
-    private async Task<RegisteredUser?> GetUser()
-    {
-        RegisteredUser? trelloUser = await _userDbOperations.RetrieveTrelloUser((int)_message.Chat.Id);
-
-        return trelloUser;
-    }
-    
-    private async Task<bool> UserIsRegisteredUser(RegisteredUser? user)
-    {
-        if (user == null)
-        {
-            await BotClient.DeleteMessageAsync(chatId: _message.Chat.Id, _message.MessageId);
-            await BotClient.SendTextMessageAsync(chatId: _message.From.Id,
-                text: "Looks like you are not registered yet." +
-                      "Click on /register and follow commands to register");
-            return false;
-        }
-
-        return true;
-    }
-
-    private async Task<bool> UserIsCreatingATask(RegisteredUser user)
-    {
-        var task = await _taskDbOperations.RetrieveUserTask(user.TelegramId);
-
-        if (task != null)
-        {
-            await BotClient.DeleteMessageAsync(chatId: _message.Chat.Id, _message.MessageId);
-            await BotClient.SendTextMessageAsync(chatId: _message.From.Id,
-                text: "Looks like you are already in the process of creating a task.\n" +
-                      "Please finish it first or drop it by pressing /drop");
-            return true;
-        }
-
-        return false;
     }
 }

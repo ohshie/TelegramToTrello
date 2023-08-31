@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
@@ -11,6 +12,7 @@ public abstract class TaskCreationBaseHandler
     
     protected readonly UserDbOperations UserDbOperations;
     protected readonly TaskDbOperations TaskDbOperations;
+    private readonly Verifier _verifier;
 
     protected internal bool IsEdit;
 
@@ -18,11 +20,12 @@ public abstract class TaskCreationBaseHandler
 
     protected TaskCreationBaseHandler(ITelegramBotClient botClient, 
         UserDbOperations dbOperations,
-        TaskDbOperations taskDbOperations)
+        TaskDbOperations taskDbOperations, Verifier verifier)
     {
         BotClient = botClient;
         UserDbOperations = dbOperations;
         TaskDbOperations = taskDbOperations;
+        _verifier = verifier;
     }
 
     public async Task Execute(Message message, bool isEdit = false)
@@ -30,21 +33,18 @@ public abstract class TaskCreationBaseHandler
         Message = message;
         IsEdit = isEdit;
 
-        RegisteredUser user = await GetUser();
-        TTTTask task = await GetTask();
+        RegisteredUser user = await _verifier.GetUser(message);
+        if (user is null) return;
 
-        if (!await UserIsRegisteredUser(user)) return;
-        if (!await TaskExist(task)) return;
+        TTTTask task = await _verifier.GetTask(message);
+        if (task is null) return;
 
         await HandleTask(user, task);
 
         if (NextTask != null)
         {
-            if (IsEdit)
-            {
-                await NextTask.Execute(message, isEdit: true);
-            }
-            await NextTask.Execute(message);
+            if (IsEdit) await NextTask.Execute(message, isEdit: true);
+            else await NextTask.Execute(message);
         }
     }
     
@@ -58,11 +58,11 @@ public abstract class TaskCreationBaseHandler
         CallbackQuery = callback;
         Message = callback.Message;
         
-        RegisteredUser user = await GetUser();
-        TTTTask task = await GetTask();
+        RegisteredUser user = await _verifier.GetUser(callback.Message);
+        if (user is null) return;
 
-        if (!await UserIsRegisteredUser(user)) return;
-        if (!await TaskExist(task)) return;
+        TTTTask task = await _verifier.GetTask(callback.Message);
+        if (task is null) return;
 
         await HandleTask(user, task);
         
@@ -77,46 +77,6 @@ public abstract class TaskCreationBaseHandler
             await NextTask.Execute(callback);
         }
     }
-
-    private async Task<RegisteredUser> GetUser()
-    {
-        RegisteredUser trelloUser = await UserDbOperations.RetrieveTrelloUser((int)Message.Chat.Id);
-
-        return trelloUser;
-    }
-
-    private async Task<TTTTask> GetTask()
-    {
-        TTTTask userTask = await TaskDbOperations.RetrieveUserTask((int)Message.Chat.Id);
-
-        return userTask;
-    }
-
-    private async Task<bool> UserIsRegisteredUser(RegisteredUser? user)
-    {
-        if (user == null)
-        {
-            await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
-                text: "Looks like you are not registered yet." +
-                      "Click on /register and follow commands to register");
-            return false;
-        }
-
-        return true;
-    }
-
-    private async Task<bool> TaskExist(TTTTask? task)
-    {
-        if (task == null)
-        {
-            await BotClient.SendTextMessageAsync(chatId: Message.From.Id,
-                text: "Lets not get ahead of ourselves.\n" +
-                      "Click on /newtask first to start task creation process");
-            return false;
-        }
-        
-        return true;
-    }
-
+    
     protected abstract Task HandleTask(RegisteredUser user, TTTTask task);
 }

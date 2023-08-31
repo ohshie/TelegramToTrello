@@ -1,6 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 using File = System.IO.File;
 
@@ -11,16 +12,19 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
     private readonly ITelegramBotClient _botClient;
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
+    private readonly MessageRemover _messageRemover;
 
     public AddAttachmentToTask(ITelegramBotClient botClient, 
         UserDbOperations userDbOperations, 
         TaskDbOperations taskDbOperations,
         CreatingTaskDbOperations creatingTaskDbOperations,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo) : base(botClient, userDbOperations, taskDbOperations)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier, MessageRemover messageRemover) : base(botClient, userDbOperations,
+        taskDbOperations, verifier)
     {
         _botClient = botClient;
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
+        _messageRemover = messageRemover;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -48,8 +52,7 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
 
     private async Task UpdateBotMessage(TTTTask task)
     {
-        await _botClient.DeleteMessageAsync(messageId: task.LastBotMessage,
-            chatId: Message.Chat.Id);
+        await _messageRemover.Remove(chatId: Message.Chat.Id, messageId: task.LastBotMessage);
 
         var newMessage = await BotClient.SendTextMessageAsync(text: "Attachment added. You can add more if you want too.",
             chatId: Message.Chat.Id,
@@ -64,7 +67,8 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
             await _creatingTaskDbOperations.WaitingForAttachmentToggle(task);
             NextTask = _displayCurrentTaskInfo;
         }
-        await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+
+        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
     }
     
     private async Task<(string, string)> GetPaths(Message message)

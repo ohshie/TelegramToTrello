@@ -14,13 +14,7 @@ public class TaskDbOperations
     
     public async Task<TTTTask> RetrieveUserTask(int telegramId)
     {
-        var task = await _tttTaskRepository.Get(telegramId);
-        
-        if (task != null)
-        {
-            return task;
-        }
-        return null;
+        return await _tttTaskRepository.Get(telegramId);
     }
     
     public async Task RemoveEntry(TTTTask userTask)

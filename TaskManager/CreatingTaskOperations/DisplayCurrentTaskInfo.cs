@@ -1,19 +1,25 @@
 using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
+    private readonly DisplayTaskKeyboard _displayTaskKeyboard;
+
     public DisplayCurrentTaskInfo(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) {}
+        TaskDbOperations taskDbOperations, Verifier verifier, DisplayTaskKeyboard displayTaskKeyboard) : base(botClient, userDbOperations, taskDbOperations, verifier)
+    {
+        _displayTaskKeyboard = displayTaskKeyboard;
+    }
 
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        var replyMarkup = ReplyKeyboard();
+        var replyMarkup = _displayTaskKeyboard.ReplyKeyboard();
         
         await BotClient.SendTextMessageAsync(text: "Lets review current task:\n\n" +
                                                    $"Task name: [{task.Tag}] {task.TaskName}\n" +
@@ -23,36 +29,5 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
                                                    $"Due date: {DateTime.Parse(task.Date, CultureInfo.InvariantCulture)}\n\n" +
                                                    $"If everything is correct press push to post this task to trello\n", 
             chatId: Message.Chat.Id, replyMarkup: replyMarkup);
-    }
-
-    private InlineKeyboardMarkup ReplyKeyboard()
-    {
-        InlineKeyboardMarkup replyKeyboardMarkup = new(new[]
-        {
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Push task to trello", callbackData:"/push"), 
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Edit name", callbackData:"/editname"),
-                InlineKeyboardButton.WithCallbackData(text: "Edit description", callbackData:"/editdesc"),
-            },
-            new[]
-            {
-            InlineKeyboardButton.WithCallbackData(text: "Edit board/list/part", callbackData:"/edittaskboardandtable"),
-            InlineKeyboardButton.WithCallbackData(text: "Edit task date", callbackData:"/editdate"),
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Add attachment (image or file)", callbackData:"/addattachment") 
-            },
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData(text: "Drop task", callbackData:"/drop") 
-            }
-        });
-
-        return replyKeyboardMarkup;
     }
 }

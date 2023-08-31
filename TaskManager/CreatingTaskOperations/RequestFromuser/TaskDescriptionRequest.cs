@@ -1,4 +1,5 @@
 using Telegram.Bot;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
@@ -6,11 +7,15 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 public class TaskDescriptionRequest : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly MessageRemover _messageRemover;
 
-    public TaskDescriptionRequest(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
+    public TaskDescriptionRequest(ITelegramBotClient botClient, 
+        UserDbOperations dbOperations, 
+        TaskDbOperations taskDbOperations,
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, MessageRemover messageRemover) : base(botClient, dbOperations, taskDbOperations, verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
+        _messageRemover = messageRemover;
     }
     
 
@@ -33,8 +38,9 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
     private async Task SendRequestToUser(TTTTask task)
     {
         await TaskDbOperations.ToggleEditModeForTask(task);
-        await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
-            messageId: CallbackQuery.Message.MessageId);
+        
+        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+       
         await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",
             chatId: Message.Chat.Id);
     }

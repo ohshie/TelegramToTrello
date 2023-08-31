@@ -1,6 +1,5 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using TelegramToTrello.BotManager;
 
 namespace TelegramToTrello.UserRegistration;
@@ -10,18 +9,18 @@ public class UserRegistrationHandler
     public UserRegistrationHandler( 
         ITelegramBotClient botClient, 
         SyncService syncService, 
-        UserDbOperations userDbOperations, BotKeyboards botKeyboards)
+        UserDbOperations userDbOperations, MenuKeyboards menuKeyboards)
     {
         _botClient = botClient;
         _syncService = syncService;
         _userDbOperations = userDbOperations;
-        _botKeyboards = botKeyboards;
+        _menuKeyboards = menuKeyboards;
     }
     
     private readonly ITelegramBotClient _botClient;
     private readonly SyncService _syncService;
     private readonly UserDbOperations _userDbOperations;
-    private readonly BotKeyboards _botKeyboards;
+    private readonly MenuKeyboards _menuKeyboards;
     
     public async Task Authenticate(Message message)
     {
@@ -33,7 +32,7 @@ public class UserRegistrationHandler
             await _botClient.SendTextMessageAsync(message.Chat.Id,
                 replyToMessageId: message.MessageId,
                 text: "User already registered.",
-                replyMarkup: _botKeyboards.MainKeyboard());
+                replyMarkup: _menuKeyboards.MainKeyboard());
             return;
         }
         
@@ -41,7 +40,7 @@ public class UserRegistrationHandler
             replyToMessageId: message.MessageId,
             text: "Please click on this link authenticate in trello:\n\n" +
                   $"{oauthLink}\n\n",
-            replyMarkup: _botKeyboards.MainKeyboard());
+            replyMarkup: _menuKeyboards.MainKeyboard());
     }
     
     public async Task SyncBoards(Message message)

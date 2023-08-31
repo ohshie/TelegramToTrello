@@ -67,6 +67,5 @@ public class WebServer
         {
             await _syncService.SyncStateToTrello(user);
         }
-        
     }
 }

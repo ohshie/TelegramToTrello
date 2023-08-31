@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
@@ -13,7 +14,7 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         TaskDbOperations taskDbOperations,
         CreateKeyboardWithUsers createKeyboardWithUsers,
         CreatingTaskDbOperations creatingTaskDbOperations,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo) : base(botClient, userDbOperations, taskDbOperations)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;

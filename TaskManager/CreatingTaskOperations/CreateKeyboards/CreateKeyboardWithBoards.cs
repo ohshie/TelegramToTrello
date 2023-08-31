@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
@@ -7,148 +8,31 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 public class CreateKeyboardWithBoards : TaskCreationBaseHandler
 {
     public CreateKeyboardWithBoards(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) { }
+        TaskDbOperations taskDbOperations, BoardsKeyboard boardsKeyboard, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+    {
+        _boardsKeyboard = boardsKeyboard;
+    }
+
+    private readonly BoardsKeyboard _boardsKeyboard;
     
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardBoardChoice(user);
-
+        InlineKeyboardMarkup inlineKeyboardMarkup;
+        
         if (IsEdit)
         {
+            inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user, IsEdit: true);
+            
             await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
                 messageId: CallbackQuery.Message.MessageId,
                 text: $"Choose new board from list", replyMarkup: inlineKeyboardMarkup);
             return;
         }
         
+        inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user);
+        
         await BotClient.SendTextMessageAsync(text: "We will start with choosing a board for our task:",
             chatId: Message.Chat.Id,
             replyMarkup: inlineKeyboardMarkup);
-    }
-    
-    private InlineKeyboardMarkup KeyboardBoardChoice(RegisteredUser? user)
-    {
-        Board?[] boards = user.Boards.ToArray();
-        
-        if (IsEdit)
-        {
-            return EditBoardKeyboard(boards);
-        }
-        
-        return NormalBoardKeyboard(boards);
-    }
-
-    private InlineKeyboardMarkup EditBoardKeyboard(Board?[] boards)
-    {
-        if (boards.Length > 8)
-        {
-            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(TwoRowKeyboardEdit(boards));
-            return inlineKeyboard;
-        }
-        else
-        {
-            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(SingleRowKeyboardEdit(boards));
-            return inlineKeyboard;
-        }
-    }
-
-    private InlineKeyboardMarkup NormalBoardKeyboard(Board?[] boards)
-    {
-        if (boards.Length > 8)
-        {
-            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(TwoRowKeyboard(boards));
-            return inlineKeyboard;
-        }
-        else
-        {
-            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(SingleRowKeyboard(boards));
-            return inlineKeyboard;
-        }
-    }
-
-    private List<InlineKeyboardButton[]> TwoRowKeyboard(Board[] board)
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-        
-        for (int i = 0; i < board.Length; i +=2)
-        {
-            if (i < board.Length-1)
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{board[i].BoardName}",
-                        $"/board {board[i].TrelloBoardId}"),
-                    InlineKeyboardButton.WithCallbackData($"{board[i + 1].BoardName}",
-                        $"/board {board[i + 1].TrelloBoardId}")
-                });
-            }
-            else
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{board[i].BoardName}",
-                        $"/board {board[i].TrelloBoardId}")
-                });
-            }
-        }
-        return keyboardButtonsList;
-    }
-    
-    private List<InlineKeyboardButton[]> SingleRowKeyboard(Board[] boards)
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-
-        foreach (var board in boards)
-        {
-            keyboardButtonsList.Add(new[]
-            {
-                InlineKeyboardButton.WithCallbackData($"{board.BoardName}",$"/board {board.TrelloBoardId}")
-            }); 
-        }
-        
-        return keyboardButtonsList;
-    }
-    
-    private List<InlineKeyboardButton[]> TwoRowKeyboardEdit(Board[] board)
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-        
-        for (int i = 0; i < board.Length; i +=2)
-        {
-            if (i < board.Length-1)
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{board[i].BoardName}",
-                        $"/editboard {board[i].TrelloBoardId}"),
-                    InlineKeyboardButton.WithCallbackData($"{board[i + 1].BoardName}",
-                        $"/editboard {board[i + 1].TrelloBoardId}")
-                });
-            }
-            else
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{board[i].BoardName}",
-                        $"/editboard {board[i].TrelloBoardId}")
-                });
-            }
-        }
-        return keyboardButtonsList;
-    }
-    
-    private List<InlineKeyboardButton[]> SingleRowKeyboardEdit(Board[] boards)
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-
-        foreach (var board in boards)
-        {
-            keyboardButtonsList.Add(new[]
-            {
-                InlineKeyboardButton.WithCallbackData($"{board.BoardName}",$"/editboard {board.TrelloBoardId}")
-            }); 
-        }
-        
-        return keyboardButtonsList;
     }
 }

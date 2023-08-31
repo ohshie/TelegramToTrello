@@ -2,17 +2,22 @@ using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 
 namespace TelegramToTrello.CreatingTaskOperations;
 
 public class TaskDateRequest : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly MessageRemover _messageRemover;
 
-    public TaskDateRequest(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, CreatingTaskDbOperations creatingTaskDbOperations) : base(botClient, userDbOperations, taskDbOperations)
+    public TaskDateRequest(ITelegramBotClient botClient, 
+        UserDbOperations dbOperations, 
+        TaskDbOperations taskDbOperations,
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, MessageRemover messageRemover) : base(botClient, dbOperations, taskDbOperations, verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
+        _messageRemover = messageRemover;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -38,8 +43,7 @@ public class TaskDateRequest : TaskCreationBaseHandler
     {
         await TaskDbOperations.ToggleEditModeForTask(task);
         
-        await BotClient.DeleteMessageAsync(chatId: CallbackQuery.Message.Chat.Id,
-            messageId: CallbackQuery.Message.MessageId);
+        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
         
         var newMessage = await BotClient.SendTextMessageAsync(
             text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +

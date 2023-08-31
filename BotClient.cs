@@ -4,6 +4,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.TaskManager;
 using TelegramToTrello.TaskManager.CreatingTaskOperations;
 
@@ -14,7 +15,7 @@ public class BotClient
     public BotClient(ITelegramBotClient botClient, 
         ActionsFactory actionsFactory, 
         CallbackFactory callbackFactory, 
-        TaskPlaceholderOperator taskPlaceholderOperator,
+        PlaceholderOperator taskPlaceholderOperator,
         IHost host)
     {
         _botClient = botClient;
@@ -27,7 +28,7 @@ public class BotClient
     private readonly ITelegramBotClient _botClient;
     private readonly ActionsFactory _actionsFactory;
     private readonly CallbackFactory _callbackFactory;
-    private readonly TaskPlaceholderOperator _taskPlaceholderOperator;
+    private readonly PlaceholderOperator _taskPlaceholderOperator;
     private readonly IHost _host;
 
     public async Task BotOperations()
@@ -73,7 +74,7 @@ public class BotClient
             var userUsername = message.From?.Username;
             
             Log.Logger.Information("Recieved a {message} in chat {chatId} from {userUsername}", 
-                message, chatId, userUsername);
+                message.Type, chatId, userUsername);
             
             await _actionsFactory.BotActionFactory(message);
             await _taskPlaceholderOperator.SortMessage(message);

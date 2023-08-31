@@ -1,6 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.TaskManager.CurrentTaskOperations;
@@ -9,17 +10,19 @@ public class CurrentTasksDisplay
 {
     public CurrentTasksDisplay(ITelegramBotClient botClient, 
         TrelloOperations trelloOperations, 
-        UserDbOperations userDbOperations)
+        UserDbOperations userDbOperations, MessageRemover messageRemover)
     {
         BotClient = botClient;
         _trelloOperations = trelloOperations;
         _userDbOperations = userDbOperations;
+        _messageRemover = messageRemover;
     }
     
     private ITelegramBotClient BotClient { get; }
     private readonly UserDbOperations _userDbOperations;
     private readonly TrelloOperations _trelloOperations;
-    
+    private readonly MessageRemover _messageRemover;
+
     public async Task Execute(Message message)
     {
         RegisteredUser user = await _userDbOperations.RetrieveTrelloUser((int)message.From.Id);
@@ -27,7 +30,7 @@ public class CurrentTasksDisplay
         {
             var cards = await _trelloOperations.GetSubscribedTasks(user);
             
-            BotClient.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId);
+            await _messageRemover.Remove(message.Chat.Id, message.MessageId);
             
             InlineKeyboardMarkup keyboardMarkup = CreateKeyboard(cards);
 

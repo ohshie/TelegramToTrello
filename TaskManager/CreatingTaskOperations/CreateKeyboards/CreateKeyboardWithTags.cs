@@ -1,5 +1,6 @@
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
@@ -7,70 +8,19 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 public class CreateKeyboardWithTags : TaskCreationBaseHandler
 {
     public CreateKeyboardWithTags(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations) : base(botClient, userDbOperations, taskDbOperations) {}
+        TaskDbOperations taskDbOperations, TagsKeyboard tagsKeyboard, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+    {
+        _tagsKeyboard = tagsKeyboard;
+    }
+
+    private readonly TagsKeyboard _tagsKeyboard;
     
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        InlineKeyboardMarkup replyKeyboardMarkup = KeyboardTagChoice();
+        InlineKeyboardMarkup replyKeyboardMarkup = _tagsKeyboard.KeyboardTagChoice();
+        
         await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
             messageId: CallbackQuery.Message.MessageId,
             text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
-    }
-    
-    private InlineKeyboardMarkup KeyboardTagChoice()
-    {
-        if (Enum.GetValues(typeof(ChanelTags)).Length > 8)
-        {
-            InlineKeyboardMarkup replyKeyboardMarkup = new(TwoRowKeyboard());
-            return replyKeyboardMarkup;
-        }
-        else
-        {
-            
-            InlineKeyboardMarkup replyKeyboardMarkup = new(SingleRowKeyboard());
-            return replyKeyboardMarkup;
-        }
-    }
-    
-    private List<InlineKeyboardButton[]> TwoRowKeyboard()
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-
-        var amountOfTags = Enum.GetValues(typeof(ChanelTags)).Length;
-        var tags = Enum.GetValues<ChanelTags>();
-        for (int i = 0; i < amountOfTags; i +=2)
-        {
-            if (i < amountOfTags-1)
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{tags[i]}",
-                        $"/tag {tags[i]}"),
-                    InlineKeyboardButton.WithCallbackData($"{tags[i+1]}",
-                        $"/tag {tags[i+1]}")
-                });
-            }
-            else
-            {
-                keyboardButtonsList.Add(new[]
-                {
-                    InlineKeyboardButton.WithCallbackData($"{tags[i]}",
-                        $"/tag {tags[i]}")
-                });
-            }
-        }
-        return keyboardButtonsList;
-    }
-
-    private List<InlineKeyboardButton[]> SingleRowKeyboard()
-    {
-        List<InlineKeyboardButton[]> keyboardButtonsList = new();
-
-        foreach (var tag in Enum.GetValues(typeof(ChanelTags)))
-        {
-            keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData($"{tag}",$"/tag {tag}") });
-        }
-
-        return keyboardButtonsList;
     }
 }
