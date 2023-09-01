@@ -6,7 +6,7 @@ public class BoardsKeyboard
 {
     private string? _boardType;
     
-    public InlineKeyboardMarkup KeyboardBoardChoice(RegisteredUser? user, 
+    public InlineKeyboardMarkup KeyboardBoardChoice(User? user, 
         bool IsEdit = false, 
         bool isTemplate = false)
     {

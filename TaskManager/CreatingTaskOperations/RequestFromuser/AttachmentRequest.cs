@@ -10,20 +10,20 @@ public class AttachmentRequest : TaskCreationBaseHandler
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
 
     public AttachmentRequest(ITelegramBotClient botClient, 
-        UserDbOperations dbOperations, 
-        TaskDbOperations taskDbOperations,
-        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier) : base(botClient, dbOperations, taskDbOperations, verifier)
+        UserDbOperations userDbOperations, 
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, BotMessenger botMessenger,TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         await _creatingTaskDbOperations.WaitingForAttachmentToggle(task);
 
-        var botRequest = await BotClient.SendTextMessageAsync(text: "Drag and drop attachment onto bot dialog now",
-            chatId: CallbackQuery.Message.Chat.Id,
-            replyMarkup: CreateKeyboard());
+        var botRequest = await BotMessenger.SendMessage(text: "Drag and drop attachment onto bot dialog now",
+            chatId: user.TelegramId,
+            replyKeyboardMarkup: CreateKeyboard());
         
         await _creatingTaskDbOperations.MarkMessage(task, botRequest.MessageId);
     }

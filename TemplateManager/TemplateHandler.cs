@@ -17,26 +17,29 @@ public class TemplateHandler
     private readonly ITelegramBotClient _botClient;
     private readonly MenuKeyboards _menuKeyboards;
     private readonly TemplatesDbOperations _templatesDbOperations;
-    private readonly MessageRemover _messageRemover;
+    private readonly BotMessenger _botMessenger;
 
-    public TemplateHandler(ITelegramBotClient botClient, MenuKeyboards menuKeyboards, TemplatesDbOperations templatesDbOperations, MessageRemover messageRemover)
+    public TemplateHandler(ITelegramBotClient botClient, 
+        MenuKeyboards menuKeyboards, 
+        TemplatesDbOperations templatesDbOperations, 
+        BotMessenger botMessenger)
     {
         _botClient = botClient;
         _menuKeyboards = menuKeyboards;
         _templatesDbOperations = templatesDbOperations;
-        _messageRemover = messageRemover;
+        _botMessenger = botMessenger;
     }
     
     public async Task Display(Message message)
     {
         if (message.MessageId != null)
         {
-            await _messageRemover.Remove(message.Chat.Id, message.MessageId);
+            await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
         }
         
-        await _botClient.SendTextMessageAsync(chatId: message.Chat.Id,
+        await _botMessenger.SendMessage(chatId: (int)message.Chat.Id,
             text: await TemplatesMessage(userId: (int)message.From.Id),
-            replyMarkup: _menuKeyboards.TemplatesKeyboard());
+            replyKeyboardMarkup:_menuKeyboards.TemplatesKeyboard());
     }
 
     private async Task<string> TemplatesMessage(int userId)

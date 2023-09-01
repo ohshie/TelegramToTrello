@@ -78,8 +78,6 @@ public class Program
         collection.AddHttpClient();
         collection.AddLogging();
         
-           
-        
         // bot classes
         collection.AddTransient<BotClient>();
         collection.AddScoped<Message>();
@@ -91,8 +89,8 @@ public class Program
         collection.AddTransient<ActionsFactory>();
         collection.AddTransient<CallbackFactory>();
         collection.AddTransient<PlaceholderOperator>();
-        
-        collection.AddTransient<MessageRemover>();
+
+        collection.AddTransient<BotMessenger>();
         
         collection.AddTransient<UserRegistrationHandler>();
         
@@ -109,6 +107,8 @@ public class Program
         collection.AddTransient<DisplayTaskKeyboard>();
         collection.AddTransient<ConfirmTemplateKeyboard>();
         collection.AddTransient<TemplatesKeyboard>();
+        collection.AddTransient<DateKeyboard>();
+        collection.AddTransient<CurrentTasksKeyboard>();
         
         // template classes
         collection.AddTransient<TemplateHandler>();
@@ -134,13 +134,13 @@ public class Program
         
         collection.AddTransient<DbOperations>();
         collection.AddTransient<TaskDbOperations>();
+        collection.AddTransient<DialogueStorageDbOperations>();
         collection.AddTransient<CreatingTaskDbOperations>();
         collection.AddTransient<UserDbOperations>();
         collection.AddTransient<NotificationsDbOperations>();
         collection.AddTransient<TemplatesDbOperations>();
         collection.AddTransient<Verifier>();
         
-        collection.AddTransient<IRepository<TTTTask>, TTTTaskRepository>();
         collection.AddTransient<IUsersRepository, UsersRepository>();
         collection.AddTransient<IRepository<Board>, BoardRepository>();
         collection.AddTransient<ITableRepository, TableRepository>();
@@ -148,6 +148,8 @@ public class Program
         collection.AddTransient<INotificationsRepository, NotificationsRepository>();
         collection.AddTransient<IBoardRepository, BoardRepository>();
         collection.AddTransient<ITemplateRepository, TemplateRepository>();
+        collection.AddTransient<IDialogueStorageRepository, DialogueStorageRepository>();
+        collection.AddTransient<ITTTTaskRepository, TTTTaskRepository>();
         
         // current task classes
         collection.AddTransient<CurrentTasksDisplay>();

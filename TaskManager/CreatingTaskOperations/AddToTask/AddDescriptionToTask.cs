@@ -11,11 +11,11 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
 
     public AddDescriptionToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations,
         CreateKeyboardWithUsers createKeyboardWithUsers,
         CreatingTaskDbOperations creatingTaskDbOperations,
         DisplayCurrentTaskInfo displayCurrentTaskInfo,
-        Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
@@ -23,7 +23,7 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         NextTask = createKeyboardWithUsers;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         if (Message.Text.StartsWith("/"))
         {
@@ -35,6 +35,9 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
             return;
         }
 
+        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
+        await BotMessenger.RemoveMessage(chatId: user.TelegramId, messageId: Message.MessageId);
+        
         if (IsTemplate)
         {
             await _creatingTaskDbOperations.AddDescription(task,Message.Text, isTemplate: true);

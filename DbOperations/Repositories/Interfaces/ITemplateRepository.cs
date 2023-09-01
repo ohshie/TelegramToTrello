@@ -7,4 +7,6 @@ public interface ITemplateRepository : IRepository<Template>
     Task<List<Template>> GetAllTemplatesByUserAndBoard(int userId, string boardId);
 
     Task<Template> GetIncompleteTemplate(int id);
+    
+    Task<bool> CheckIfIncomplete(int userId);
 }

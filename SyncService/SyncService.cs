@@ -37,7 +37,7 @@ public class SyncService : IWorkflow
         }
     }
     
-    public async Task<bool> SyncStateToTrello(RegisteredUser user)
+    public async Task<bool> SyncStateToTrello(User user)
     {
         if (user != null)
         {
@@ -48,7 +48,7 @@ public class SyncService : IWorkflow
         return true;
     }
 
-    private async Task SyncProcessor(RegisteredUser user)
+    private async Task SyncProcessor(User user)
     {
         await _boardDbOperations.Execute(user);
         await _tablesDbOperations.Execute(user);

@@ -11,45 +11,50 @@ public class UsersRepository : IUsersRepository
         _botDbContext = botDbContext;
     }
 
-    public async Task<RegisteredUser> Get(int id)
+    public async Task<User> Get(int id)
     {
         return await _botDbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == id);
     }
 
-    public async Task<RegisteredUser> Get(string id)
+    public async Task<User> Get(string id)
     {
         return await _botDbContext.Users.FirstOrDefaultAsync(u => u.TrelloId == id);
     }
 
-    public async Task<IEnumerable<RegisteredUser>> GetAll()
+    public async Task<IEnumerable<User>> GetAll()
     {
         return await _botDbContext.Users
                 .Include(u => u.Boards)
                 .ToListAsync();
     }
 
-    public async Task Add(RegisteredUser entity)
+    public async Task Add(User entity)
     {
         _botDbContext.Users.Add(entity);
         await _botDbContext.SaveChangesAsync();
     }
 
-    public async Task Update(RegisteredUser entity)
+    public async Task Update(User entity)
     {
         _botDbContext.Users.Update(entity);
         await _botDbContext.SaveChangesAsync();
     }
 
-    public async Task Delete(RegisteredUser entity)
+    public async Task Delete(User entity)
     {
         _botDbContext.Users.Remove(entity);
         await _botDbContext.SaveChangesAsync();
     }
 
-    public async Task<RegisteredUser> GetUserWithBoards(int id)
+    public async Task<User> GetUserWithBoards(int id)
     { 
         return await _botDbContext.Users
                 .Include(ru => ru.Boards)
                 .FirstOrDefaultAsync(um => um.TelegramId == id);
+    }
+
+    public async Task<bool> CheckExist(int id)
+    {
+        return await _botDbContext.Users.AnyAsync(u => u.TelegramId == id);
     }
 }

@@ -29,7 +29,7 @@ public class MarkTaskAsCompleted
         TaskNotification? task = await _notificationsDbOperations.RetrieveAssignedTask(taskId);
         if (task != null)
         {
-            RegisteredUser? user = await _userDbOperations.RetrieveTrelloUser(task.User);
+            User? user = await _userDbOperations.RetrieveTrelloUser(task.User);
             
             bool success = await _trelloOperations.MarkTaskAsComplete(taskId, user);
             if (success)

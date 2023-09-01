@@ -2,7 +2,9 @@ using Telegram.Bot.Types;
 
 namespace TelegramToTrello;
 
-public interface IUsersRepository : IRepository<RegisteredUser>
+public interface IUsersRepository : IRepository<User>
 {
-   Task<RegisteredUser> GetUserWithBoards(int id);
+   Task<User> GetUserWithBoards(int id);
+
+   Task<bool> CheckExist(int id);
 }

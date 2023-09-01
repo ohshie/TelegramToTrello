@@ -6,21 +6,19 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class DropTask : TaskCreationBaseHandler
 {
-    private readonly MessageRemover _remover;
+    public DropTask(ITelegramBotClient botClient, UserDbOperations userDbOperations, 
+        Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
+    {}
 
-    public DropTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, Verifier verifier, MessageRemover remover) : base(botClient, userDbOperations, taskDbOperations, verifier)
-    {
-        _remover = remover;
-    }
-
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         await TaskDbOperations.RemoveEntry(task);
 
-        await _remover.Remove(Message.Chat.Id, Message.MessageId);
+        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
+        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
         
-        await BotClient.SendTextMessageAsync(chatId: Message.Chat.Id,
+        await BotMessenger.SendMessage(chatId: (int)Message.Chat.Id,
             text: "Task removed. You can now create a new one");
     }
 }

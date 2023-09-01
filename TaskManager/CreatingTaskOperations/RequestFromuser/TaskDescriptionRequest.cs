@@ -7,19 +7,18 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.RequestFromuser;
 public class TaskDescriptionRequest : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
-    private readonly MessageRemover _messageRemover;
 
     public TaskDescriptionRequest(ITelegramBotClient botClient, 
-        UserDbOperations dbOperations, 
-        TaskDbOperations taskDbOperations,
-        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, MessageRemover messageRemover) : base(botClient, dbOperations, taskDbOperations, verifier)
+        UserDbOperations userDbOperations, 
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier, 
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
-        _messageRemover = messageRemover;
     }
     
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         if (IsTemplate)
         {
@@ -32,23 +31,14 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
         
         if (IsEdit)
         {
-            await SendRequestToUser(task);
+            await TaskDbOperations.ToggleEditModeForTask(task);
+            await BotMessenger.SendMessage(text: "Now please type name of your task in the next message.",
+                chatId: user.TelegramId);
             return;
         }
         
-        await BotClient.SendTextMessageAsync(Message.Chat.Id,
-            replyToMessageId: Message.MessageId,
+        await BotMessenger.SendMessage(user.TelegramId,
             text: $"Task name successfully set to: {Message.Text}\n" +
                   $"Now please type description of your task in the next message.");
-    }
-    
-    private async Task SendRequestToUser(TTTTask task)
-    {
-        await TaskDbOperations.ToggleEditModeForTask(task);
-        
-        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
-       
-        await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",
-            chatId: Message.Chat.Id);
     }
 }

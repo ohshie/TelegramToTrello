@@ -19,7 +19,7 @@ public class SyncBoardDbOperations
         _usersRepository = usersRepository;
     }
     
-    internal async Task Execute(RegisteredUser user)
+    internal async Task Execute(User user)
     {
         var boardsFoundInTrello =
             await _trelloOperations.GetTrelloBoards(user);
@@ -31,7 +31,7 @@ public class SyncBoardDbOperations
         }
     }
     
-    private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
+    private async Task AddNewBoards(Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, User trelloUser)
     {
         var (user, currentBoardsInDb) = await GetUserAndUserBoards(trelloUser);
             
@@ -44,7 +44,7 @@ public class SyncBoardDbOperations
             }
     }
 
-    private void CreateBoardUserRelations(RegisteredUser user, Board board)
+    private void CreateBoardUserRelations(User user, Board board)
     {
         if (!user.Boards.Any(b => b.TrelloBoardId == board.TrelloBoardId))
         {
@@ -54,7 +54,7 @@ public class SyncBoardDbOperations
     }
 
     private Board HandleBoard( 
-        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair, RegisteredUser user)
+        KeyValuePair<string, TrelloOperations.TrelloUserBoard> keyBoardPair, User user)
     {
         Board board = new Board
         {
@@ -67,9 +67,9 @@ public class SyncBoardDbOperations
         return board;
     }
 
-    private async Task<(RegisteredUser trackedUser, Dictionary<string, Board> currentBoardsInDb)> GetUserAndUserBoards(RegisteredUser trelloUser)
+    private async Task<(User trackedUser, Dictionary<string, Board> currentBoardsInDb)> GetUserAndUserBoards(User trelloUser)
     {
-        RegisteredUser trackedUser = await _usersRepository.GetUserWithBoards(trelloUser.TelegramId);
+        User trackedUser = await _usersRepository.GetUserWithBoards(trelloUser.TelegramId);
 
         Dictionary<string,Board> currentBoardsInDb = await _boardRepository.GetAll()
             .ToDictionary(b => b.TrelloBoardId!);
@@ -78,7 +78,7 @@ public class SyncBoardDbOperations
     }
 
     private async Task RemoveBoardThatWereNotInTrello(
-        Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, RegisteredUser trelloUser)
+        Dictionary<string, TrelloOperations.TrelloUserBoard> boardsFoundInTrello, User trelloUser)
     {
         var currentBoardsInDb = await _boardRepository.GetAll()
             .Where(b => b.Users.Any(u => u.TelegramId== trelloUser.TelegramId))

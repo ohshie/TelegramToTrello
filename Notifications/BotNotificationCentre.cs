@@ -27,7 +27,7 @@ public class BotNotificationCentre : IWorkflow
 
     public async Task ToggleNotificationsForUser(Message message)
     {
-        RegisteredUser? user = await _notificationsDbOperations.ToggleNotifications((int)message.From.Id);
+        User? user = await _notificationsDbOperations.ToggleNotifications((int)message.From.Id);
         if (user == null) return;
      
         if (user.NotificationsEnabled)
@@ -46,7 +46,7 @@ public class BotNotificationCentre : IWorkflow
             chatId: user.TelegramId);
     }
 
-    private async Task<string> GetCardsForNotifications(RegisteredUser trelloUser)
+    private async Task<string> GetCardsForNotifications(User trelloUser)
     {
         var cards = await _trelloOperations.GetSubscribedTasks(trelloUser);
 
@@ -67,7 +67,7 @@ public class BotNotificationCentre : IWorkflow
 
     public async Task NotificationManager()
     {
-        List<RegisteredUser> usersWithNotifications = await _notificationsDbOperations.GetUsersWithNotificationsEnabled();
+        List<User> usersWithNotifications = await _notificationsDbOperations.GetUsersWithNotificationsEnabled();
             
             foreach (var trelloUser in usersWithNotifications) 
             {

@@ -11,27 +11,32 @@ public class AddNameToTask : TaskCreationBaseHandler
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
 
-    public AddNameToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, TaskDescriptionRequest taskDescriptionRequest,
+    public AddNameToTask(ITelegramBotClient botClient, 
+        UserDbOperations userDbOperations,
+        TaskDescriptionRequest taskDescriptionRequest,
         CreatingTaskDbOperations creatingTaskDbOperations,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo, 
+        Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
         NextTask = taskDescriptionRequest;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         if (Message.Text.StartsWith("/"))
         {
-            await BotClient.SendTextMessageAsync(Message.Chat.Id,
-                replyToMessageId: Message.MessageId,
+            await BotMessenger.SendMessage(user.TelegramId,
                 text: $"Task name should not start with \"/\"\n" +
                       $"Please type a new name for a task");
             return;
         }
 
+        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
+        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        
         if (IsTemplate)
         {
             await _creatingTaskDbOperations.AddName(task, Message.Text, isTemplate: true);

@@ -10,24 +10,29 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
 {
     private readonly DisplayTaskKeyboard _displayTaskKeyboard;
 
-    public DisplayCurrentTaskInfo(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, Verifier verifier, DisplayTaskKeyboard displayTaskKeyboard) : base(botClient, userDbOperations, taskDbOperations, verifier)
+    public DisplayCurrentTaskInfo(ITelegramBotClient botClient, UserDbOperations userDbOperations, 
+        Verifier verifier, DisplayTaskKeyboard displayTaskKeyboard, 
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations) 
+        : base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _displayTaskKeyboard = displayTaskKeyboard;
     }
 
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         var replyMarkup = _displayTaskKeyboard.ReplyKeyboard();
         
-        await BotClient.SendTextMessageAsync(text: "Lets review current task:\n\n" +
+        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        
+        await BotMessenger.SendMessage(text: "Lets review current task:\n\n" +
                                                    $"Task name: [{task.Tag}] {task.TaskName}\n" +
                                                    $"On board: {task.TrelloBoardName}\n"+
                                                    $"Description: {task.TaskDesc}\n"+
                                                    $"Participants: {task.TaskPartName}\n"+
                                                    $"Due date: {DateTime.Parse(task.Date, CultureInfo.InvariantCulture)}\n\n" +
                                                    $"If everything is correct press push to post this task to trello\n", 
-            chatId: Message.Chat.Id, replyMarkup: replyMarkup);
+            chatId: user.TelegramId, 
+            replyKeyboardMarkup: replyMarkup);
     }
 }

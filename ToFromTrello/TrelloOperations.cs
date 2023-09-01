@@ -41,7 +41,7 @@ public class TrelloOperations
         return null;
     }
     
-    public async Task<Dictionary<string, TrelloUserBoard>?> GetTrelloBoards(RegisteredUser userName)
+    public async Task<Dictionary<string, TrelloUserBoard>?> GetTrelloBoards(User userName)
     {
         HttpResponseMessage response = (await _httpClient.GetAsync(
             $"https://api.trello.com/1/members/{userName.TrelloId}/boards?key={_trelloApiKey}&token={userName.TrelloToken}"));
@@ -56,7 +56,7 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardTable>?> GetBoardTables(string boardName, RegisteredUser trelloUser)
+    public async Task<List<TrelloBoardTable>?> GetBoardTables(string boardName, User trelloUser)
     {
         HttpResponseMessage response = await _httpClient.GetAsync($"https://api.trello.com/1/boards/{boardName}/lists?key={_trelloApiKey}&token={trelloUser.TrelloToken}");
 
@@ -69,7 +69,7 @@ public class TrelloOperations
         return null;
     }
 
-    public async Task<List<TrelloBoardUser>?> GetUsersOnBoard(string boardId, RegisteredUser trelloUser)
+    public async Task<List<TrelloBoardUser>?> GetUsersOnBoard(string boardId, User trelloUser)
     {
         HttpResponseMessage response =
             await _httpClient.GetAsync(
@@ -89,7 +89,7 @@ public class TrelloOperations
         return newUsers;
     }
     
-    public async Task<(bool, string)> PushTaskToTrello(TTTTask task, RegisteredUser user)
+    public async Task<(bool, string)> PushTaskToTrello(TTTTask task, User user)
     {
         string trelloApiUri = $"https://api.trello.com/1/cards";
 
@@ -115,7 +115,7 @@ public class TrelloOperations
             return (false, string.Empty);
     }
 
-    public async Task AddAttachmentsToTask(TTTTask task, RegisteredUser user, string createdTaskId)
+    public async Task AddAttachmentsToTask(TTTTask task, User user, string createdTaskId)
     {
         var allAttachments = task.Attachments
             .Substring(0, task.Attachments.Length - 2)
@@ -153,7 +153,7 @@ public class TrelloOperations
     }
 
     private async Task<(bool, string)> AddTaskToNotifications(TTTTask task, HttpResponseMessage response,
-        string correctDate, RegisteredUser? trelloUser)
+        string correctDate, User? trelloUser)
     {
         if (response.IsSuccessStatusCode)
         {
@@ -191,7 +191,7 @@ public class TrelloOperations
         return (false, string.Empty);
     }
 
-    public async Task<bool> MarkTaskAsComplete(string taskId, RegisteredUser user)
+    public async Task<bool> MarkTaskAsComplete(string taskId, User user)
     {
         string requestUrl = $"https://api.trello.com/1/cards/{taskId}?key={_trelloApiKey}" +
                             $"&token={user.TrelloToken}" +
@@ -210,7 +210,7 @@ public class TrelloOperations
         return false;
     }
     
-    private async Task<List<TrelloCard>?> FetchCardsFromTrello(RegisteredUser user)
+    private async Task<List<TrelloCard>?> FetchCardsFromTrello(User user)
     {
         string query = Uri.EscapeDataString("@me is:open has:members created:month sort:-edited");
         string cardLimit = "50";
@@ -238,7 +238,7 @@ public class TrelloOperations
         return cards;
     }
 
-    public async Task<Dictionary<string, TrelloCard>?> GetSubscribedTasks(RegisteredUser user)
+    public async Task<Dictionary<string, TrelloCard>?> GetSubscribedTasks(User user)
     {
         List<TrelloCard>? cards = await FetchCardsFromTrello(user);
         if (cards != null)

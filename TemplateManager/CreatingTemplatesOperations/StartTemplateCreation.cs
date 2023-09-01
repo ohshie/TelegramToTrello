@@ -1,56 +1,52 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramToTrello.BotManager;
-using TelegramToTrello.TaskManager.CreatingTaskOperations;
 using TelegramToTrello.TemplateManager.CreatingTemplatesOperations.CreateKeyboards;
 
 namespace TelegramToTrello.TemplateManager.CreatingTemplatesOperations;
 
 public class StartTemplateCreation
 {
-    private Message? _message;
     private readonly TemplateCreateKbWithBoards _createKeyboardWithBoards;
-    private readonly MessageRemover _messageRemover;
     private readonly Verifier _verifier;
+    private readonly BotMessenger _botMessenger;
     private readonly TemplatesDbOperations _templatesDbOperations;
-
-    private ITelegramBotClient BotClient { get; }
-
-
-    public StartTemplateCreation(ITelegramBotClient botClient, 
-        TemplatesDbOperations templatesDbOperations, 
+    
+    public StartTemplateCreation(TemplatesDbOperations templatesDbOperations, 
         TemplateCreateKbWithBoards createKeyboardWithBoards,
-        MessageRemover messageRemover,
-        Verifier verifier)
+        Verifier verifier,
+        BotMessenger botMessenger)
     {
         _templatesDbOperations = templatesDbOperations;
         _createKeyboardWithBoards = createKeyboardWithBoards;
-        _messageRemover = messageRemover;
         _verifier = verifier;
-        BotClient = botClient;
+        _botMessenger = botMessenger;
     }
 
     public async Task CreateTemplate(Message message)
     {
-        _message = message;
-
-        var user = await _verifier.GetUser(message);
-        if (user is null)
+        if (await _verifier.CheckUser((int)message.From.Id))
         {
-            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
+            await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
             return;
         }
 
-        Template template = await _verifier.GetTemplate(user.TelegramId, creationStart: true);
+        if (await _verifier.CheckTemplate((int)message.From.Id))
+        {
+            await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
+            return;
+        }
+        
+        
+        Template template = await _verifier.GetTemplate((int)message.From.Id, creationStart: true);
         if (template is not null)
         {
-            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
+            await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
             return;
         }
 
-        await _templatesDbOperations.StartTemplate(user);
+        await _templatesDbOperations.StartTemplate((int)message.From.Id);
 
-        await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
-        await _createKeyboardWithBoards.Execute(_message);
+        await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
+        await _createKeyboardWithBoards.Execute(message);
     }
 }

@@ -9,8 +9,9 @@ public abstract class TaskCreationBaseHandler
     protected Message? Message;
     protected CallbackQuery? CallbackQuery;
     protected readonly ITelegramBotClient BotClient;
+    private readonly UserDbOperations _userDbOperations;
+    protected readonly BotMessenger BotMessenger;
     
-    protected readonly UserDbOperations UserDbOperations;
     protected readonly TaskDbOperations TaskDbOperations;
     private readonly Verifier _verifier;
 
@@ -19,14 +20,15 @@ public abstract class TaskCreationBaseHandler
 
     protected TaskCreationBaseHandler? NextTask { get; set; }
 
-    protected TaskCreationBaseHandler(ITelegramBotClient botClient, 
-        UserDbOperations dbOperations,
-        TaskDbOperations taskDbOperations, Verifier verifier)
+    protected TaskCreationBaseHandler(ITelegramBotClient botClient,
+        UserDbOperations userDbOperations, Verifier verifier, 
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations)
     {
         BotClient = botClient;
-        UserDbOperations = dbOperations;
-        TaskDbOperations = taskDbOperations;
+        _userDbOperations = userDbOperations;
         _verifier = verifier;
+        BotMessenger = botMessenger;
+        TaskDbOperations = taskDbOperations;
     }
 
     public async Task Execute(Message message, bool isEdit = false, bool isTemplate = false)
@@ -35,12 +37,12 @@ public abstract class TaskCreationBaseHandler
         IsEdit = isEdit;
         IsTemplate = isTemplate;
 
-        RegisteredUser user = await _verifier.GetUser(message);
-        if (user is null) return;
-
-        TTTTask task = await _verifier.GetTask(message);
-        if (task is null) return;
-
+        if (!await _verifier.CheckUser((int)message.From.Id)) return;
+        if (!await _verifier.CheckTask((int)message.From.Id)) return;
+        
+        User user = await _userDbOperations.RetrieveTrelloUser((int)message.From.Id);
+        TTTTask task = await TaskDbOperations.RetrieveUserTask(user.TelegramId);
+        
         await HandleTask(user, task);
 
         if (NextTask != null)
@@ -53,25 +55,18 @@ public abstract class TaskCreationBaseHandler
     
     public async Task Execute(CallbackQuery callback, bool isEdit = false, bool isTemplate = false)
     {
-        if (!IsEdit)
-        {
-            IsEdit = isEdit;
-        }
-
-        if (!IsTemplate)
-        {
-            IsTemplate = isTemplate;
-        }
+        if (!IsEdit) IsEdit = isEdit;
+        if (!IsTemplate) IsTemplate = isTemplate;
         
         CallbackQuery = callback;
         Message = callback.Message;
         
-        RegisteredUser user = await _verifier.GetUser(callback.Message);
-        if (user is null) return;
-
-        TTTTask task = await _verifier.GetTask(callback.Message);
-        if (task is null) return;
-
+        if (!await _verifier.CheckUser((int)callback.From.Id)) return;
+        if (!await _verifier.CheckTask((int)callback.From.Id)) return;
+        
+        User user = await _userDbOperations.RetrieveTrelloUser((int)callback.From.Id);
+        TTTTask task = await TaskDbOperations.RetrieveUserTask((int)callback.From.Id);
+        
         await HandleTask(user, task);
         
         if (NextTask != null)
@@ -90,5 +85,5 @@ public abstract class TaskCreationBaseHandler
         }
     }
 
-    protected abstract Task HandleTask(RegisteredUser user, TTTTask task);
+    protected abstract Task HandleTask(User user, TTTTask task);
 }

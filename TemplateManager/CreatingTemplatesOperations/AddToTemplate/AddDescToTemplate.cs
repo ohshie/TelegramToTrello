@@ -7,22 +7,22 @@ namespace TelegramToTrello.TemplateManager.CreatingTemplatesOperations.AddToTemp
 public class AddDescToTemplate : TemplateCreationBaseHandler
 {
     private readonly DisplayTemplate _displayTemplate;
-    private readonly MessageRemover _messageRemover;
+    private readonly BotMessenger _botMessenger;
 
     public AddDescToTemplate(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TemplatesDbOperations templateDbOperations, Verifier verifier, DisplayTemplate displayTemplate,
-        MessageRemover messageRemover) : base(botClient, userDbOperations,
+        BotMessenger botMessenger) : base(botClient, userDbOperations,
         templateDbOperations, verifier)
     {
         _displayTemplate = displayTemplate;
-        _messageRemover = messageRemover;
+        _botMessenger = botMessenger;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         string templateDesc = Message.Text;
 
-        await _messageRemover.Remove(Message.Chat.Id, (int)Message.From.Id);
+        await _botMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
         await TemplateDbOperations.AddDesc(template, templateDesc);
 
         NextTask = _displayTemplate;

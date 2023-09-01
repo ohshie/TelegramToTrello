@@ -11,7 +11,7 @@ public class UsersKeyboard
         _dbOperations = dbOperations;
     }
 
-    public async Task<InlineKeyboardMarkup?> KeyboardParticipants(TTTTask task)
+    public async Task<InlineKeyboardMarkup> KeyboardParticipants(TTTTask task)
     {
         Board taskBoard = await _dbOperations.RetrieveBoard(task.Id, task.TrelloBoardId!);
 

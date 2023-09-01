@@ -16,7 +16,7 @@ public class AddTableToTemplate : TemplateCreationBaseHandler
         _requestName = requestName;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         string tableName = CallbackQuery.Data
             .Substring(CallbackList.TemplateList.Length).Trim();

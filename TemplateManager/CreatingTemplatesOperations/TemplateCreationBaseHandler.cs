@@ -30,7 +30,7 @@ public abstract class TemplateCreationBaseHandler
     {
         Message = message;
 
-        RegisteredUser user = await _verifier.GetUser(message);
+        User user = await _verifier.GetUser(message);
         if (user is null) return;
 
         Template template = await _verifier.GetTemplate(user.TelegramId);
@@ -48,7 +48,7 @@ public abstract class TemplateCreationBaseHandler
     {
         CallbackQuery = callbackQuery;
         
-        RegisteredUser user = await _verifier.GetUser(callbackQuery.Message);
+        User user = await _verifier.GetUser(callbackQuery.Message);
         if (user is null) return;
         
         Template template = await _verifier.GetTemplate(user.TelegramId);
@@ -62,5 +62,5 @@ public abstract class TemplateCreationBaseHandler
         }
     }
     
-    protected abstract Task HandleTask(RegisteredUser user, Template template);
+    protected abstract Task HandleTask(User user, Template template);
 }

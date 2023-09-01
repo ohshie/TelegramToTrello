@@ -8,9 +8,8 @@ namespace TelegramToTrello.CreatingTaskOperations;
 public class StartTaskCreation
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
-    private Message? _message;
     private readonly CreateKeyboardWithBoards _createKeyboardWithBoards;
-    private readonly MessageRemover _messageRemover;
+    private readonly BotMessenger _botMessenger;
     private readonly Verifier _verifier;
 
     private ITelegramBotClient BotClient { get; }
@@ -18,41 +17,41 @@ public class StartTaskCreation
     public StartTaskCreation(ITelegramBotClient botClient, 
         CreatingTaskDbOperations creatingTaskDbOperations, 
         CreateKeyboardWithBoards createKeyboardWithBoards,
-        MessageRemover messageRemover,
+        BotMessenger botMessenger,
         Verifier verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _createKeyboardWithBoards = createKeyboardWithBoards;
-        _messageRemover = messageRemover;
+        _botMessenger = botMessenger;
         _verifier = verifier;
         BotClient = botClient;
     }
     
     public async Task CreateTask(Message message)
     {
-        _message = message;
+        await _botMessenger.RemoveLastBotMessage((int)(message.From.Id));
         
-        var user = await _verifier.GetUser(message);
-        if (user is null)
+        var chatId = (int)message.Chat.Id;
+        var messageId = message.MessageId;
+        
+        var userExist = await _verifier.CheckUser(chatId);
+        if (!userExist)
         {
-            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
+            await _botMessenger.RemoveMessage(chatId, messageId);
             return;
         }
 
-        TTTTask task = await _verifier.GetTask(message);
-        if (task is not null)
+        var taskExist = await _verifier.CheckTask(chatId);
+        if (taskExist)
         {
-            await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
-            await BotClient.SendTextMessageAsync(chatId: _message.From.Id,
+            await _botMessenger.RemoveMessage(chatId, messageId);
+            await _botMessenger.SendMessage(chatId: chatId,
                 text: "Looks like you are already in the process of creating a task.\n" +
                       "Please finish it first or drop it by pressing cancel task");
             return;
         }
         
-        await _creatingTaskDbOperations.CreateTask(user);
-
-        await _messageRemover.Remove(_message.Chat.Id, _message.MessageId);
-        
-        await _createKeyboardWithBoards.Execute(_message);
+        await _creatingTaskDbOperations.CreateTask(chatId);
+        await _createKeyboardWithBoards.Execute(message);
     }
 }

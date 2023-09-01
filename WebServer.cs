@@ -62,7 +62,7 @@ public class WebServer
 
     private async Task UpdateDbWithNewUserInfo(string token, string trelloId, int telegramId)
     {
-        RegisteredUser? user = await _userDbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
+        User? user = await _userDbOperations.AddTrelloTokenAndId(token, trelloId, telegramId);
         if (user != null)
         {
             await _syncService.SyncStateToTrello(user);

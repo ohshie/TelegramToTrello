@@ -9,18 +9,17 @@ namespace TelegramToTrello.CreatingTaskOperations;
 public class PushTask : TaskCreationBaseHandler
 {
     private readonly TrelloOperations _trelloOperations;
-    private readonly MessageRemover _messageRemover;
 
-    public PushTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, TrelloOperations trelloOperations,
+    public PushTask(ITelegramBotClient botClient,
+        UserDbOperations userDbOperations, TrelloOperations trelloOperations,
         Verifier verifier,
-        MessageRemover messageRemover) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _trelloOperations = trelloOperations;
-        _messageRemover = messageRemover;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         (bool creatingTaskSuccess, string taskId) = await _trelloOperations.PushTaskToTrello(task, user);
         if (!string.IsNullOrEmpty(taskId) && !string.IsNullOrEmpty(task.Attachments))
@@ -30,7 +29,7 @@ public class PushTask : TaskCreationBaseHandler
         
         if (creatingTaskSuccess)
         {
-            await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+            await BotMessenger.RemoveMessage((int)Message.Chat.Id, CallbackQuery.Message.MessageId);
             
             await BotClient.SendTextMessageAsync(Message.Chat.Id,
                 text: "Task successfully created");

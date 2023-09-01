@@ -11,7 +11,7 @@ public class RequestDesc : TemplateCreationBaseHandler
     {
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         await TemplateDbOperations.AddPlaceholderDesc(template);
         

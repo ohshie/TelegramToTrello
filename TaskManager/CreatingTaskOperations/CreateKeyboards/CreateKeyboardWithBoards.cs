@@ -2,20 +2,22 @@ using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramToTrello.BotManager;
 using TelegramToTrello.CreatingTaskOperations;
+using TelegramToTrello.Repositories;
 
 namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class CreateKeyboardWithBoards : TaskCreationBaseHandler
 {
     public CreateKeyboardWithBoards(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, BoardsKeyboard boardsKeyboard, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        BoardsKeyboard boardsKeyboard, Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _boardsKeyboard = boardsKeyboard;
     }
 
     private readonly BoardsKeyboard _boardsKeyboard;
-    
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         InlineKeyboardMarkup inlineKeyboardMarkup;
         
@@ -23,16 +25,16 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
         {
             inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user, IsEdit: true);
             
-            await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
+            await BotMessenger.UpdateMessage(chatId: (int)CallbackQuery.Message.Chat.Id,
                 messageId: CallbackQuery.Message.MessageId,
-                text: $"Choose new board from list", replyMarkup: inlineKeyboardMarkup);
+                text: $"Choose new board from list", inlineKeyboardMarkup);
             return;
         }
         
         inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user);
         
-        await BotClient.SendTextMessageAsync(text: "We will start with choosing a board for our task:",
-            chatId: Message.Chat.Id,
-            replyMarkup: inlineKeyboardMarkup);
+        await BotMessenger.SendMessage(text: "We will start with choosing a board for our task:",
+            chatId: (int)Message.Chat.Id, 
+            replyKeyboardMarkup: inlineKeyboardMarkup);
     }
 }

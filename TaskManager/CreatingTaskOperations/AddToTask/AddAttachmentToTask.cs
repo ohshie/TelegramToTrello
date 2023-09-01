@@ -12,28 +12,27 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
     private readonly ITelegramBotClient _botClient;
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
-    private readonly MessageRemover _messageRemover;
 
     public AddAttachmentToTask(ITelegramBotClient botClient, 
         UserDbOperations userDbOperations, 
-        TaskDbOperations taskDbOperations,
         CreatingTaskDbOperations creatingTaskDbOperations,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier, MessageRemover messageRemover) : base(botClient, userDbOperations,
-        taskDbOperations, verifier)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo, 
+        Verifier verifier, 
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _botClient = botClient;
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
-        _messageRemover = messageRemover;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         if (CallbackQuery is not null)
         {
             if (CallbackQuery.Data is "press_this_when_done")
             {
-                await FinishAddingAttachments(task);
+                await FinishAddingAttachments(user, task);
                 return;
             }
         }
@@ -47,20 +46,20 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
 
         await _creatingTaskDbOperations.AddFilePath(task,savedFilePath);
 
-        await UpdateBotMessage(task);
+        await UpdateBotMessage(user, task);
     }
 
-    private async Task UpdateBotMessage(TTTTask task)
+    private async Task UpdateBotMessage(User user,TTTTask task)
     {
-        await _messageRemover.Remove(chatId: Message.Chat.Id, messageId: task.LastBotMessage);
+        await BotMessenger.RemoveMessage(chatId: user.TelegramId, messageId: task.LastBotMessage);
 
-        var newMessage = await BotClient.SendTextMessageAsync(text: "Attachment added. You can add more if you want too.",
-            chatId: Message.Chat.Id,
-            replyMarkup: CreateKeyboard());
+        var newMessage = await BotMessenger.SendMessage(text: "Attachment added. You can add more if you want too.",
+            chatId: user.TelegramId,
+            replyKeyboardMarkup: CreateKeyboard());
         await _creatingTaskDbOperations.MarkMessage(task, newMessage.MessageId);
     }
 
-    private async Task FinishAddingAttachments(TTTTask task)
+    private async Task FinishAddingAttachments(User user,TTTTask task)
     {
         if (task.WaitingForAttachment)
         {
@@ -68,7 +67,7 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
             NextTask = _displayCurrentTaskInfo;
         }
 
-        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+        await BotMessenger.RemoveMessage(user.TelegramId, CallbackQuery.Message.MessageId);
     }
     
     private async Task<(string, string)> GetPaths(Message message)

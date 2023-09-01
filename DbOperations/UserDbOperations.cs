@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types;
+using TelegramToTrello.Repositories;
 
 namespace TelegramToTrello;
 
@@ -17,20 +18,21 @@ public class UserDbOperations
         var userExist = await _usersRepository.Get((int)message.From.Id);
         if (userExist == null)
         {
-            userExist = new RegisteredUser
+            userExist = new User
             {
                 TelegramId = (int)message.From.Id,
                 TelegramName = message.From.Username,
             };
 
             await _usersRepository.Add(userExist);
+            
             return true;
         }
 
         return false;
     }
 
-    public async Task<RegisteredUser?> AddTrelloTokenAndId(string token, string trelloId, int telegramId)
+    public async Task<User?> AddTrelloTokenAndId(string token, string trelloId, int telegramId)
     {
         var userExist = await _usersRepository.Get(telegramId);
         if (userExist != null)
@@ -45,7 +47,7 @@ public class UserDbOperations
         return userExist;
     }
     
-    public async Task<RegisteredUser?> RetrieveTrelloUser(int telegramId)
+    public async Task<User?> RetrieveTrelloUser(int telegramId)
     {
         var trelloUser = await _usersRepository.GetUserWithBoards(telegramId);
         
@@ -54,9 +56,14 @@ public class UserDbOperations
             return trelloUser;
         }
         return null;
-    } 
+    }
+
+    public async Task<bool> CheckIfExist(int telegramId)
+    {
+        return await _usersRepository.CheckExist(telegramId);
+    }
     
-    public async Task<List<RegisteredUser>> FetchAllUsers()
+    public async Task<List<User>> FetchAllUsers()
     {
         var users = await _usersRepository.GetAll();
         var usersList = users.ToList();

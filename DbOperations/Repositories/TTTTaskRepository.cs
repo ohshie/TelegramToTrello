@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TelegramToTrello.Repositories;
 
-public class TTTTaskRepository : IRepository<TTTTask>
+public class TTTTaskRepository : ITTTTaskRepository
 {
     private readonly BotDbContext _dbContext;
 
@@ -15,12 +15,7 @@ public class TTTTaskRepository : IRepository<TTTTask>
     {
         return await _dbContext.CreatingTasks.FindAsync(id);
     }
-
-    /// <summary>
-    /// Attempt to get task by name
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
+    
     public async Task<TTTTask> Get(string name)
     {
         return await _dbContext.CreatingTasks
@@ -49,5 +44,10 @@ public class TTTTaskRepository : IRepository<TTTTask>
     {
         _dbContext.CreatingTasks.Remove(entity);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<bool> CheckIfExist(int userId)
+    {
+        return await _dbContext.CreatingTasks.AnyAsync(ct => ct.Id == userId);
     }
 }

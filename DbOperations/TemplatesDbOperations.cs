@@ -36,11 +36,11 @@ public class TemplatesDbOperations
         return template;
     }
 
-    public async Task StartTemplate(RegisteredUser user)
+    public async Task StartTemplate(int userId)
     {
         Template template = new Template
         {
-            UserId = user.TelegramId,
+            UserId = userId,
             Complete = false,
         };
 
@@ -100,5 +100,10 @@ public class TemplatesDbOperations
         template.Complete = true;
 
         await _templateRepository.Update(template);
+    }
+
+    public async Task<bool> CheckIfIncomplete(int userId)
+    {
+        return await _templateRepository.CheckIfIncomplete(userId);
     }
 }

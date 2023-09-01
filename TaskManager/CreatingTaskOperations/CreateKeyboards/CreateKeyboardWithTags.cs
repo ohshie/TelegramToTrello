@@ -8,27 +8,30 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 public class CreateKeyboardWithTags : TaskCreationBaseHandler
 {
     public CreateKeyboardWithTags(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, TagsKeyboard tagsKeyboard, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        TagsKeyboard tagsKeyboard, Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _tagsKeyboard = tagsKeyboard;
     }
 
     private readonly TagsKeyboard _tagsKeyboard;
     
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         InlineKeyboardMarkup replyKeyboardMarkup = _tagsKeyboard.KeyboardTagChoice();
 
         if (IsTemplate)
         {
-            await BotClient.SendTextMessageAsync(chatId: user.TelegramId,
-                text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
+            await BotMessenger.SendMessage(chatId: user.TelegramId,
+                text: $"Choose channel tag according to your task channel", 
+                replyKeyboardMarkup: replyKeyboardMarkup);
         }
         else
         {
-            await BotClient.EditMessageTextAsync(chatId: user.TelegramId,
+            await BotMessenger.UpdateMessage(chatId: user.TelegramId,
                 messageId: CallbackQuery.Message.MessageId,
-                text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
+                text: $"Choose channel tag according to your task channel", 
+                keyboardMarkup: replyKeyboardMarkup);
         }
     }
 }

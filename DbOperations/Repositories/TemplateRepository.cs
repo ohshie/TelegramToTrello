@@ -64,4 +64,9 @@ public class TemplateRepository : ITemplateRepository
             .Where(t => !t.Complete && t.UserId == id)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<bool> CheckIfIncomplete(int userId)
+    {
+        return await _dbContext.Templates.AnyAsync(t => t.UserId == userId);
+    }
 }

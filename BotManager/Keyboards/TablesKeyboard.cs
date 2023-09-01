@@ -13,7 +13,7 @@ public class TablesKeyboard
 
     private string? _boardType;
     
-    public async Task<InlineKeyboardMarkup> KeyboardTableChoice(RegisteredUser user, 
+    public async Task<InlineKeyboardMarkup> KeyboardTableChoice(User user, 
         string boardId, 
         bool isEdit = false, 
         bool isTemplate = false)

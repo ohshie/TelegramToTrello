@@ -17,7 +17,7 @@ public class SyncTablesDbOperations
         _tableRepository = tableRepository;
     }
     
-    internal async Task Execute(RegisteredUser trelloUser)
+    internal async Task Execute(User trelloUser)
     {
         var (currentBoards, currentTables) = await GetCurrentBoardsAndTablesFromDb(trelloUser);
         var freshTableLists = await GetTablesFromTrello(currentBoards, trelloUser);
@@ -26,7 +26,7 @@ public class SyncTablesDbOperations
     }
     
     private async Task<Dictionary<string, TrelloOperations.TrelloBoardTable>> GetTablesFromTrello(
-        Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
+        Dictionary<string, Board> currentBoards, User trelloUser)
     {
         List<Task<List<TrelloOperations.TrelloBoardTable>>> fetchFreshTablesTask = new();
             
@@ -41,7 +41,7 @@ public class SyncTablesDbOperations
         return freshTablesMap;
     }
 
-    private async Task<(Dictionary<string, Board>, Dictionary<string, Table>)> GetCurrentBoardsAndTablesFromDb(RegisteredUser trelloUser)
+    private async Task<(Dictionary<string, Board>, Dictionary<string, Table>)> GetCurrentBoardsAndTablesFromDb(User trelloUser)
     {
         var currentBoards = await _boardRepository.GetAll()
                 .Where(b => b.Users.Any(u => u.TelegramId == trelloUser.TelegramId))

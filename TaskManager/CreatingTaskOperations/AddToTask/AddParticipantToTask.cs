@@ -10,53 +10,45 @@ public class AddParticipantToTask : TaskCreationBaseHandler
     private readonly CreateKeyboardWithUsers _createKeyboardWithUsers;
     private readonly TaskDateRequest _taskDateRequest;
     private readonly DisplayCurrentTaskInfo _displayCurrentTaskInfo;
-    private readonly MessageRemover _messageRemover;
 
     public AddParticipantToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, 
         CreatingTaskDbOperations creatingTaskDbOperations, 
         CreateKeyboardWithUsers createKeyboardWithUsers,
         TaskDateRequest taskDateRequest,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier, MessageRemover messageRemover) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier,
+        BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _createKeyboardWithUsers = createKeyboardWithUsers;
         _taskDateRequest = taskDateRequest;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
-        _messageRemover = messageRemover;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
         string participantName = CallbackQuery.Data.Substring("/name".Length).Trim();
         if (participantName == "press this when done")
         {
-            await FinishAddingParticipants(task);
+            await FinishAddingParticipants(user, task);
             return;
         }
         
-        bool userFoundOnBoard = await _creatingTaskDbOperations.AddParticipant(task, participantName);
-        if (!userFoundOnBoard)
-        {
-            await BotClient.SendTextMessageAsync(text: "Please choose name from keyboard menu.",
-                chatId: Message.Chat.Id);
-            return;
-        }
+        await _creatingTaskDbOperations.AddParticipant(task, participantName);
         
         NextTask = _createKeyboardWithUsers;
     }
 
-    private async Task FinishAddingParticipants(TTTTask task)
+    private async Task FinishAddingParticipants(User user,TTTTask task)
     {
-        await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: user.TelegramId, Message.MessageId);
         if (task.InEditMode)
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
             NextTask = _displayCurrentTaskInfo;
+            return;
         }
-        else
-        {
-            NextTask = _taskDateRequest;
-        }
+     
+        NextTask = _taskDateRequest;
     }
 }

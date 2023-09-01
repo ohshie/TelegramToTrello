@@ -15,7 +15,7 @@ public class DisplayTemplate : TemplateCreationBaseHandler
         _confirmTemplateKeyboard = confirmTemplateKeyboard;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         var replyMarkup = _confirmTemplateKeyboard.AssembleKeyboard();
         

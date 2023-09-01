@@ -14,7 +14,7 @@ public class TemplateCreateKbWithBoards : TemplateCreationBaseHandler
         _boardsKeyboard = boardsKeyboard;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         InlineKeyboardMarkup inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user, isTemplate: true);
         

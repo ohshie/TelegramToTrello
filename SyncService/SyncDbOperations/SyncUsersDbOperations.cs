@@ -17,7 +17,7 @@ public class SyncUsersDbOperations
         _userRepository = userRepository;
     }
     
-    internal async Task Execute(RegisteredUser trelloUser)
+    internal async Task Execute(User trelloUser)
     {
         var (currentBoards, currentUsers) = await GetCurrentBoardsAndUsersFromDb(trelloUser);
         var freshUsers = await GetUsersFromTrello(currentBoards, trelloUser);
@@ -25,7 +25,7 @@ public class SyncUsersDbOperations
         await RemoveUsersThatAreNotInTrello(freshUsers, currentBoards, currentUsers);
     }
     
-    private async Task<(Dictionary<string, Board> currentBoards, HashSet<(string userId, string userName, string boardId)> currentUsers)> GetCurrentBoardsAndUsersFromDb(RegisteredUser trelloUser)
+    private async Task<(Dictionary<string, Board> currentBoards, HashSet<(string userId, string userName, string boardId)> currentUsers)> GetCurrentBoardsAndUsersFromDb(User trelloUser)
     {
         var currentBoards = await _boardRepository
                 .GetAll()
@@ -42,7 +42,7 @@ public class SyncUsersDbOperations
     }
     
     private async Task<HashSet<(string userId, string userName,string boardId)>> GetUsersFromTrello(
-        Dictionary<string, Board> currentBoards, RegisteredUser trelloUser)
+        Dictionary<string, Board> currentBoards, User trelloUser)
     {
         List<Task<List<TrelloOperations.TrelloBoardUser>>> fetchingUsersOnBoardsTasks = new();
 

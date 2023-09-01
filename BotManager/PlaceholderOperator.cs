@@ -39,7 +39,7 @@ public class PlaceholderOperator
 
     public async Task SortMessage(Message message)
     {
-        RegisteredUser? trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
+        User? trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
         if (trelloUser is null) return;
         
         TTTTask? task = await _taskDbOperations.RetrieveUserTask(trelloUser.TelegramId);

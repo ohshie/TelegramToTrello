@@ -7,31 +7,24 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations;
 
 public class CreateKeyboardWithTables : TaskCreationBaseHandler
 {
-
     public CreateKeyboardWithTables(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TaskDbOperations taskDbOperations, DbOperations dbOperations, TablesKeyboard tablesKeyboard, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations,verifier)
+        TablesKeyboard tablesKeyboard, Verifier verifier, BotMessenger botMessenger, TaskDbOperations taskDbOperations) : 
+        base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {
         _tablesKeyboard = tablesKeyboard;
     }
 
-    private TablesKeyboard _tablesKeyboard;
+    private readonly TablesKeyboard _tablesKeyboard;
 
-    protected override async Task HandleTask(RegisteredUser user, TTTTask task)
+    protected override async Task HandleTask(User user, TTTTask task)
     {
-        InlineKeyboardMarkup replyKeyboardMarkup;
+        InlineKeyboardMarkup replyKeyboardMarkup = IsEdit
+            ? await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId, isEdit: true)
+                                        : await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId);
         
-        if (IsEdit)
-        {
-            replyKeyboardMarkup = await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId, isEdit: true); 
-        }
-        else
-        {
-            replyKeyboardMarkup = await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId);
-        }
-        
-        await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
+        await BotMessenger.UpdateMessage(chatId: user.TelegramId,
                 messageId: CallbackQuery.Message.MessageId,
                 text: $"Now choose list on {task.TrelloBoardName}", 
-                replyMarkup: replyKeyboardMarkup);
+                keyboardMarkup: replyKeyboardMarkup);
     }
 }

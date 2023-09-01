@@ -12,7 +12,7 @@ public class DbOperations
     }
     public async Task<Board?> RetrieveBoard(int telegramId, string boardName)
     {
-        RegisteredUser trelloUser = await _dbContext.Users
+        User trelloUser = await _dbContext.Users
                 .Include(ru => ru.Boards)
                 .ThenInclude(b => b.Tables)
                 .Include(ru => ru.Boards)

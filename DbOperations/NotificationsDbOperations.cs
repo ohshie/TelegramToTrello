@@ -21,7 +21,7 @@ public class NotificationsDbOperations
         _boardRepository = boardRepository;
     }
 
-    public async Task<RegisteredUser> ToggleNotifications(int telegramId)
+    public async Task<User> ToggleNotifications(int telegramId)
     {
         var user = await _usersRepository.GetUserWithBoards(telegramId);
         
@@ -35,7 +35,7 @@ public class NotificationsDbOperations
         return null;
     }
     
-    public async Task<List<TaskNotification>> UpdateAndAddCards(RegisteredUser user, Dictionary<string, TrelloOperations.TrelloCard> cards)
+    public async Task<List<TaskNotification>> UpdateAndAddCards(User user, Dictionary<string, TrelloOperations.TrelloCard> cards)
     {
         List<TaskNotification> newTasks = new();
         
@@ -77,13 +77,13 @@ public class NotificationsDbOperations
         return newTasks;
     }
 
-    public async Task<List<TaskNotification>> GetUserCardsFromDb(RegisteredUser trelloUser)
+    public async Task<List<TaskNotification>> GetUserCardsFromDb(User trelloUser)
     {
         var taskList = _notificationsRepository.GetAllPendingNotificationsByUserId(trelloUser.TelegramId);
         return taskList;
     }
 
-    private async Task RemoveTasksThatAreNotInTrello(RegisteredUser user, Dictionary<string, TrelloOperations.TrelloCard> cards)
+    private async Task RemoveTasksThatAreNotInTrello(User user, Dictionary<string, TrelloOperations.TrelloCard> cards)
     {
         var notifications = _notificationsRepository.GetAllPendingNotificationsByUserId(user.TelegramId);
         List<string> cardsIds = cards.Values.Select(c => c.Id).ToList();
@@ -92,7 +92,7 @@ public class NotificationsDbOperations
         await _notificationsRepository.DeleteRange(notifications);
     }
 
-    public async Task<List<RegisteredUser>> GetUsersWithNotificationsEnabled()
+    public async Task<List<User>> GetUsersWithNotificationsEnabled()
     {
         var allUsers = await _usersRepository.GetAll();
         var usersWithNotificationsList = allUsers.Where(u => u.NotificationsEnabled)

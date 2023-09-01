@@ -1,14 +1,11 @@
-using Microsoft.EntityFrameworkCore;
-using TelegramToTrello.Repositories;
-
 namespace TelegramToTrello;
 
 public class TaskDbOperations
 {
-    private readonly IRepository<TTTTask> _tttTaskRepository;
+    private readonly ITTTTaskRepository _tttTaskRepository;
     private readonly ITemplateRepository _templateRepository;
 
-    public TaskDbOperations(IRepository<TTTTask> tttTaskRepository, ITemplateRepository templateRepository)
+    public TaskDbOperations(ITTTTaskRepository tttTaskRepository, ITemplateRepository templateRepository)
     {
         _tttTaskRepository = tttTaskRepository;
         _templateRepository = templateRepository;
@@ -51,5 +48,10 @@ public class TaskDbOperations
         }
         
         await _tttTaskRepository.Update(task);
+    }
+
+    public async Task<bool> CheckIfExist(int userId)
+    {
+        return await _tttTaskRepository.CheckIfExist(userId);
     }
 }

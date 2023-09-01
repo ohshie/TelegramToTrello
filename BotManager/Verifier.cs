@@ -8,7 +8,7 @@ public class Verifier
     private readonly UserDbOperations _userDbOperations;
     private readonly TaskDbOperations _taskDbOperations;
     private readonly ITelegramBotClient _botClient;
-    private TemplatesDbOperations _templatesDbOperations;
+    private readonly TemplatesDbOperations _templatesDbOperations;
 
     public Verifier(UserDbOperations userDbOperations, ITelegramBotClient botClient, TaskDbOperations taskDbOperations, TemplatesDbOperations templatesDbOperations)
     {
@@ -18,9 +18,9 @@ public class Verifier
         _templatesDbOperations = templatesDbOperations;
     }
 
-    public async Task<RegisteredUser> GetUser(Message message)
+    public async Task<User> GetUser(Message message)
     {
-        RegisteredUser trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
+        User trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
         if (trelloUser is null)
         {
             await _botClient.SendTextMessageAsync(chatId: message.From.Id,
@@ -31,20 +31,21 @@ public class Verifier
         return trelloUser;
     }
 
-    public async Task<TTTTask> GetTask(Message message, bool creationStart = false)
+    public async Task<bool> CheckUser(int userId)
     {
-        TTTTask userTask = await _taskDbOperations.RetrieveUserTask((int)message.Chat.Id);
-
-        if (userTask == null && !creationStart)
-        {
-            await _botClient.SendTextMessageAsync(chatId: message.From.Id,
-                text: "Lets not get ahead of ourselves.\n" +
-                      "Click on new task to start task creation process");
-        }
-        
-        return userTask;
+        return await _userDbOperations.CheckIfExist(userId);
     }
 
+    public async Task<bool> CheckTask(int userId)
+    {
+        return await _taskDbOperations.CheckIfExist(userId);
+    }
+
+    public async Task<bool> CheckTemplate(int userId)
+    {
+        return await _templatesDbOperations.CheckIfIncomplete(userId);
+    }
+    
     public async Task<Template> GetTemplate(int id, bool creationStart = false)
     {
         Template template = await _templatesDbOperations.GetIncompleteTemplate(id);

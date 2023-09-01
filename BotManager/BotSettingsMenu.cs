@@ -9,27 +9,27 @@ public class BotSettingsMenu
     private readonly ITelegramBotClient _botClient;
     private readonly UserDbOperations _userDbOperations;
     private readonly MenuKeyboards _menuKeyboards;
-    private MessageRemover _remover;
-    private long _chatId;
+    private int _chatId;
     private int _messageId;
+    private readonly BotMessenger _botMessenger;
 
     public BotSettingsMenu(ITelegramBotClient botClient,
-        UserDbOperations userDbOperations, MenuKeyboards menuKeyboards, MessageRemover remover)
+        UserDbOperations userDbOperations, MenuKeyboards menuKeyboards, BotMessenger botMessenger)
     {
         _botClient = botClient;
         _userDbOperations = userDbOperations;
         _menuKeyboards = menuKeyboards;
-        _remover = remover;
+        _botMessenger = botMessenger;
     }
 
     public async Task Display(Message message)
     {
-        _chatId = message.Chat.Id;
+        _chatId = (int)message.Chat.Id;
         _messageId = message.MessageId;
         
         if (!await CheckIfRegistered(message)) return;
 
-        await _remover.Remove(_chatId, _messageId);
+        await _botMessenger.RemoveMessage(_chatId, _messageId);
 
         await _botClient.SendTextMessageAsync(chatId: _chatId,
             text: "Choose menu item from a keyboard bellow.", replyMarkup: _menuKeyboards.SettingsKeyboard());
@@ -52,12 +52,12 @@ public class BotSettingsMenu
 
     public async Task CloseMenu(Message message)
     {
-        _chatId = message.Chat.Id;
+        _chatId = (int)message.Chat.Id;
         _messageId = message.MessageId;
         
         if (!await CheckIfRegistered(message)) return;
 
-        await _remover.Remove(_chatId, _messageId);
+        await _botMessenger.RemoveMessage(_chatId, _messageId);
         
         await _botClient.SendTextMessageAsync(chatId: _chatId, text: "Back to work.",
             replyMarkup: _menuKeyboards.MainKeyboard());

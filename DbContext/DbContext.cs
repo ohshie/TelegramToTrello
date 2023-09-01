@@ -6,17 +6,18 @@ public class BotDbContext : DbContext
 {
     public BotDbContext(DbContextOptions<BotDbContext> options) : base(options) { }
     
-    public DbSet<RegisteredUser> Users { get; set; }
+    public DbSet<User> Users { get; set; }
     public DbSet<Board> Boards { get; set; }
     public DbSet<TTTTask> CreatingTasks { get; set; }
     public DbSet<Table> BoardTables { get; set; }
     public DbSet<UsersOnBoard> UsersOnBoards { get; set; }
     public DbSet<TaskNotification> TaskNotifications { get; set; }
     public DbSet<Template> Templates { get; set; }
+    public DbSet<DialogueStorage> DialogueStorages { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<RegisteredUser>()
+        modelBuilder.Entity<User>()
             .HasKey(u => u.TelegramId);
 
         modelBuilder.Entity<Template>()
@@ -30,8 +31,11 @@ public class BotDbContext : DbContext
         
         modelBuilder.Entity<UsersOnBoard>()
             .HasKey(uob => uob.Id);
+        
+        modelBuilder.Entity<DialogueStorage>()
+            .HasKey(ds => ds.Id);
 
-        modelBuilder.Entity<RegisteredUser>()
+        modelBuilder.Entity<User>()
             .HasMany(ru => ru.Boards)
             .WithMany(b => b.Users)
             .UsingEntity(etb => etb.ToTable("UsersBoards"));

@@ -7,21 +7,21 @@ namespace TelegramToTrello.TemplateManager.CreatingTemplatesOperations.AddToTemp
 public class AddNameToTemplate : TemplateCreationBaseHandler
 {
     private readonly RequestDesc _requestDesc;
-    private readonly MessageRemover _messageRemover;
+    private readonly BotMessenger _botMessenger;
 
     public AddNameToTemplate(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TemplatesDbOperations templateDbOperations, Verifier verifier, RequestDesc requestDesc, MessageRemover messageRemover) : base(botClient, userDbOperations,
+        TemplatesDbOperations templateDbOperations, Verifier verifier, RequestDesc requestDesc, BotMessenger botMessenger) : base(botClient, userDbOperations,
         templateDbOperations, verifier)
     {
         _requestDesc = requestDesc;
-        _messageRemover = messageRemover;
+        _botMessenger = botMessenger;
     }
 
-    protected override async Task HandleTask(RegisteredUser user, Template template)
+    protected override async Task HandleTask(User user, Template template)
     {
         string templateName = Message.Text;
         
-        await _messageRemover.Remove(Message.Chat.Id, (int)Message.From.Id);
+        await _botMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
         await TemplateDbOperations.AddName(template, templateName);
 
         NextTask = _requestDesc;
