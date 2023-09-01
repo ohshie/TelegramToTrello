@@ -24,6 +24,11 @@ public class TemplatesDbOperations
         return templates;
     }
 
+    public async Task<List<Template>> GetAllBoardTemplates(int userId, string boardId)
+    {
+        return await _templateRepository.GetAllTemplatesByUserAndBoard(userId, boardId);
+    }
+
     public async Task<Template> GetIncompleteTemplate(int userId)
     {
         var template = await _templateRepository.GetIncompleteTemplate(userId);

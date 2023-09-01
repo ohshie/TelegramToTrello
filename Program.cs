@@ -107,7 +107,8 @@ public class Program
         collection.AddTransient<TagsKeyboard>();
         collection.AddTransient<UsersKeyboard>();
         collection.AddTransient<DisplayTaskKeyboard>();
-        collection.AddTransient<ConfirmTemplateKeyboard>(); 
+        collection.AddTransient<ConfirmTemplateKeyboard>();
+        collection.AddTransient<TemplatesKeyboard>();
         
         // template classes
         collection.AddTransient<TemplateHandler>();
@@ -158,11 +159,16 @@ public class Program
         collection.AddTransient<DisplayCurrentTaskInfo>();
         collection.AddTransient<DropTask>();
         collection.AddTransient<PushTask>();
-
+        
+        collection.AddTransient<AddBoardToTask>();
+        
+        collection.AddTransient<CreateKeyboardWithTemplate>();
+        collection.AddTransient<AssembleTaskFromTemplate>();
+        
         collection.AddTransient<AddNameToTask>();
         collection.AddTransient<AddTagToTask>();
         collection.AddTransient<AddDescriptionToTask>();
-        collection.AddTransient<AddBoardToTask>();
+        
         collection.AddTransient<AddTableToTask>();
         collection.AddTransient<AddDateToTask>();
         collection.AddTransient<AddParticipantToTask>();

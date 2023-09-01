@@ -80,9 +80,21 @@ public class PlaceholderOperator
             return true;
         }
 
+        if (task.TaskDesc is not null && task.TaskName.Contains("##template##"))
+        {
+            await _addNameToTask.Execute(message, isTemplate: true);
+            return true;
+        }
+
         if (task.TaskDesc == "###tempdesc###")
         {
             await _addDescriptionToTask.Execute(message);
+            return true;
+        }
+
+        if (task.TaskDesc is not null && task.TaskDesc.Contains("##template##"))
+        {
+            await _addDescriptionToTask.Execute(message, isTemplate: true);
             return true;
         }
 

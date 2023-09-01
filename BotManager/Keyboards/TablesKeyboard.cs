@@ -22,15 +22,15 @@ public class TablesKeyboard
 
         if (isEdit)
         {
-            _boardType = "/editlist ";
+            _boardType = CallbackList.TaskEditlist;
         }
         else if (isTemplate)
         {
-            _boardType = "/templatelist ";
+            _boardType = CallbackList.TemplateList;
         }
         else
         {
-            _boardType = "/list ";
+            _boardType = CallbackList.List;
         }
         
         return AssembleKeyboard(selectedBoard);

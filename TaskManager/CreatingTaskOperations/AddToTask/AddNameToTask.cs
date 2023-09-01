@@ -31,8 +31,21 @@ public class AddNameToTask : TaskCreationBaseHandler
                       $"Please type a new name for a task");
             return;
         }
-        
-        await _creatingTaskDbOperations.AddName(task, Message.Text);
+
+        if (IsTemplate)
+        {
+            await _creatingTaskDbOperations.AddName(task, Message.Text, isTemplate: true);
+        }
+        else
+        {
+            await _creatingTaskDbOperations.AddName(task, Message.Text);
+        }
+
+        if (IsTemplate)
+        {
+            NextTask.IsTemplate = true;
+            return;
+        }
         
         if (task.InEditMode)
         {

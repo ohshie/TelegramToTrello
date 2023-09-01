@@ -30,7 +30,9 @@ public class CallbackFactory
         AttachmentRequest attachmentRequest,
         AddBoardToTemplate addBoardToTemplate,
         AddTableToTemplate addTableToTemplate,
-        ConfirmTemplate confirmTemplate
+        ConfirmTemplate confirmTemplate,
+        AssembleTaskFromTemplate assembleTaskFromTemplate,
+        CreateKeyboardWithTags createKeyboardWithTags
     )
     {
         _botTaskFactory = new()
@@ -55,8 +57,10 @@ public class CallbackFactory
             { CallbackList.AddAttachment, callbackQuery => attachmentRequest.Execute(callbackQuery)},
             { CallbackList.TemplateBoard, addBoardToTemplate.Execute },
             { CallbackList.TemplateList, addTableToTemplate.Execute },
-            { CallbackList.TemplateSave, confirmTemplate.Execute }
-            
+            { CallbackList.TemplateSave, confirmTemplate.Execute },
+            { CallbackList.Template, query => assembleTaskFromTemplate.Execute(query) },
+            { CallbackList.TemplateTag, query => createKeyboardWithTags.Execute(query, isTemplate: true) },
+            { CallbackList.Skip, query => createKeyboardWithTags.Execute(query) }
         };
     }
 

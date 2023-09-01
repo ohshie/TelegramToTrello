@@ -70,15 +70,31 @@ public class CreatingTaskDbOperations
         return false;
     }
     
-    public async Task AddPlaceholderName(TTTTask userTask)
+    public async Task AddPlaceholderName(TTTTask userTask, bool isTemplate = false)
     {
-        userTask.TaskName = "###tempname###";
+        if (isTemplate)
+        {
+            userTask.TaskName += "##template##"; 
+        }
+        else
+        {
+            userTask.TaskName = "###tempname###";
+        }
+        
         await _taskRepository.Update(userTask);
     }
     
-    public async Task AddPlaceholderDescription(TTTTask userTask)
+    public async Task AddPlaceholderDescription(TTTTask userTask, bool isTemplate = false)
     {
-        userTask.TaskDesc = "###tempdesc###";
+        if (isTemplate)
+        {
+            userTask.TaskDesc += "##template##";
+        }
+        else
+        {
+            userTask.TaskDesc = "###tempdesc###";
+        }
+        
         await _taskRepository.Update(userTask);
     }
 
@@ -94,15 +110,37 @@ public class CreatingTaskDbOperations
         await _taskRepository.Update(userTask);
     }
     
-    public async Task AddName(TTTTask userTask,string taskName)
+    public async Task AddName(TTTTask userTask,string taskName, bool isTemplate = false)
     {
-        userTask.TaskName = taskName;
+        if (isTemplate)
+        {
+            userTask.TaskName = userTask.TaskName
+                .Substring(0, userTask.TaskName.Length - "##template##".Length)
+                .Trim();
+            userTask.TaskName += " "+taskName;
+        }
+        else
+        {
+            userTask.TaskName = taskName;
+        }
+        
         await _taskRepository.Update(userTask);
     }
     
-    public async Task AddDescription(TTTTask userTask, string description)
+    public async Task AddDescription(TTTTask userTask, string description, bool isTemplate = false)
     {
-        userTask.TaskDesc = description;
+        if (isTemplate)
+        {
+            userTask.TaskDesc = userTask.TaskDesc
+                .Substring(0, userTask.TaskName.Length - "##template##".Length)
+                .Trim();
+            userTask.TaskDesc += " " + description;
+        }
+        else
+        {
+            userTask.TaskDesc = description;
+        }
+        
         await _taskRepository.Update(userTask);
     }
 

@@ -7,15 +7,18 @@ namespace TelegramToTrello.TaskManager.CreatingTaskOperations.AddToTask;
 public class AddBoardToTask : TaskCreationBaseHandler
 {
     private readonly CreatingTaskDbOperations _creatingTaskDbOperations;
+    private readonly CreateKeyboardWithTemplate _createKeyboardWithTemplate;
     private readonly CreateKeyboardWithTables _createKeyboardWithTables;
 
     public AddBoardToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations,
         CreateKeyboardWithTables createKeyboardWithTables,
-        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier,
+        CreateKeyboardWithTemplate createKeyboardWithTemplate) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _createKeyboardWithTables = createKeyboardWithTables;
         _creatingTaskDbOperations = creatingTaskDbOperations;
+        _createKeyboardWithTemplate = createKeyboardWithTemplate;
     }
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
@@ -26,16 +29,16 @@ public class AddBoardToTask : TaskCreationBaseHandler
         if (string.IsNullOrEmpty(boardName))
         {
             await BotClient.SendTextMessageAsync(text: "Please choose board name from keyboard menu.",
-                chatId: Message.Chat.Id,
-                replyToMessageId: Message.MessageId);
+                chatId: user.TelegramId);
             NextTask = null;
             return;
         }
 
-        NextTask = _createKeyboardWithTables;
+        NextTask = _createKeyboardWithTemplate;
         
         if (IsEdit)
         {
+            NextTask = _createKeyboardWithTables;
             NextTask.IsEdit = true;
         }
     }
@@ -45,11 +48,11 @@ public class AddBoardToTask : TaskCreationBaseHandler
         string boardId;
         if (IsEdit)
         {
-            boardId = CallbackQuery.Data.Substring("/editboard".Length).Trim();
+            boardId = CallbackQuery.Data.Substring(CallbackList.TaskEditboard.Length).Trim();
         }
         else
         {
-            boardId = CallbackQuery.Data.Substring("/board".Length).Trim();
+            boardId = CallbackQuery.Data.Substring(CallbackList.Board.Length).Trim();
         }
 
         return boardId;

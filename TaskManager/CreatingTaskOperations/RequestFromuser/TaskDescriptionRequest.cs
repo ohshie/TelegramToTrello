@@ -21,8 +21,15 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        await _creatingTaskDbOperations.AddPlaceholderDescription(task);
-
+        if (IsTemplate)
+        {
+            await _creatingTaskDbOperations.AddPlaceholderDescription(task, isTemplate: true);
+        }
+        else
+        {
+            await _creatingTaskDbOperations.AddPlaceholderDescription(task);
+        }
+        
         if (IsEdit)
         {
             await SendRequestToUser(task);

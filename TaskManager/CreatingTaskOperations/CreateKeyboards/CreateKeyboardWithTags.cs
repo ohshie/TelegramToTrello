@@ -18,9 +18,17 @@ public class CreateKeyboardWithTags : TaskCreationBaseHandler
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
         InlineKeyboardMarkup replyKeyboardMarkup = _tagsKeyboard.KeyboardTagChoice();
-        
-        await BotClient.EditMessageTextAsync(chatId: CallbackQuery.Message.Chat.Id,
-            messageId: CallbackQuery.Message.MessageId,
-            text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
+
+        if (IsTemplate)
+        {
+            await BotClient.SendTextMessageAsync(chatId: user.TelegramId,
+                text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
+        }
+        else
+        {
+            await BotClient.EditMessageTextAsync(chatId: user.TelegramId,
+                messageId: CallbackQuery.Message.MessageId,
+                text: $"Choose channel tag according to your task channel", replyMarkup: replyKeyboardMarkup);
+        }
     }
 }

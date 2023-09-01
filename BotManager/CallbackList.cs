@@ -3,7 +3,12 @@ namespace TelegramToTrello.BotManager;
 public static class CallbackList
 {
     private const string Slash = "/";
+    
     public const string Board =  Slash+"board";
+    
+    public const string Skip = Slash + "skip";
+    public const string Template = Slash + "template";
+    
     public const string List = Slash+"list";
     public const string Tag = Slash+"tag";
     public const string Name = Slash+"name";
@@ -21,7 +26,8 @@ public static class CallbackList
     public const string TaskMove = Slash+"taskMove";
     public const string AttachmentsDone = "press_this_when_done";
     public const string AddAttachment = Slash+"addattachment";
-    
+
+    public const string TemplateTag = Slash + "templatetag";
     public const string TemplateBoard = Slash+"templateboard";
     public const string TemplateList = Slash+"templatelist";
     public const string TemplateSave = Slash + "templateSave";

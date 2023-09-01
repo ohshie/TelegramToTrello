@@ -14,7 +14,8 @@ public class AddTagToTask : TaskCreationBaseHandler
     public AddTagToTask(ITelegramBotClient botClient, UserDbOperations userDbOperations,
         TaskDbOperations taskDbOperations, 
         TaskNameRequest taskNameRequest, 
-        CreatingTaskDbOperations creatingTaskDbOperations, Verifier verifier) : base(botClient, userDbOperations,
+        CreatingTaskDbOperations creatingTaskDbOperations,
+        Verifier verifier) : base(botClient, userDbOperations,
         taskDbOperations, verifier)
     {
         _taskNameRequest = taskNameRequest;
@@ -37,5 +38,6 @@ public class AddTagToTask : TaskCreationBaseHandler
         await _creatingTaskDbOperations.AddTag(task,tag);
         
         NextTask = _taskNameRequest;
+        if (IsTemplate) NextTask.IsTemplate = true;
     }
 }

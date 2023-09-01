@@ -14,10 +14,12 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         TaskDbOperations taskDbOperations,
         CreateKeyboardWithUsers createKeyboardWithUsers,
         CreatingTaskDbOperations creatingTaskDbOperations,
-        DisplayCurrentTaskInfo displayCurrentTaskInfo, Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
+        DisplayCurrentTaskInfo displayCurrentTaskInfo,
+        Verifier verifier) : base(botClient, userDbOperations, taskDbOperations, verifier)
     {
         _creatingTaskDbOperations = creatingTaskDbOperations;
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
+        
         NextTask = createKeyboardWithUsers;
     }
 
@@ -32,8 +34,16 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
             NextTask = null;
             return;
         }
-        
-        await _creatingTaskDbOperations.AddDescription(task,Message.Text);
+
+        if (IsTemplate)
+        {
+            await _creatingTaskDbOperations.AddDescription(task,Message.Text, isTemplate: true);
+            NextTask.IsTemplate = true;
+        }
+        else
+        {
+            await _creatingTaskDbOperations.AddDescription(task,Message.Text);
+        }
         
         if (task.InEditMode)
         {

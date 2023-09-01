@@ -4,8 +4,16 @@ namespace TelegramToTrello.BotManager;
 
 public class TagsKeyboard
 {
+    public bool IsTemplate = false;
+    private string Callback = CallbackList.Tag;
+    
     public InlineKeyboardMarkup KeyboardTagChoice()
     {
+        if (IsTemplate)
+        {
+            Callback = CallbackList.TemplateTag;
+        }
+        
         if (Enum.GetValues(typeof(ChanelTags)).Length > 8)
         {
             InlineKeyboardMarkup replyKeyboardMarkup = new(TwoRowKeyboard());
@@ -31,9 +39,9 @@ public class TagsKeyboard
                 keyboardButtonsList.Add(new[]
                 {
                     InlineKeyboardButton.WithCallbackData($"{tags[i]}",
-                        $"/tag {tags[i]}"),
+                        $"{Callback} {tags[i]}"),
                     InlineKeyboardButton.WithCallbackData($"{tags[i+1]}",
-                        $"/tag {tags[i+1]}")
+                        $"{Callback} {tags[i+1]}")
                 });
             }
             else
@@ -41,7 +49,7 @@ public class TagsKeyboard
                 keyboardButtonsList.Add(new[]
                 {
                     InlineKeyboardButton.WithCallbackData($"{tags[i]}",
-                        $"/tag {tags[i]}")
+                        $"{Callback} {tags[i]}")
                 });
             }
         }
@@ -54,7 +62,7 @@ public class TagsKeyboard
 
         foreach (var tag in Enum.GetValues(typeof(ChanelTags)))
         {
-            keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData($"{tag}",$"/tag {tag}") });
+            keyboardButtonsList.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData($"{tag}",$"{Callback} {tag}") });
         }
 
         return keyboardButtonsList;

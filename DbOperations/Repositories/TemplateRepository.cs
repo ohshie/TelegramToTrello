@@ -51,6 +51,13 @@ public class TemplateRepository : ITemplateRepository
             .ToListAsync();
     }
 
+    public async Task<List<Template>> GetAllTemplatesByUserAndBoard(int userId, string boardId)
+    {
+        return await _dbContext.Templates
+            .Where(t => t.UserId == userId && t.BoardId == boardId && t.Complete)
+            .ToListAsync();
+    }
+    
     public async Task<Template> GetIncompleteTemplate(int id)
     {
         return await _dbContext.Templates

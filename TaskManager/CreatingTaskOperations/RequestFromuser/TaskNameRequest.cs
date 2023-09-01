@@ -20,7 +20,15 @@ public class TaskNameRequest : TaskCreationBaseHandler
 
     protected override async Task HandleTask(RegisteredUser user, TTTTask task)
     {
-        await _creatingTaskDbOperations.AddPlaceholderName(task);
+        if (IsTemplate)
+        {
+            await _creatingTaskDbOperations.AddPlaceholderName(task, isTemplate: true);
+        }
+        else
+        {
+            await _creatingTaskDbOperations.AddPlaceholderName(task);
+        }
+        
         
         await SendRequestToUser(task);
     }
@@ -33,6 +41,14 @@ public class TaskNameRequest : TaskCreationBaseHandler
         }
         
         await _messageRemover.Remove(CallbackQuery.Message.Chat.Id, CallbackQuery.Message.MessageId);
+
+        if (IsTemplate)
+        {
+            await BotClient.SendTextMessageAsync(text: $"Add something to {task.TaskName
+                .Substring(0, task.TaskName.Length - "##template##".Length).Trim()}",
+                chatId: Message.Chat.Id);
+            return;
+        }
         
         await BotClient.SendTextMessageAsync(text: "Now please type name of your task in the next message.",
             chatId: Message.Chat.Id);
