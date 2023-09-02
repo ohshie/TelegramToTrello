@@ -30,7 +30,7 @@ public class Program
         Configuration.InitializeVariables();
 
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();

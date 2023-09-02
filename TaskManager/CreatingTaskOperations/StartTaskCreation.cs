@@ -34,17 +34,17 @@ public class StartTaskCreation
         var chatId = (int)message.Chat.Id;
         var messageId = message.MessageId;
         
+        await _botMessenger.RemoveMessage(chatId, messageId);
+        
         var userExist = await _verifier.CheckUser(chatId);
         if (!userExist)
         {
-            await _botMessenger.RemoveMessage(chatId, messageId);
             return;
         }
 
         var taskExist = await _verifier.CheckTask(chatId);
         if (taskExist)
         {
-            await _botMessenger.RemoveMessage(chatId, messageId);
             await _botMessenger.SendMessage(chatId: chatId,
                 text: "Looks like you are already in the process of creating a task.\n" +
                       "Please finish it first or drop it by pressing cancel task");
