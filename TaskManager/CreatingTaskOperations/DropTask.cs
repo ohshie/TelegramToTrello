@@ -11,12 +11,12 @@ public class DropTask : TaskCreationBaseHandler
         base(botClient, userDbOperations, verifier, botMessenger, taskDbOperations)
     {}
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         await TaskDbOperations.RemoveEntry(task);
 
-        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
-        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await BotMessenger.RemoveLastBotMessage(task.Id);
+        await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         
         await BotMessenger.SendMessage(chatId: (int)Message.Chat.Id,
             text: "Task removed. You can now create a new one");

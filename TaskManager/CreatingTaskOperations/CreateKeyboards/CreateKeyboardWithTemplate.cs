@@ -23,11 +23,11 @@ public class CreateKeyboardWithTemplate : TaskCreationBaseHandler
         _templatesKeyboard = templatesKeyboard;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
-        var templates = await _templatesDbOperations.GetAllBoardTemplates(user.TelegramId, task.TrelloBoardId);
+        var templates = await _templatesDbOperations.GetAllBoardTemplates(task.Id, task.TrelloBoardId);
 
-        if (templates.Count == null)
+        if (templates.Count == 0)
         {
             NextTask = _createKeyboardWithTables;
             return;
@@ -35,7 +35,7 @@ public class CreateKeyboardWithTemplate : TaskCreationBaseHandler
         
         InlineKeyboardMarkup keyboardMarkup = _templatesKeyboard.KeyboardMarkup(templates);
 
-        await BotMessenger.UpdateMessage(chatId: user.TelegramId, messageId: Message.MessageId,text:
+        await BotMessenger.UpdateMessage(chatId: task.Id, messageId: Message.MessageId,text:
             "You can choose a template if you wish", keyboardMarkup: keyboardMarkup);
     }
 }

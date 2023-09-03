@@ -24,18 +24,18 @@ public class AddNameToTask : TaskCreationBaseHandler
         NextTask = taskDescriptionRequest;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (Message.Text.StartsWith("/"))
         {
-            await BotMessenger.SendMessage(user.TelegramId,
+            await BotMessenger.SendMessage(chatId: task.Id,
                 text: $"Task name should not start with \"/\"\n" +
                       $"Please type a new name for a task");
             return;
         }
 
-        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
-        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await BotMessenger.RemoveLastBotMessage(task.Id);
+        await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         
         if (IsTemplate)
         {

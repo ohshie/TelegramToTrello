@@ -36,7 +36,7 @@ public abstract class TemplateCreationBaseHandler
         Template template = await _verifier.GetTemplate(user.TelegramId);
         if (template is null) return;
 
-        await HandleTask(user, template);
+        await HandleTask(template);
         
         if (NextTask != null)
         {
@@ -54,7 +54,7 @@ public abstract class TemplateCreationBaseHandler
         Template template = await _verifier.GetTemplate(user.TelegramId);
         if (template is null) return;
         
-        await HandleTask(user, template);
+        await HandleTask(template);
 
         if (NextTask != null)
         {
@@ -62,5 +62,5 @@ public abstract class TemplateCreationBaseHandler
         }
     }
     
-    protected abstract Task HandleTask(User user, Template template);
+    protected abstract Task HandleTask(Template template);
 }

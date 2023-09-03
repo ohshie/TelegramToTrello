@@ -21,17 +21,17 @@ public class TaskDateRequest : TaskCreationBaseHandler
         _dateKeyboard = dateKeyboard;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         await _creatingTaskDbOperations.AddPlaceholderDate(task);
         
         if (IsEdit)
         {
-            await ToggleEditModeRequestDate(user, task);
+            await ToggleEditModeRequestDate(task);
             return;
         }
         
-        Message newMessage = await BotMessenger.SendMessage(chatId: user.TelegramId,
+        Message newMessage = await BotMessenger.SendMessage(chatId: task.Id,
             text: "All participants added\n\n" +
                   "Now please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                   "Due date must be in the future.",
@@ -40,16 +40,16 @@ public class TaskDateRequest : TaskCreationBaseHandler
         await _creatingTaskDbOperations.MarkMessage(task, newMessage.MessageId);
     }
 
-    private async Task ToggleEditModeRequestDate(User user,TTTTask task)
+    private async Task ToggleEditModeRequestDate(TTTTask task)
     {
         await TaskDbOperations.ToggleEditModeForTask(task);
 
-        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         
         var newMessage = await BotMessenger.SendMessage(
             text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                   "Due date must be in the future.",
-            chatId: user.TelegramId,
+            chatId: task.Id,
             replyKeyboardMarkup: _dateKeyboard.CreateKeyboard());
         
         await _creatingTaskDbOperations.MarkMessage(task,newMessage.MessageId);

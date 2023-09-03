@@ -19,11 +19,11 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
     }
 
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         var replyMarkup = _displayTaskKeyboard.ReplyKeyboard();
         
-        await BotMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         
         await BotMessenger.SendMessage(text: "Lets review current task:\n\n" +
                                                    $"Task name: [{task.Tag}] {task.TaskName}\n" +
@@ -32,7 +32,7 @@ public class DisplayCurrentTaskInfo : TaskCreationBaseHandler
                                                    $"Participants: {task.TaskPartName}\n"+
                                                    $"Due date: {DateTime.Parse(task.Date, CultureInfo.InvariantCulture)}\n\n" +
                                                    $"If everything is correct press push to post this task to trello\n", 
-            chatId: user.TelegramId, 
+            chatId: task.Id, 
             replyKeyboardMarkup: replyMarkup);
     }
 }

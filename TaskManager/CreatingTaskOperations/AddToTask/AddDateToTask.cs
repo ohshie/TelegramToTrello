@@ -22,7 +22,7 @@ public class AddDateToTask : TaskCreationBaseHandler
         NextTask = displayCurrentTaskInfo;
     }
     
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         var possibleDate = GetPossibleDate();
 
@@ -31,11 +31,11 @@ public class AddDateToTask : TaskCreationBaseHandler
             NextTask = null;
             await BotMessenger.SendMessage(text: "Please enter date in the format like this - 24.02.2022 04:30 (dd.mm.yyyy hh:mm)\n" +
                                                        "Due date must be in the future.",
-                chatId: user.TelegramId);
+                chatId: task.Id);
             return;
         }
         
-        await BotMessenger.RemoveMessage(user.TelegramId, task.LastBotMessage);
+        await BotMessenger.RemoveMessage(chatId: task.Id, task.LastBotMessage);
         await _creatingTaskDbOperations.AddDate(task, possibleDate);
         
         if (task.InEditMode)  await TaskDbOperations.ToggleEditModeForTask(task);

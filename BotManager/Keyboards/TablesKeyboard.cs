@@ -13,12 +13,12 @@ public class TablesKeyboard
 
     private string? _boardType;
     
-    public async Task<InlineKeyboardMarkup> KeyboardTableChoice(User user, 
+    public async Task<InlineKeyboardMarkup> KeyboardTableChoice(int telegramId, 
         string boardId, 
         bool isEdit = false, 
         bool isTemplate = false)
     {
-        Board selectedBoard = await _dbOperations.RetrieveBoard(user.TelegramId, boardId);
+        Board selectedBoard = await _dbOperations.RetrieveBoard(telegramId, boardId);
 
         if (isEdit)
         {
@@ -62,9 +62,9 @@ public class TablesKeyboard
                 keyboardButtonsList.Add(new[]
                 {
                     InlineKeyboardButton.WithCallbackData($"{tables[i]}",
-                         _boardType+tables[i]),
+                        $"{_boardType} {tables[i]}"),
                     InlineKeyboardButton.WithCallbackData($"{tables[i+1]}",
-                        _boardType+tables[i])
+                        $"{_boardType} {tables[i]}")
                 });
             }
             else
@@ -72,7 +72,7 @@ public class TablesKeyboard
                 keyboardButtonsList.Add(new[]
                 {
                     InlineKeyboardButton.WithCallbackData($"{tables[i]}",
-                        _boardType+tables[i])
+                        $"{_boardType} {tables[i]}")
                 });
             }
         }
@@ -87,7 +87,7 @@ public class TablesKeyboard
         {
             keyboardButtonsList.Add(new InlineKeyboardButton[]
             {
-                InlineKeyboardButton.WithCallbackData($"{table.Name}",_boardType+table.Name)
+                InlineKeyboardButton.WithCallbackData($"{table.Name}",$"{_boardType} {table.Name}")
             }); 
         }
         

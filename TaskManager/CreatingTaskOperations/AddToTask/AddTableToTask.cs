@@ -23,11 +23,11 @@ public class AddTableToTask : TaskCreationBaseHandler
         _createKeyboardWithUsers = createKeyboardWithUsers;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         string listName = IsEdit
-            ? CallbackQuery.Data.Substring("/editlist".Length).Trim()
-            : CallbackQuery.Data.Substring("/list".Length).Trim();
+            ? CallbackQuery.Data.Substring(CallbackList.TaskEditlist.Length).Trim()
+            : CallbackQuery.Data.Substring(CallbackList.List.Length).Trim();
         
         await _creatingTaskDbOperations.AddTable(task, listName);
 

@@ -13,7 +13,6 @@ public abstract class TaskCreationBaseHandler
     protected readonly BotMessenger BotMessenger;
     
     protected readonly TaskDbOperations TaskDbOperations;
-    private readonly Verifier _verifier;
 
     protected internal bool IsEdit;
     protected internal bool IsTemplate;
@@ -26,7 +25,6 @@ public abstract class TaskCreationBaseHandler
     {
         BotClient = botClient;
         _userDbOperations = userDbOperations;
-        _verifier = verifier;
         BotMessenger = botMessenger;
         TaskDbOperations = taskDbOperations;
     }
@@ -37,13 +35,12 @@ public abstract class TaskCreationBaseHandler
         IsEdit = isEdit;
         IsTemplate = isTemplate;
 
-        if (!await _verifier.CheckUser((int)message.From.Id)) return;
-        if (!await _verifier.CheckTask((int)message.From.Id)) return;
+        if (!await _userDbOperations.CheckIfExist((int)message.From.Id)) return;
+        if (!await TaskDbOperations.CheckIfExist((int)message.From.Id)) return;
         
-        User user = await _userDbOperations.RetrieveTrelloUser((int)message.From.Id);
-        TTTTask task = await TaskDbOperations.RetrieveUserTask(user.TelegramId);
+        TTTTask task = await TaskDbOperations.RetrieveUserTask((int)message.From.Id);
         
-        await HandleTask(user, task);
+        await HandleTask(task);
 
         if (NextTask != null)
         {
@@ -61,13 +58,12 @@ public abstract class TaskCreationBaseHandler
         CallbackQuery = callback;
         Message = callback.Message;
         
-        if (!await _verifier.CheckUser((int)callback.From.Id)) return;
-        if (!await _verifier.CheckTask((int)callback.From.Id)) return;
-        
-        User user = await _userDbOperations.RetrieveTrelloUser((int)callback.From.Id);
+        if (!await _userDbOperations.CheckIfExist((int)callback.From.Id)) return;
+        if (!await TaskDbOperations.CheckIfExist((int)callback.From.Id)) return;
+
         TTTTask task = await TaskDbOperations.RetrieveUserTask((int)callback.From.Id);
         
-        await HandleTask(user, task);
+        await HandleTask(task);
         
         if (NextTask != null)
         {
@@ -85,5 +81,5 @@ public abstract class TaskCreationBaseHandler
         }
     }
 
-    protected abstract Task HandleTask(User user, TTTTask task);
+    protected abstract Task HandleTask(TTTTask task);
 }

@@ -16,13 +16,13 @@ public class CreateKeyboardWithTables : TaskCreationBaseHandler
 
     private readonly TablesKeyboard _tablesKeyboard;
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         InlineKeyboardMarkup replyKeyboardMarkup = IsEdit
-            ? await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId, isEdit: true)
-                                        : await _tablesKeyboard.KeyboardTableChoice(user, task.TrelloBoardId);
+            ? await _tablesKeyboard.KeyboardTableChoice(task.Id, task.TrelloBoardId, isEdit: true)
+                                        : await _tablesKeyboard.KeyboardTableChoice(task.Id, task.TrelloBoardId);
         
-        await BotMessenger.UpdateMessage(chatId: user.TelegramId,
+        await BotMessenger.UpdateMessage(chatId: task.Id,
                 messageId: CallbackQuery.Message.MessageId,
                 text: $"Now choose list on {task.TrelloBoardName}", 
                 keyboardMarkup: replyKeyboardMarkup);

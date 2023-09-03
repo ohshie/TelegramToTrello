@@ -6,17 +6,15 @@ namespace TelegramToTrello.BotManager;
 
 public class BotSettingsMenu
 {
-    private readonly ITelegramBotClient _botClient;
     private readonly UserDbOperations _userDbOperations;
     private readonly MenuKeyboards _menuKeyboards;
     private int _chatId;
     private int _messageId;
     private readonly BotMessenger _botMessenger;
 
-    public BotSettingsMenu(ITelegramBotClient botClient,
-        UserDbOperations userDbOperations, MenuKeyboards menuKeyboards, BotMessenger botMessenger)
+    public BotSettingsMenu(UserDbOperations userDbOperations, 
+        MenuKeyboards menuKeyboards, BotMessenger botMessenger)
     {
-        _botClient = botClient;
         _userDbOperations = userDbOperations;
         _menuKeyboards = menuKeyboards;
         _botMessenger = botMessenger;
@@ -31,17 +29,18 @@ public class BotSettingsMenu
 
         await _botMessenger.RemoveMessage(_chatId, _messageId);
 
-        await _botClient.SendTextMessageAsync(chatId: _chatId,
-            text: "Choose menu item from a keyboard bellow.", replyMarkup: _menuKeyboards.SettingsKeyboard());
+        await _botMessenger.SendMessage(chatId: _chatId,
+            text: "Choose menu item from a keyboard bellow.", 
+            replyKeyboardMarkup: _menuKeyboards.SettingsKeyboard());
     }
 
     private async Task<bool> CheckIfRegistered(Message message)
     {
         if (message.From.Id == null) return false;
-        var user = await _userDbOperations.RetrieveTrelloUser((int)message.From.Id);
-        if (user == null)
+        var userExist = await _userDbOperations.CheckIfExist((int)message.From.Id);
+        if (!userExist)
         {
-            await _botClient.SendTextMessageAsync(chatId: message.Chat.Id,
+            await _botMessenger.SendMessage(chatId: (int)message.Chat.Id,
                 text: "Looks like you haven't registered yet. Type /register first and follow registration process");
 
             return false;
@@ -59,7 +58,7 @@ public class BotSettingsMenu
 
         await _botMessenger.RemoveMessage(_chatId, _messageId);
         
-        await _botClient.SendTextMessageAsync(chatId: _chatId, text: "Back to work.",
-            replyMarkup: _menuKeyboards.MainKeyboard());
+        await _botMessenger.SendMessage(chatId: _chatId, text: "Back to work.",
+            replyKeyboardMarkup: _menuKeyboards.MainKeyboard());
     }
 }

@@ -17,11 +17,11 @@ public class AddNameToTemplate : TemplateCreationBaseHandler
         _botMessenger = botMessenger;
     }
 
-    protected override async Task HandleTask(User user, Template template)
+    protected override async Task HandleTask(Template template)
     {
         string templateName = Message.Text;
         
-        await _botMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await _botMessenger.RemoveMessage(chatId: template.UserId, Message.MessageId);
         await TemplateDbOperations.AddName(template, templateName);
 
         NextTask = _requestDesc;

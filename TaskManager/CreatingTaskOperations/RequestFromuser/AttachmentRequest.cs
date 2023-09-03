@@ -17,12 +17,12 @@ public class AttachmentRequest : TaskCreationBaseHandler
         _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         await _creatingTaskDbOperations.WaitingForAttachmentToggle(task);
 
         var botRequest = await BotMessenger.SendMessage(text: "Drag and drop attachment onto bot dialog now",
-            chatId: user.TelegramId,
+            chatId: task.Id,
             replyKeyboardMarkup: CreateKeyboard());
         
         await _creatingTaskDbOperations.MarkMessage(task, botRequest.MessageId);

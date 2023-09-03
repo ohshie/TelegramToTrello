@@ -17,7 +17,7 @@ public class AssembleTaskFromTemplate : TaskCreationBaseHandler
         NextTask.IsTemplate = true;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         int templateId = int.Parse(CallbackQuery.Data
             .Substring(CallbackList.Template.Length).Trim());

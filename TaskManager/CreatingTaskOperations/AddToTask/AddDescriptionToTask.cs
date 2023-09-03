@@ -23,20 +23,19 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         NextTask = createKeyboardWithUsers;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (Message.Text.StartsWith("/"))
         {
-            await BotClient.SendTextMessageAsync(Message.Chat.Id,
-                replyToMessageId: Message.MessageId,
+            await BotMessenger.SendMessage(chatId: task.Id,
                 text: $"Task description should not start with \"/\"\n" +
                       $"Please type a new description for a task");
             NextTask = null;
             return;
         }
 
-        await BotMessenger.RemoveLastBotMessage(user.TelegramId);
-        await BotMessenger.RemoveMessage(chatId: user.TelegramId, messageId: Message.MessageId);
+        await BotMessenger.RemoveLastBotMessage(task.Id);
+        await BotMessenger.RemoveMessage(chatId: task.Id, messageId: Message.MessageId);
         
         if (IsTemplate)
         {

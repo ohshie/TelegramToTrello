@@ -19,7 +19,7 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
 
     private readonly UsersKeyboard _usersKeyboard;
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (IsEdit)
         {
@@ -31,12 +31,12 @@ public class CreateKeyboardWithUsers : TaskCreationBaseHandler
         if (CallbackQuery == null)
         {
             await BotMessenger.SendMessage(text: "choose participant from a list",
-                chatId: user.TelegramId, 
+                chatId: task.Id, 
                 replyKeyboardMarkup: replyKeyboardMarkup);
             return;
         }
 
-        await BotMessenger.UpdateMessage(chatId: user.TelegramId,
+        await BotMessenger.UpdateMessage(chatId: task.Id,
             messageId: CallbackQuery.Message.MessageId,
             text: $"Choose participant from a list", 
             replyKeyboardMarkup);

@@ -5,11 +5,18 @@ namespace TelegramToTrello.BotManager;
 public class BoardsKeyboard
 {
     private string? _boardType;
-    
-    public InlineKeyboardMarkup KeyboardBoardChoice(User? user, 
+    private readonly UserDbOperations _userDbOperations;
+
+    public BoardsKeyboard(UserDbOperations userDbOperations)
+    {
+        _userDbOperations = userDbOperations;
+    }
+
+    public async Task<InlineKeyboardMarkup> KeyboardBoardChoice(int telegramId, 
         bool IsEdit = false, 
         bool isTemplate = false)
     {
+        var user = await _userDbOperations.RetrieveTrelloUser(telegramId);
         Board?[] boards = user.Boards.ToArray();
 
         if (IsEdit)

@@ -18,7 +18,7 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
     }
     
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (IsTemplate)
         {
@@ -33,11 +33,11 @@ public class TaskDescriptionRequest : TaskCreationBaseHandler
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
             await BotMessenger.SendMessage(text: "Now please type name of your task in the next message.",
-                chatId: user.TelegramId);
+                chatId: task.Id);
             return;
         }
         
-        await BotMessenger.SendMessage(user.TelegramId,
+        await BotMessenger.SendMessage(chatId: task.Id,
             text: $"Task name successfully set to: {Message.Text}\n" +
                   $"Now please type description of your task in the next message.");
     }

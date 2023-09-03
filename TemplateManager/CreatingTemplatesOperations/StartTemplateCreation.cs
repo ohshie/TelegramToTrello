@@ -24,18 +24,11 @@ public class StartTemplateCreation
 
     public async Task CreateTemplate(Message message)
     {
-        if (await _verifier.CheckUser((int)message.From.Id))
+        if (!await _verifier.CheckUser((int)message.From.Id))
         {
             await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
             return;
         }
-
-        if (await _verifier.CheckTemplate((int)message.From.Id))
-        {
-            await _botMessenger.RemoveMessage((int)message.Chat.Id, message.MessageId);
-            return;
-        }
-        
         
         Template template = await _verifier.GetTemplate((int)message.From.Id, creationStart: true);
         if (template is not null)

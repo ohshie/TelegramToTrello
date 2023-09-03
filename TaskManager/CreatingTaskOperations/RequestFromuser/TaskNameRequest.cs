@@ -17,7 +17,7 @@ public class TaskNameRequest : TaskCreationBaseHandler
         _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (IsTemplate)
         {
@@ -28,17 +28,17 @@ public class TaskNameRequest : TaskCreationBaseHandler
             await _creatingTaskDbOperations.AddPlaceholderName(task);
         }
         
-        await SendRequestToUser(task, user);
+        await SendRequestToUser(task);
     }
 
-    private async Task SendRequestToUser(TTTTask task, User user)
+    private async Task SendRequestToUser(TTTTask task)
     {
         if (IsEdit)
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
         }
         
-        await BotMessenger.RemoveMessage(chatId: user.TelegramId, CallbackQuery.Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: task.Id, CallbackQuery.Message.MessageId);
 
         if (IsTemplate)
         {
@@ -46,11 +46,11 @@ public class TaskNameRequest : TaskCreationBaseHandler
                 .Substring(0, task.TaskName.Length - "##template##".Length).Trim()}";
             
             await BotMessenger.SendMessage(text: messageText,
-                chatId: user.TelegramId);
+                chatId: task.Id);
             return;
         }
         
         await BotMessenger.SendMessage(text: "Now please type name of your task in the next message.",
-            chatId: user.TelegramId);
+            chatId: task.Id);
     }
 }

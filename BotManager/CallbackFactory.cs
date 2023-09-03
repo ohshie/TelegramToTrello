@@ -32,7 +32,8 @@ public class CallbackFactory
         AddTableToTemplate addTableToTemplate,
         ConfirmTemplate confirmTemplate,
         AssembleTaskFromTemplate assembleTaskFromTemplate,
-        CreateKeyboardWithTags createKeyboardWithTags
+        CreateKeyboardWithTags createKeyboardWithTags,
+        CreateKeyboardWithTables createKeyboardWithTables
     )
     {
         _botTaskFactory = new()
@@ -60,7 +61,7 @@ public class CallbackFactory
             { CallbackList.TemplateSave, confirmTemplate.Execute },
             { CallbackList.Template, query => assembleTaskFromTemplate.Execute(query) },
             { CallbackList.TemplateTag, query => createKeyboardWithTags.Execute(query, isTemplate: true) },
-            { CallbackList.Skip, query => createKeyboardWithTags.Execute(query) }
+            { CallbackList.Skip, query => createKeyboardWithTables.Execute(query) }
         };
     }
 

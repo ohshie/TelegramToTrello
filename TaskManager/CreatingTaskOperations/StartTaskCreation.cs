@@ -29,7 +29,8 @@ public class StartTaskCreation
     
     public async Task CreateTask(Message message)
     {
-        await _botMessenger.RemoveLastBotMessage((int)(message.From.Id));
+        // not sure how to fix it yet.
+        //await _botMessenger.RemoveLastBotMessage((int)(message.From.Id));
         
         var chatId = (int)message.Chat.Id;
         var messageId = message.MessageId;

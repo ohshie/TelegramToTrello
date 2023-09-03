@@ -21,7 +21,7 @@ public class AddTagToTask : TaskCreationBaseHandler
         _creatingTaskDbOperations = creatingTaskDbOperations;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         string tag = CallbackQuery.Data.Substring(CallbackList.Tag.Length).Trim();
         

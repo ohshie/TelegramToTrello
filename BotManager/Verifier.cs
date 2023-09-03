@@ -1,4 +1,3 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TelegramToTrello.BotManager;
@@ -7,15 +6,16 @@ public class Verifier
 {
     private readonly UserDbOperations _userDbOperations;
     private readonly TaskDbOperations _taskDbOperations;
-    private readonly ITelegramBotClient _botClient;
     private readonly TemplatesDbOperations _templatesDbOperations;
+    private readonly BotMessenger _botMessenger;
 
-    public Verifier(UserDbOperations userDbOperations, ITelegramBotClient botClient, TaskDbOperations taskDbOperations, TemplatesDbOperations templatesDbOperations)
+    public Verifier(UserDbOperations userDbOperations, TaskDbOperations taskDbOperations,
+        TemplatesDbOperations templatesDbOperations, BotMessenger botMessenger)
     {
         _userDbOperations = userDbOperations;
-        _botClient = botClient;
         _taskDbOperations = taskDbOperations;
         _templatesDbOperations = templatesDbOperations;
+        _botMessenger = botMessenger;
     }
 
     public async Task<User> GetUser(Message message)
@@ -23,7 +23,7 @@ public class Verifier
         User trelloUser = await _userDbOperations.RetrieveTrelloUser((int)message.Chat.Id);
         if (trelloUser is null)
         {
-            await _botClient.SendTextMessageAsync(chatId: message.From.Id,
+            await _botMessenger.SendMessage(chatId: (int)message.From.Id,
                 text: "Looks like you are not registered yet." +
                       "Click on /register and follow commands to register");
         }
@@ -52,7 +52,7 @@ public class Verifier
 
         if (template ==  null && !creationStart)
         {
-            await _botClient.SendTextMessageAsync(chatId: id,
+            await _botMessenger.SendMessage(chatId: id,
                 text: "Lets not get ahead of ourselves.\n" +
                     "Click on new template to start template creation process");
         }

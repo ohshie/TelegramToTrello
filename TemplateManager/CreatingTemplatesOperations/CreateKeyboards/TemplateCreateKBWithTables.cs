@@ -7,20 +7,23 @@ namespace TelegramToTrello.TemplateManager.CreatingTemplatesOperations.CreateKey
 public class TemplateCreateKBWithTables : TemplateCreationBaseHandler
 {
     private readonly TablesKeyboard _tablesKeyboard;
+    private readonly BotMessenger _botMessenger;
 
     public TemplateCreateKBWithTables(ITelegramBotClient botClient, UserDbOperations userDbOperations,
-        TemplatesDbOperations templateDbOperations, Verifier verifier, TablesKeyboard tablesKeyboard) : base(botClient,
+        TemplatesDbOperations templateDbOperations, Verifier verifier, TablesKeyboard tablesKeyboard, BotMessenger botMessenger) : base(botClient,
         userDbOperations, templateDbOperations, verifier)
     {
         _tablesKeyboard = tablesKeyboard;
+        _botMessenger = botMessenger;
     }
 
-    protected override async Task HandleTask(User user, Template template)
+    protected override async Task HandleTask(Template template)
     {
-        InlineKeyboardMarkup keyboardMarkup = await _tablesKeyboard.KeyboardTableChoice(user, template.BoardId, isTemplate: true);
+        InlineKeyboardMarkup keyboardMarkup = await _tablesKeyboard.KeyboardTableChoice(template.UserId, template.BoardId, isTemplate: true);
         
-        await BotClient.SendTextMessageAsync(text: "Next, we need to select a default list:",
-            chatId: user.TelegramId,
-            replyMarkup: keyboardMarkup);
+        await _botMessenger.UpdateMessage(text: "Next, we need to select a default list:",
+            chatId: template.UserId,
+            messageId: CallbackQuery.Message.MessageId,
+            keyboardMarkup: keyboardMarkup);
     }
 }

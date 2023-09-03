@@ -4,6 +4,7 @@ using Elsa.Builders;
 using NodaTime;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramToTrello.BotManager;
 using TelegramToTrello.ToFromTrello;
 
 namespace TelegramToTrello.Notifications;
@@ -14,15 +15,17 @@ public class BotNotificationCentre : IWorkflow
     private readonly TrelloOperations _trelloOperations;
     private readonly ITelegramBotClient _botClient;
     private IClock _notifyClock;
+    private readonly BotMessenger _botMessenger;
 
     public BotNotificationCentre(ITelegramBotClient botClient, 
         TrelloOperations trelloOperations, 
-        NotificationsDbOperations notificationsDbOperations, IClock clock)
+        NotificationsDbOperations notificationsDbOperations, IClock clock, BotMessenger botMessenger)
     {
         _botClient = botClient;
         _trelloOperations = trelloOperations;
         _notificationsDbOperations = notificationsDbOperations;
         _notifyClock = clock;
+        _botMessenger = botMessenger;
     }
 
     public async Task ToggleNotificationsForUser(Message message)
@@ -34,14 +37,14 @@ public class BotNotificationCentre : IWorkflow
         {
             await GetCardsForNotifications(user);
             
-            await _botClient.SendTextMessageAsync(text: $"Notifications turned on.\n" +
+            await _botMessenger.SendMessage(text: $"Notifications turned on.\n" +
                                                        $"You will now receive messages with new tasks set on your name and when task due is less than 3 hours.\n" +
                                                        $"if you want to disable notifications press /notifications",
             chatId: user.TelegramId);
             return;
         }
         
-        await _botClient.SendTextMessageAsync(text: $"Notifications turned off.\n" +
+        await _botMessenger.SendMessage(text: $"Notifications turned off.\n" +
                                                    $"To enable notifications press /notifications",
             chatId: user.TelegramId);
     }
@@ -74,7 +77,7 @@ public class BotNotificationCentre : IWorkflow
                 string newTaskMessage = await GetCardsForNotifications(trelloUser);
                 if (!string.IsNullOrEmpty(newTaskMessage))
                 {
-                    await _botClient.SendTextMessageAsync(text: $"Looks like you have some new tasks:\n" +
+                    await _botMessenger.SendMessage(text: $"Looks like you have some new tasks:\n" +
                                                                 $"{newTaskMessage}",
                         chatId: trelloUser.TelegramId);
                 }
@@ -89,7 +92,7 @@ public class BotNotificationCentre : IWorkflow
 
                     if (timeDelta.TotalHours < 3 && !task.NotificationSent)
                     {
-                        await _botClient.SendTextMessageAsync(text: $"You have some tasks that are due soon:\n" +
+                        await _botMessenger.SendMessage(text: $"You have some tasks that are due soon:\n" +
                                                                     $"{task.Name}\n" +
                                                                     $"{task.Due}\n" +
                                                                     $"{task.Url}",

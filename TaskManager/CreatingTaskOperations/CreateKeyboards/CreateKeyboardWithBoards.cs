@@ -17,13 +17,13 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
 
     private readonly BoardsKeyboard _boardsKeyboard;
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         InlineKeyboardMarkup inlineKeyboardMarkup;
         
         if (IsEdit)
         {
-            inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user, IsEdit: true);
+            inlineKeyboardMarkup = await _boardsKeyboard.KeyboardBoardChoice(task.Id, IsEdit: true);
             
             await BotMessenger.UpdateMessage(chatId: (int)CallbackQuery.Message.Chat.Id,
                 messageId: CallbackQuery.Message.MessageId,
@@ -31,7 +31,7 @@ public class CreateKeyboardWithBoards : TaskCreationBaseHandler
             return;
         }
         
-        inlineKeyboardMarkup = _boardsKeyboard.KeyboardBoardChoice(user);
+        inlineKeyboardMarkup = await _boardsKeyboard.KeyboardBoardChoice(task.Id);
         
         await BotMessenger.SendMessage(text: "We will start with choosing a board for our task:",
             chatId: (int)Message.Chat.Id, 

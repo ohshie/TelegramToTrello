@@ -28,7 +28,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         Configuration.InitializeVariables();
-
+        
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .Enrich.FromLogContext()

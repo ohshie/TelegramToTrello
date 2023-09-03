@@ -24,7 +24,9 @@ public class BotMessenger
     
     public async Task<Message> SendMessage(int chatId, string text, InlineKeyboardMarkup replyKeyboardMarkup)
     {
-        var message = await _botClient.SendTextMessageAsync(chatId: chatId, text: text, replyMarkup: replyKeyboardMarkup);
+        var message = await _botClient.SendTextMessageAsync(chatId: chatId, 
+            text: text, 
+            replyMarkup: replyKeyboardMarkup);
         await _dialogueStorageDbOperations.SaveBotMessage(chatId, message.MessageId);
 
         return message;
@@ -32,7 +34,8 @@ public class BotMessenger
     
     public async Task<Message> SendMessage(int chatId, string text, ReplyKeyboardMarkup replyKeyboardMarkup)
     {
-        var message = await _botClient.SendTextMessageAsync(chatId: chatId, text: text,
+        var message = await _botClient.SendTextMessageAsync(chatId: chatId, 
+            text: text,
             replyMarkup: replyKeyboardMarkup);
         await _dialogueStorageDbOperations.SaveBotMessage(chatId, message.MessageId);
 

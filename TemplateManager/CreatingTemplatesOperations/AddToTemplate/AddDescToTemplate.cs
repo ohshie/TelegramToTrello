@@ -18,11 +18,12 @@ public class AddDescToTemplate : TemplateCreationBaseHandler
         _botMessenger = botMessenger;
     }
 
-    protected override async Task HandleTask(User user, Template template)
+    protected override async Task HandleTask(Template template)
     {
         string templateDesc = Message.Text;
 
-        await _botMessenger.RemoveMessage(user.TelegramId, Message.MessageId);
+        await _botMessenger.RemoveMessage(chatId: template.UserId, Message.MessageId);
+        await _botMessenger.RemoveLastBotMessage(chatId: template.UserId);
         await TemplateDbOperations.AddDesc(template, templateDesc);
 
         NextTask = _displayTemplate;

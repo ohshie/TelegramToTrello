@@ -23,7 +23,7 @@ public class AddBoardToTask : TaskCreationBaseHandler
         _createKeyboardWithTemplate = createKeyboardWithTemplate;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask( TTTTask task)
     {
         string boardId = CheckIfEditForBoardId();
         
@@ -31,7 +31,7 @@ public class AddBoardToTask : TaskCreationBaseHandler
         if (string.IsNullOrEmpty(boardName))
         {
             await BotMessenger.SendMessage(text: "Please choose board name from keyboard menu.",
-                chatId: user.TelegramId);
+                chatId: task.Id);
             NextTask = null;
             return;
         }

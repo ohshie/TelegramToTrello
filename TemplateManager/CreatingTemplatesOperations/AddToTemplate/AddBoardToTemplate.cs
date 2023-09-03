@@ -17,7 +17,7 @@ public class AddBoardToTemplate : TemplateCreationBaseHandler
         _createKeyboardWithTables = createKeyboardWithTables;
     }
 
-    protected override async Task HandleTask(User user, Template template)
+    protected override async Task HandleTask(Template template)
     {
         string boardId = CallbackQuery.Data
             .Substring(CallbackList.TemplateBoard.Length).Trim();

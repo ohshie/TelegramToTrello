@@ -26,13 +26,13 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         if (CallbackQuery is not null)
         {
             if (CallbackQuery.Data is "press_this_when_done")
             {
-                await FinishAddingAttachments(user, task);
+                await FinishAddingAttachments(task);
                 return;
             }
         }
@@ -46,20 +46,20 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
 
         await _creatingTaskDbOperations.AddFilePath(task,savedFilePath);
 
-        await UpdateBotMessage(user, task);
+        await UpdateBotMessage(task);
     }
 
-    private async Task UpdateBotMessage(User user,TTTTask task)
+    private async Task UpdateBotMessage(TTTTask task)
     {
-        await BotMessenger.RemoveMessage(chatId: user.TelegramId, messageId: task.LastBotMessage);
+        await BotMessenger.RemoveMessage(chatId: task.Id, messageId: task.LastBotMessage);
 
         var newMessage = await BotMessenger.SendMessage(text: "Attachment added. You can add more if you want too.",
-            chatId: user.TelegramId,
+            chatId: task.Id,
             replyKeyboardMarkup: CreateKeyboard());
         await _creatingTaskDbOperations.MarkMessage(task, newMessage.MessageId);
     }
 
-    private async Task FinishAddingAttachments(User user,TTTTask task)
+    private async Task FinishAddingAttachments(TTTTask task)
     {
         if (task.WaitingForAttachment)
         {
@@ -67,7 +67,7 @@ public class AddAttachmentToTask : TaskCreationBaseHandler
             NextTask = _displayCurrentTaskInfo;
         }
 
-        await BotMessenger.RemoveMessage(user.TelegramId, CallbackQuery.Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: task.Id, CallbackQuery.Message.MessageId);
     }
     
     private async Task<(string, string)> GetPaths(Message message)

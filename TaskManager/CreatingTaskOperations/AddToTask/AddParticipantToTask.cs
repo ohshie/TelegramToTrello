@@ -25,12 +25,12 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         _displayCurrentTaskInfo = displayCurrentTaskInfo;
     }
 
-    protected override async Task HandleTask(User user, TTTTask task)
+    protected override async Task HandleTask(TTTTask task)
     {
         string participantName = CallbackQuery.Data.Substring("/name".Length).Trim();
         if (participantName == "press this when done")
         {
-            await FinishAddingParticipants(user, task);
+            await FinishAddingParticipants(task);
             return;
         }
         
@@ -39,9 +39,9 @@ public class AddParticipantToTask : TaskCreationBaseHandler
         NextTask = _createKeyboardWithUsers;
     }
 
-    private async Task FinishAddingParticipants(User user,TTTTask task)
+    private async Task FinishAddingParticipants(TTTTask task)
     {
-        await BotMessenger.RemoveMessage(chatId: user.TelegramId, Message.MessageId);
+        await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         if (task.InEditMode)
         {
             await TaskDbOperations.ToggleEditModeForTask(task);
