@@ -60,7 +60,7 @@ public class CallbackFactory
             { CallbackList.TemplateList, addTableToTemplate.Execute },
             { CallbackList.TemplateSave, confirmTemplate.Execute },
             { CallbackList.Template, query => assembleTaskFromTemplate.Execute(query) },
-            { CallbackList.TemplateTag, query => createKeyboardWithTags.Execute(query, isTemplate: true) },
+            { CallbackList.TemplateTag, query => addTagToTask.Execute(query, isTemplate: true) },
             { CallbackList.Skip, query => createKeyboardWithTables.Execute(query) }
         };
     }

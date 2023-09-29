@@ -75,7 +75,7 @@ public class CreatingTaskDbOperations
     {
         if (isTemplate)
         {
-            userTask.TaskName += "##template##"; 
+            userTask.TaskName += " ##template##"; 
         }
         else
         {
@@ -111,12 +111,12 @@ public class CreatingTaskDbOperations
         await _taskRepository.Update(userTask);
     }
     
-    public async Task AddName(TTTTask userTask,string taskName, bool isTemplate = false)
+    public async Task AddName(TTTTask userTask, string taskName, bool isTemplate = false)
     {
         if (isTemplate)
         {
             userTask.TaskName = userTask.TaskName
-                .Substring(0, userTask.TaskName.Length - "##template##".Length)
+                .Substring(0, userTask.TaskName.Length - " ##template##".Length)
                 .Trim();
             userTask.TaskName += " "+taskName;
         }
@@ -133,9 +133,9 @@ public class CreatingTaskDbOperations
         if (isTemplate)
         {
             userTask.TaskDesc = userTask.TaskDesc
-                .Substring(0, userTask.TaskName.Length - "##template##".Length)
+                .Substring(0, userTask.TaskDesc.Length - "##template##".Length)
                 .Trim();
-            userTask.TaskDesc += " " + description;
+            userTask.TaskDesc += " \n" + description;
         }
         else
         {

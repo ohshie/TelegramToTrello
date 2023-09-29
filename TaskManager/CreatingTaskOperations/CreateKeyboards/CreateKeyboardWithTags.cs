@@ -18,7 +18,7 @@ public class CreateKeyboardWithTags : TaskCreationBaseHandler
     
     protected override async Task HandleTask(TTTTask task)
     {
-        InlineKeyboardMarkup replyKeyboardMarkup = _tagsKeyboard.KeyboardTagChoice();
+        InlineKeyboardMarkup replyKeyboardMarkup = _tagsKeyboard.KeyboardTagChoice(IsTemplate);
 
         if (IsTemplate)
         {

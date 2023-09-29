@@ -75,6 +75,7 @@ public abstract class TaskCreationBaseHandler
             if (isTemplate)
             {
                 await NextTask.Execute(callback, isTemplate: true);
+                return;
             }
             
             await NextTask.Execute(callback);

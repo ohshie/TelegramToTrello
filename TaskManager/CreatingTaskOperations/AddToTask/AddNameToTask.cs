@@ -37,7 +37,7 @@ public class AddNameToTask : TaskCreationBaseHandler
         await BotMessenger.RemoveLastBotMessage(task.Id);
         await BotMessenger.RemoveMessage(chatId: task.Id, Message.MessageId);
         
-        if (IsTemplate)
+        if (task.TaskName.Contains("##template##"))
         {
             await _creatingTaskDbOperations.AddName(task, Message.Text, isTemplate: true);
         }

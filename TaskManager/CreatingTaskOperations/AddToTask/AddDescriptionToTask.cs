@@ -37,7 +37,7 @@ public class AddDescriptionToTask : TaskCreationBaseHandler
         await BotMessenger.RemoveLastBotMessage(task.Id);
         await BotMessenger.RemoveMessage(chatId: task.Id, messageId: Message.MessageId);
         
-        if (IsTemplate)
+        if (task.TaskDesc.Contains("##template##"))
         {
             await _creatingTaskDbOperations.AddDescription(task,Message.Text, isTemplate: true);
             NextTask.IsTemplate = true;

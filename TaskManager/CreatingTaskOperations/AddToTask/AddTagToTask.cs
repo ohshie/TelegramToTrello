@@ -23,7 +23,16 @@ public class AddTagToTask : TaskCreationBaseHandler
 
     protected override async Task HandleTask(TTTTask task)
     {
-        string tag = CallbackQuery.Data.Substring(CallbackList.Tag.Length).Trim();
+        string tag;
+        if (IsTemplate)
+        {
+            tag = CallbackQuery.Data.Substring(CallbackList.TemplateTag.Length).Trim();
+        }
+        else
+        {
+            tag = CallbackQuery.Data.Substring(CallbackList.Tag.Length).Trim();
+        }
+        
         
         await _creatingTaskDbOperations.AddTag(task,tag);
         

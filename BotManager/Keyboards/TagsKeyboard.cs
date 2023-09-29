@@ -7,8 +7,10 @@ public class TagsKeyboard
     public bool IsTemplate = false;
     private string Callback = CallbackList.Tag;
     
-    public InlineKeyboardMarkup KeyboardTagChoice()
+    public InlineKeyboardMarkup KeyboardTagChoice(bool isTemplate)
     {
+        IsTemplate = isTemplate;
+        
         if (IsTemplate)
         {
             Callback = CallbackList.TemplateTag;

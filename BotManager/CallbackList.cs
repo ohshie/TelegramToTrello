@@ -7,7 +7,7 @@ public static class CallbackList
     public const string Board =  Slash+"board";
     
     public const string Skip = Slash + "skip";
-    public const string Template = Slash + "template";
+    public const string Template = Slash+"template";
     
     public const string List = Slash+"list";
     public const string Tag = Slash+"tag";
