@@ -6,13 +6,15 @@ public class WebServer
 {
     private readonly TrelloOperations _trelloOperations;
     private readonly UserDbOperations _userDbOperations;
-    private SyncService _syncService;
+    private readonly SyncService _syncService;
+    private readonly ILogger<WebServer> _logger;
 
-    public WebServer(TrelloOperations trelloOperations, UserDbOperations userDbOperations, SyncService syncService)
+    public WebServer(TrelloOperations trelloOperations, UserDbOperations userDbOperations, SyncService syncService, ILogger<WebServer> logger)
     {
         _trelloOperations = trelloOperations;
         _userDbOperations = userDbOperations;
         _syncService = syncService;
+        _logger = logger;
     }
     public async Task Run(string[] args)
     {

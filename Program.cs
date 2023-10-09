@@ -30,7 +30,7 @@ public class Program
         Configuration.InitializeVariables();
         
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Warning()
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();
@@ -45,8 +45,6 @@ public class Program
         {
             await host.StartAsync();
 
-            Log.Logger.Information("app starting");
-            
             var dbContext = host.Services.GetRequiredService<BotDbContext>();
             await dbContext.Database.EnsureCreatedAsync();
 

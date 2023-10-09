@@ -61,7 +61,6 @@ public class BotClient
         
         using (var scope = _host.Services.CreateScope())
         {
-            #pragma warning disable
             if (update.CallbackQuery is { } callbackQuery)
             {
                 await _callbackFactory.CallBackDataManager(callbackQuery);

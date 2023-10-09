@@ -106,11 +106,11 @@ public class PlaceholderOperator
 
         if (task.WaitingForAttachment)
         {
-            if (message.Photo is not null || message.Document is not null || message.Video is not null)
-            {
-                await _addAttachmentToTask.Execute(message);
-                return true;
-            }
+            if (message.Photo is null && message.Document is null && message.Video is null) return false;
+            if (message.Document is not null && message.Document.FileSize > 25000000) return false;
+
+            await _addAttachmentToTask.Execute(message);
+            return true;
         }
 
         return false;
