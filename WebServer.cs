@@ -29,6 +29,9 @@ public class WebServer
         app.UseStaticFiles();
         app.MapGet("/", () => "Nothing to see here.");
         app.MapPost("/trello/authcallback", AuthCallback);
+        
+        _logger.LogWarning("server started on {Url}", _configuration.GetSection("WebServer").GetValue<string>("WebServer")!);
+        
         app.Run();
     }
     

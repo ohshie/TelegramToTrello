@@ -34,6 +34,8 @@ public class BotClient
     private readonly IHost _host;
     private readonly ILogger<BotClient> _logger;
 
+    private static readonly ManualResetEvent ShutdownEvent = new ManualResetEvent(false);
+
     public async Task BotOperations()
     {
         using CancellationTokenSource cts = new CancellationTokenSource();
@@ -48,22 +50,23 @@ public class BotClient
             pollingErrorHandler: HandlePollingErrorAsync,
             receiverOptions: receiverOptions,
             cancellationToken: cts.Token);
-
+        
         var me = await _botClient.GetMeAsync(cancellationToken: cts.Token);
         
         _logger.LogWarning("bot started @{Me}", me);
         
-        Console.ReadLine();
+        ShutdownEvent.WaitOne();
+        _logger.LogCritical("bot stopped");
         
         cts.Cancel();
     }
 
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        botClient.GetUpdatesAsync();
-        
+        _logger.LogWarning("Handling update {Update}", update.Id);
         using (var scope = _host.Services.CreateScope())
         {
+            
             if (update.CallbackQuery is { } callbackQuery)
             {
                 await _callbackFactory.CallBackDataManager(callbackQuery);
@@ -75,7 +78,7 @@ public class BotClient
             var chatId = message.Chat.Id;
             var userUsername = message.From?.Username;
             
-            _logger.LogWarning("Recieved a {message} in chat {chatId} from {userUsername}", 
+            _logger.LogWarning("Received a {message} in chat {chatId} from {userUsername}", 
                 message.Type, chatId, userUsername);
             
             await _actionsFactory.BotActionFactory(message);

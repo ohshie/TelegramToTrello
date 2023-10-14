@@ -12,17 +12,21 @@ public class DbOperations
     }
     public async Task<Board?> RetrieveBoard(int telegramId, string boardName)
     {
-        User trelloUser = await _dbContext.Users
-                .Include(ru => ru.Boards)
-                .ThenInclude(b => b.Tables)
-                .Include(ru => ru.Boards)
-                .ThenInclude(b => b.UsersOnBoards)
-                .FirstOrDefaultAsync(um => um.TelegramId == telegramId);
-            
-            if (trelloUser != null)
-            {
-                return trelloUser.Boards!.FirstOrDefault(b => b.TrelloBoardId == boardName);
-            }
-        return null;
+        var board = await _dbContext.Users
+            .Where(u => u.TelegramId == telegramId)
+            .SelectMany(u => u.Boards)
+            .FirstOrDefaultAsync(b => b.TrelloBoardId == boardName);
+        
+        if (board == null) return board;
+        
+        await _dbContext.Entry(board)
+                .Collection(b => b.Tables)
+                .LoadAsync();
+
+        await _dbContext.Entry(board)
+                .Collection(b => b.UsersOnBoards)
+                .LoadAsync();
+
+        return board;
     }
 }

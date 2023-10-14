@@ -12,18 +12,22 @@ public class BoardRepository : IBoardRepository
     }
     public async Task<Board> Get(int id)
     {
-        return await _dbContext.Boards
-            .Include(b => b.Users)
-            .Include(b => b.Tables)
-            .FirstOrDefaultAsync(b => b.Id == id);
+        var board = await _dbContext.Boards.FirstOrDefaultAsync(b => b.Id == id);
+
+        await _dbContext.Entry(board).Collection(b => b.Users).LoadAsync();
+        await _dbContext.Entry(board).Collection(b => b.Tables).LoadAsync();
+
+        return board;
     }
 
     public async Task<Board> Get(string id)
     {
-        return await _dbContext.Boards
-            .Include(b => b.Users)
-            .Include(b => b.Tables)
-            .FirstOrDefaultAsync(b => b.TrelloBoardId == id);
+        var board = await _dbContext.Boards.FirstOrDefaultAsync(b => b.TrelloBoardId == id);
+
+        await _dbContext.Entry(board).Collection(b => b.Users).LoadAsync();
+        await _dbContext.Entry(board).Collection(b => b.Tables).LoadAsync();
+
+        return board;
     }
 
     public async Task<IEnumerable<Board>> GetAll()
