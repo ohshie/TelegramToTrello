@@ -1,22 +1,21 @@
-using Telegram.Bot;
 using Telegram.Bot.Types;
-using TelegramToTrello.BotManager;
 using TelegramToTrello.Repositories;
 
-namespace TelegramToTrello.UserRegistration;
+namespace TelegramToTrello.BotManager;
 
 public class UserRegistrationHandler
 {
     public UserRegistrationHandler( 
         SyncService syncService, 
         UserDbOperations userDbOperations, MenuKeyboards menuKeyboards,
-        DialogueStorageDbOperations dialogueStorageDbOperations, BotMessenger botMessenger)
+        DialogueStorageDbOperations dialogueStorageDbOperations, BotMessenger botMessenger, AuthLink authLink)
     {
         _syncService = syncService;
         _userDbOperations = userDbOperations;
         _menuKeyboards = menuKeyboards;
         _dialogueStorageDbOperations = dialogueStorageDbOperations;
         _botMessenger = botMessenger;
+        _authLink = authLink;
     }
 
     private readonly SyncService _syncService;
@@ -24,10 +23,11 @@ public class UserRegistrationHandler
     private readonly MenuKeyboards _menuKeyboards;
     private readonly DialogueStorageDbOperations _dialogueStorageDbOperations;
     private readonly BotMessenger _botMessenger;
+    private readonly AuthLink _authLink;
 
     public async Task Authenticate(Message message)
     {
-        string oauthLink = AuthLink.CreateLink(message.From!.Id);
+        string oauthLink = _authLink.CreateLink(message.From!.Id);
         
         bool registerSuccess = await _userDbOperations.RegisterNewUser(message);
         if (!registerSuccess)

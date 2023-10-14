@@ -8,17 +8,19 @@ namespace TelegramToTrello;
 public class SyncService : IWorkflow
 {
     private readonly IClock _clock;
+    private readonly IConfiguration _configuration;
 
     public SyncService(UserDbOperations dbOperations, 
         SyncBoardDbOperations boardDbOperations, 
         SyncTablesDbOperations tablesDbOperations, 
-        SyncUsersDbOperations userDbOperations, IClock clock)
+        SyncUsersDbOperations userDbOperations, IClock clock, IConfiguration configuration)
     {
         _dbOperations = dbOperations;
         _boardDbOperations = boardDbOperations;
         _tablesDbOperations = tablesDbOperations;
         _userDbOperations = userDbOperations;
         _clock = clock;
+        _configuration = configuration;
     }
 
     private readonly UserDbOperations _dbOperations;
@@ -58,6 +60,6 @@ public class SyncService : IWorkflow
     public void Build(IWorkflowBuilder builder) =>
         builder
             .AsSingleton()
-            .Timer(Duration.FromMinutes(Configuration.SyncTimer).Plus(Duration.FromSeconds(30)))
+            .Timer(Duration.FromMinutes(_configuration.GetSection("Timers").GetValue<int>("SyncTimer")).Plus(Duration.FromSeconds(30)))
             .Then(SynchronizeDataToTrello);
 }

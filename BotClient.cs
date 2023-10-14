@@ -7,6 +7,7 @@ using Telegram.Bot.Types.Enums;
 using TelegramToTrello.BotManager;
 using TelegramToTrello.TaskManager;
 using TelegramToTrello.TaskManager.CreatingTaskOperations;
+using ILogger = Serilog.ILogger;
 
 namespace TelegramToTrello;
 
@@ -16,13 +17,14 @@ public class BotClient
         ActionsFactory actionsFactory, 
         CallbackFactory callbackFactory, 
         PlaceholderOperator taskPlaceholderOperator,
-        IHost host)
+        IHost host, ILogger<BotClient> logger)
     {
         _botClient = botClient;
         _actionsFactory = actionsFactory;
         _callbackFactory = callbackFactory;
         _taskPlaceholderOperator = taskPlaceholderOperator;
         _host = host;
+        _logger = logger;
     }
 
     private readonly ITelegramBotClient _botClient;
@@ -30,6 +32,7 @@ public class BotClient
     private readonly CallbackFactory _callbackFactory;
     private readonly PlaceholderOperator _taskPlaceholderOperator;
     private readonly IHost _host;
+    private readonly ILogger<BotClient> _logger;
 
     public async Task BotOperations()
     {
@@ -48,7 +51,7 @@ public class BotClient
 
         var me = await _botClient.GetMeAsync(cancellationToken: cts.Token);
         
-        Log.Logger.Warning("bot started @{Me}", me);
+        _logger.LogWarning("bot started @{Me}", me);
         
         Console.ReadLine();
         
@@ -72,7 +75,7 @@ public class BotClient
             var chatId = message.Chat.Id;
             var userUsername = message.From?.Username;
             
-            Log.Logger.Information("Recieved a {message} in chat {chatId} from {userUsername}", 
+            _logger.LogWarning("Recieved a {message} in chat {chatId} from {userUsername}", 
                 message.Type, chatId, userUsername);
             
             await _actionsFactory.BotActionFactory(message);
@@ -82,14 +85,22 @@ public class BotClient
 
     Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        var errorMessage = exception switch
+        try
         {
-            ApiRequestException apiRequestException
-                => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
-            _ => exception.ToString()
-        };
+            var errorMessage = exception switch
+            {
+                ApiRequestException apiRequestException
+                    => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
+                _ => exception.ToString()
+            };
 
-        Console.WriteLine(errorMessage);
-        return Task.CompletedTask;
+            Console.WriteLine(errorMessage);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while processing update: {ex}");
+            return Task.CompletedTask;
+        }
     }
 }

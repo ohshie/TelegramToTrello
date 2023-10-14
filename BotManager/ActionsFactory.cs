@@ -6,7 +6,6 @@ using TelegramToTrello.TaskManager.CreatingTaskOperations;
 using TelegramToTrello.TaskManager.CurrentTaskOperations;
 using TelegramToTrello.TemplateManager;
 using TelegramToTrello.TemplateManager.CreatingTemplatesOperations;
-using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello;
 

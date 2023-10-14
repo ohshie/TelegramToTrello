@@ -8,18 +8,21 @@ public class WebServer
     private readonly UserDbOperations _userDbOperations;
     private readonly SyncService _syncService;
     private readonly ILogger<WebServer> _logger;
+    private readonly IConfiguration _configuration;
 
-    public WebServer(TrelloOperations trelloOperations, UserDbOperations userDbOperations, SyncService syncService, ILogger<WebServer> logger)
+    public WebServer(TrelloOperations trelloOperations, UserDbOperations userDbOperations, SyncService syncService,
+        ILogger<WebServer> logger, IConfiguration configuration)
     {
         _trelloOperations = trelloOperations;
         _userDbOperations = userDbOperations;
         _syncService = syncService;
         _logger = logger;
+        _configuration = configuration;
     }
     public async Task Run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseUrls(Configuration.ServerUrl);
+        builder.WebHost.UseUrls(_configuration.GetSection("WebServer").GetValue<string>("WebServer")!);
         
         var app = builder.Build();
         

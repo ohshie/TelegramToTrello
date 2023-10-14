@@ -10,12 +10,12 @@ public class TrelloOperations
     private readonly HttpClient _httpClient;
     private readonly BotDbContext _botDbContext;
 
-    public TrelloOperations(HttpClient httpClient, BotDbContext botDbContext)
+    public TrelloOperations(HttpClient httpClient, BotDbContext botDbContext, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _botDbContext = botDbContext;
         
-        _trelloApiKey = Configuration.TrelloKey;
+        _trelloApiKey = configuration.GetSection("TrelloApi").GetValue<string>("TrelloKey");
     }
     
     private readonly string? _trelloApiKey;

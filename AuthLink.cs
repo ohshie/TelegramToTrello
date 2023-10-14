@@ -1,9 +1,18 @@
-class AuthLink
+namespace TelegramToTrello;
+
+public class AuthLink
 {
-    public static string CreateLink(long telegramId)
+    private readonly IConfiguration _configuration;
+
+    public AuthLink(IConfiguration configuration)
     {
-        string callbackUrl = Configuration.CallbackUrl;
-        string trelloKey = Configuration.TrelloKey;
+        _configuration = configuration;
+    }
+
+    public string CreateLink(long telegramId)
+    {
+        string callbackUrl = _configuration.GetSection("WebServer").GetValue<string>("CallbackUrl")!;
+        string trelloKey = _configuration.GetSection("TrelloApi").GetValue<string>("TrelloKey")!;
         
         string url =
             $"https://trello.com/1/authorize?expiration=never&name=TelegramToTrello" +

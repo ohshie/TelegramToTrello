@@ -13,19 +13,18 @@ public class BotNotificationCentre : IWorkflow
 {
     private readonly NotificationsDbOperations _notificationsDbOperations;
     private readonly TrelloOperations _trelloOperations;
-    private readonly ITelegramBotClient _botClient;
     private IClock _notifyClock;
     private readonly BotMessenger _botMessenger;
+    private readonly IConfiguration _configuration;
 
-    public BotNotificationCentre(ITelegramBotClient botClient, 
-        TrelloOperations trelloOperations, 
-        NotificationsDbOperations notificationsDbOperations, IClock clock, BotMessenger botMessenger)
+    public BotNotificationCentre(TrelloOperations trelloOperations, 
+        NotificationsDbOperations notificationsDbOperations, IClock clock, BotMessenger botMessenger, IConfiguration configuration)
     {
-        _botClient = botClient;
         _trelloOperations = trelloOperations;
         _notificationsDbOperations = notificationsDbOperations;
         _notifyClock = clock;
         _botMessenger = botMessenger;
+        _configuration = configuration;
     }
 
     public async Task ToggleNotificationsForUser(Message message)
@@ -107,6 +106,6 @@ public class BotNotificationCentre : IWorkflow
     public void Build(IWorkflowBuilder builder) =>
         builder
             .AsSingleton()
-            .Timer(Duration.FromMinutes(Configuration.NotificationTimer))
+            .Timer(Duration.FromMinutes(_configuration.GetSection("Timers").GetValue<int>("NotificationTimer")))
             .Then(NotificationManager);
 }

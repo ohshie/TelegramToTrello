@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using Elsa;
+﻿using Elsa;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Telegram.Bot;
@@ -20,7 +19,6 @@ using TelegramToTrello.TemplateManager.CreatingTemplatesOperations.AddToTemplate
 using TelegramToTrello.TemplateManager.CreatingTemplatesOperations.CreateKeyboards;
 using TelegramToTrello.TemplateManager.CreatingTemplatesOperations.RequestFromUser;
 using TelegramToTrello.ToFromTrello;
-using TelegramToTrello.UserRegistration;
 
 namespace TelegramToTrello;
 
@@ -28,8 +26,6 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        Configuration.InitializeVariables();
-        
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Warning()
             .Enrich.FromLogContext()
@@ -37,15 +33,26 @@ public class Program
             .CreateLogger();
         
         var host = new HostBuilder()
+            .ConfigureAppConfiguration(builder =>
+            {
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                if (environment=="Development")
+                {
+                    builder.AddJsonFile($"appsettings.Development.json", optional: true);
+                }
+                else
+                {
+                    builder.SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                }
+            })
             .ConfigureServices(ConfigureServices)
             .UseConsoleLifetime()
-            .UseSerilog()
             .Build();
 
         using (host)
         {
             await host.StartAsync();
-
             var dbContext = host.Services.GetRequiredService<BotDbContext>();
             await dbContext.Database.EnsureCreatedAsync();
 
@@ -61,27 +68,28 @@ public class Program
         }
     }
     
-    private static void ConfigureServices(IServiceCollection collection)
+    private static void ConfigureServices(HostBuilderContext context,IServiceCollection collection)
     {
         collection.AddSingleton<ITelegramBotClient>(sp =>
         {
-            var token = Configuration.BotToken;
-            return new TelegramBotClient(token);
+            var token = context.Configuration.GetSection("BotToken").GetValue<string>("BotToken");
+            return new TelegramBotClient(token!);
         });
         
         collection.AddDbContext<BotDbContext>(sp =>
         {
-            sp.UseNpgsql(Configuration.ConnectionString);
+            sp.UseNpgsql(context.Configuration.GetConnectionString("Postgres"));
         });
 
         collection.AddHttpClient();
         
-        collection.AddLogging();
+        collection.AddSerilog();
         
         // bot classes
         collection.AddTransient<BotClient>();
         collection.AddScoped<Message>();
         collection.AddTransient<WebServer>();
+        collection.AddSingleton<AuthLink>();
         collection.AddTransient<TrelloOperations>();
         
         collection.AddTransient<BotSettingsMenu>();
