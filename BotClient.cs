@@ -48,7 +48,7 @@ public class BotClient
 
         var me = await _botClient.GetMeAsync(cancellationToken: cts.Token);
         
-        Log.Logger.Information("bot started @{Me}", me);
+        Log.Logger.Warning("bot started @{Me}", me);
         
         Console.ReadLine();
         
