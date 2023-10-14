@@ -1,4 +1,5 @@
-﻿using Elsa;
+﻿using System.Net.Sockets;
+using Elsa;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Telegram.Bot;
@@ -67,13 +68,14 @@ public class Program
             var token = Configuration.BotToken;
             return new TelegramBotClient(token);
         });
-
+        
         collection.AddDbContext<BotDbContext>(sp =>
         {
             sp.UseNpgsql(Configuration.ConnectionString);
         });
 
         collection.AddHttpClient();
+        
         collection.AddLogging();
         
         // bot classes
@@ -94,7 +96,6 @@ public class Program
         
         collection.AddTransient<BotNotificationCentre>();
         collection.AddTransient<SyncService>();
-
         
         // keyboard classes
         collection.AddTransient<MenuKeyboards>();
