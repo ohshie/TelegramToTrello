@@ -46,6 +46,7 @@ public class PushTask : TaskCreationBaseHandler
 
     private void RemoveFiles(TTTTask task)
     {
+        if (!Directory.Exists($"./{task.Id}")) return;
         var allAttachments = Directory.EnumerateFiles($"./{task.Id}/");
         foreach (var attachment in allAttachments) File.Delete(attachment);
     }
