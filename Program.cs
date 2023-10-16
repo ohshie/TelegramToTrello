@@ -38,12 +38,12 @@ public class Program
                 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                 if (environment=="Development")
                 {
-                    builder.AddJsonFile($"appsettings.Development.json", optional: true);
+                    builder.AddJsonFile($"./data/appsettings.Development.json", optional: true);
                 }
                 else
                 {
                     builder.SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                        .AddJsonFile("./data/appsettings.json", optional: false, reloadOnChange: true);
                 }
             })
             .ConfigureServices(ConfigureServices)
