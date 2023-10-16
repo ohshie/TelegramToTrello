@@ -28,4 +28,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: $ttt_bot_image:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ttt_bot_image:latest
